@@ -70,10 +70,19 @@ const Login = () => {
         setApplicationSession(session);
         redirectApplicationUser(session.user, session.restaurant);
       } catch (sessionError) {
-        setError(sessionError.response?.status === 409
-          ? 'Bu Firebase hesabı henüz bir zuuqrmenu hesabıyla eşleştirilmemiş. Kayıt olun veya mevcut hesabınızla giriş yapın.'
-          : sessionError.response?.data?.error || 'Oturum doğrulanamadı.');
-        await signOut(auth);
+        if (sessionError.response?.status !== 409) throw sessionError;
+        try {
+          const name = credential.user.displayName || credential.user.email?.split('@')[0] || 'Yeni işletme';
+          const registration = await authService.registerFirebase({
+            ownerName: name,
+            restaurantName: `${name} Restoranı`,
+          });
+          setApplicationSession(registration);
+          navigate('/pending-approval');
+        } catch (registrationError) {
+          setError(registrationError.response?.data?.error || 'Google hesabınızla kayıt tamamlanamadı. Lütfen tekrar deneyin.');
+          await signOut(auth);
+        }
       }
     } catch (firebaseError) {
       setError(getFirebaseAuthError(firebaseError));

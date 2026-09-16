@@ -23,7 +23,6 @@ const Register = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [registrationComplete, setRegistrationComplete] = useState(false);
-  const [googleRegistration, setGoogleRegistration] = useState(false);
   const { setApplicationSession } = useAuth();
   const navigate = useNavigate();
 
@@ -86,9 +85,13 @@ const Register = () => {
       } catch (sessionError) {
         if (sessionError.response?.status !== 409) throw sessionError;
       }
-      setGoogleRegistration(true);
-      setFormData((current) => ({ ...current, email: credential.user.email || current.email, name: credential.user.displayName || current.name, password: '' }));
-      setError('Google hesabı hazır. Restoran bilgilerini tamamlayarak kaydı gönderin.');
+      const name = credential.user.displayName || credential.user.email?.split('@')[0] || 'Yeni işletme';
+      const result = await authService.registerFirebase({
+        ownerName: name,
+        restaurantName: `${name} Restoranı`,
+      });
+      setApplicationSession(result);
+      navigate('/pending-approval');
     } catch (firebaseError) {
       setError(getFirebaseAuthError(firebaseError));
     } finally {
@@ -153,7 +156,7 @@ const Register = () => {
                   />
                 </div>
 
-                {!googleRegistration && <div>
+                <div>
                   <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                     Şifre *
                   </label>
@@ -167,7 +170,7 @@ const Register = () => {
                     minLength="6"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
-                </div>}
+                </div>
 
                 <div>
                   <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">

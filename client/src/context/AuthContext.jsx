@@ -31,11 +31,11 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (nextFirebaseUser) => {
       setFirebaseUser(nextFirebaseUser);
-      if (!authStateInitialized.current) {
-        authStateInitialized.current = true;
-        checkAuth();
-      }
     });
+    if (!authStateInitialized.current) {
+      authStateInitialized.current = true;
+      checkAuth();
+    }
     return unsubscribe;
   }, []);
 

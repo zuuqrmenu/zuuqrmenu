@@ -149,7 +149,7 @@ export const me = async (req, res) => {
       restaurant = await Restaurant.findById(user.restaurantId);
     }
 
-    if (user.role === 'RESTAURANT_USER' && restaurant?.status !== 'ACTIVE') {
+    if (user.role === 'RESTAURANT_USER' && restaurant?.status === 'REJECTED') {
       return res.status(403).json({ error: 'Hesabınız şu anda restoran paneline erişemiyor.' });
     }
 

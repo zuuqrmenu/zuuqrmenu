@@ -14,7 +14,15 @@ import QrManagement from './pages/QrManagement';
 import Analytics from './pages/Analytics';
 import LandingPage from './pages/LandingPage';
 
-const RouteLoading = () => <div className="flex min-h-screen items-center justify-center bg-slate-50 text-sm text-slate-500">Oturum kontrol ediliyor...</div>;
+const RouteLoading = () => (
+  <div className="route-loading">
+    <div className="route-loading__content">
+      <img src="/logo_darkmode.svg" alt="zuuqrmenu" className="route-loading__logo" />
+      <span className="route-loading__spinner" aria-label="Yükleniyor" />
+      <p>Menünüz hazırlanıyor...</p>
+    </div>
+  </div>
+);
 
 const DashboardThemeController = () => {
   const location = useLocation();

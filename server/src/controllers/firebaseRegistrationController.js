@@ -42,20 +42,25 @@ export const registerFirebase = async (req, res, next) => {
     if (!firebaseUser?.uid) return res.status(401).json({ error: 'Geçersiz veya süresi dolmuş Firebase oturumu.' });
     if (!firebaseUser.email) return res.status(400).json({ error: 'Firebase hesabında e-posta adresi bulunamadı.' });
 
-    const invalidField = validationError(body);
+    const email = firebaseUser.email.trim().toLowerCase();
+    const authProvider = providerFromToken(firebaseUser);
+    const ownerName = body.ownerName?.trim() || firebaseUser.name?.trim() || email.split('@')[0];
+    const restaurantName = body.restaurantName?.trim() || (authProvider === 'GOOGLE' ? `${ownerName} Restoranı` : '');
+    const city = body.city?.trim() || (authProvider === 'GOOGLE' ? 'Belirtilmedi' : '');
+    const businessType = body.businessType || (authProvider === 'GOOGLE' ? 'RESTAURANT' : '');
+    const normalizedBody = { ...body, ownerName, restaurantName, city, businessType };
+    const invalidField = validationError(normalizedBody);
     if (invalidField) return res.status(400).json({ error: invalidField });
 
-    const email = firebaseUser.email.trim().toLowerCase();
     const existingUid = await User.findOne({ firebaseUid: firebaseUser.uid }).select('_id');
     if (existingUid) return res.status(409).json({ error: 'Bu Firebase hesabı zaten bir ZuuLab QR hesabına bağlı.' });
 
     const existingEmail = await User.findOne({ email }).select('_id');
     if (existingEmail) return res.status(409).json({ error: 'Bu e-posta adresiyle zaten bir ZuuLab QR hesabı bulunuyor.' });
 
-    const authProvider = providerFromToken(firebaseUser);
     createdUser = await User.create({
       email,
-      name: body.ownerName.trim(),
+      name: ownerName,
       phone: body.ownerPhone?.trim() || '',
       role: 'RESTAURANT_USER',
       firebaseUid: firebaseUser.uid,
@@ -63,12 +68,12 @@ export const registerFirebase = async (req, res, next) => {
     });
 
     createdRestaurant = await Restaurant.create({
-      name: body.restaurantName.trim(),
-      slug: await getUniqueSlug(body.restaurantName),
+      name: restaurantName,
+      slug: await getUniqueSlug(restaurantName),
       ownerId: createdUser._id,
       status: 'PENDING',
-      businessType: body.businessType,
-      city: body.city.trim(),
+      businessType,
+      city,
       address: body.address?.trim() || '',
       website: body.website?.trim() || '',
       instagram: body.instagram?.trim() || '',
@@ -79,6 +84,7 @@ export const registerFirebase = async (req, res, next) => {
 
     createdUser.restaurantId = createdRestaurant._id;
     await createdUser.save();
+    setAuthCookie(res, createdUser);
     return res.status(201).json({
       success: true,
       message: 'Hesabınız oluşturuldu. Yönetici onayı bekleniyor.',

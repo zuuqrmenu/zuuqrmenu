@@ -18,6 +18,14 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+.route-loading { display: grid; min-height: 100vh; place-items: center; background: #050505; color: #a3a3a3; }
+.route-loading__content { display: grid; justify-items: center; text-align: center; }
+.route-loading__logo { width: 11rem; height: auto; }
+.route-loading__spinner { width: 2.75rem; height: 2.75rem; margin-top: 2.5rem; border: .2rem solid #292929; border-top-color: #deff36; border-radius: 50%; animation: route-loading-spin .8s linear infinite; }
+.route-loading p { margin: 1.1rem 0 0; color: #737373; font-size: .8rem; letter-spacing: .02em; }
+@keyframes route-loading-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .route-loading__spinner { animation-duration: 1.8s; } }
+
 @layer components {
   .field-input {
     @apply w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10;
