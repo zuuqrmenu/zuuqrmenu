@@ -55,10 +55,18 @@ zuulab-qr/
    PORT=5001
    NODE_ENV=development
    MONGODB_URI=mongodb://localhost:27017/zuulab-qr
-   JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+   JWT_SECRET=<strong-random-secret-at-least-32-characters>
    JWT_EXPIRES_IN=24h
    CLIENT_URL=http://localhost:5174
    COOKIE_SECRET=your-cookie-secret-change-this-in-production
+   ```
+
+   Seed credentials are required only for `npm run seed`:
+   ```env
+   SEED_ADMIN_USERNAME=
+   SEED_ADMIN_PASSWORD=
+   SEED_RESTAURANT_EMAIL=
+   SEED_RESTAURANT_PASSWORD=
    ```
 
    **Client (.env):**
@@ -142,6 +150,11 @@ zuulab-qr/
    - Backend API: http://localhost:5001
    - API Health Check: http://localhost:5001/api/health
 
+   Production domains:
+   - Frontend: https://zuuqrmenu.com
+   - Backend API: https://api.zuuqrmenu.com
+   - Public menu: https://zuuqrmenu.com/{username}/menu
+
 ## 📊 Database Models
 
 ### User
@@ -210,7 +223,8 @@ zuulab-qr/
 - `PATCH /api/admin/restaurants/:id/activate` - Activate a suspended or rejected restaurant
 
 ### Public Menu
-- `GET /api/public/menu/:slug` - Get an active restaurant's published public menu
+- `GET /api/public/menu/:username` - Get an active restaurant's published public menu by `User.username`
+- Canonical browser URL: `/{username}/menu`
 
 ### Cloudinary Product Images
 1. Create a Cloudinary account.

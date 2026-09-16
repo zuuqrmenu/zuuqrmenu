@@ -9,10 +9,22 @@ import Product from './models/Product.js';
 
 dotenv.config();
 
-const ADMIN_IDENTIFIER = 'admin';
-const ADMIN_PASSWORD = '218061295eO.';
-const RESTAURANT_EMAIL = 'test@gmail.com';
-const RESTAURANT_PASSWORD = '123456789';
+const requiredSeedEnv = [
+  'SEED_ADMIN_USERNAME',
+  'SEED_ADMIN_PASSWORD',
+  'SEED_RESTAURANT_EMAIL',
+  'SEED_RESTAURANT_PASSWORD',
+];
+const missingSeedEnv = requiredSeedEnv.filter((name) => !process.env[name]?.trim());
+
+if (missingSeedEnv.length) {
+  throw new Error(`Missing required seed environment variables: ${missingSeedEnv.join(', ')}`);
+}
+
+const ADMIN_IDENTIFIER = process.env.SEED_ADMIN_USERNAME.trim();
+const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD;
+const RESTAURANT_EMAIL = process.env.SEED_RESTAURANT_EMAIL.trim().toLowerCase();
+const RESTAURANT_PASSWORD = process.env.SEED_RESTAURANT_PASSWORD;
 
 const demoMenu = [
   { name: 'Başlangıçlar', products: [

@@ -93,9 +93,6 @@ const restaurantSettingsSchema = new mongoose.Schema({
   timestamps: true,
 });
 
-// Index for restaurant lookup
-restaurantSettingsSchema.index({ restaurantId: 1 });
-
 const RestaurantSettings = mongoose.model('RestaurantSettings', restaurantSettingsSchema);
 
 export default RestaurantSettings;

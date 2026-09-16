@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { authService } from '../services/authService';
 import { auth } from '../config/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
@@ -11,12 +11,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [firebaseUser, setFirebaseUser] = useState(null);
-
-  // Check if user is authenticated on mount
-  useEffect(() => {
-    checkAuth();
-    return onAuthStateChanged(auth, setFirebaseUser);
-  }, []);
+  const authStateInitialized = useRef(false);
 
   const checkAuth = async () => {
     try {
@@ -32,6 +27,17 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (nextFirebaseUser) => {
+      setFirebaseUser(nextFirebaseUser);
+      if (!authStateInitialized.current) {
+        authStateInitialized.current = true;
+        checkAuth();
+      }
+    });
+    return unsubscribe;
+  }, []);
 
   const login = async (credentials) => {
     try {

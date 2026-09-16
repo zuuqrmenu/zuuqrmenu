@@ -98,7 +98,6 @@ function App() {
           <Route path="/dashboard/analytics" element={<RestaurantRoute analytics />} />
           <Route path="/dashboard/qr" element={<RestaurantRoute qr />} />
           <Route path="/:username/menu" element={<PublicMenu />} />
-          <Route path="/:slug" element={<PublicMenu />} />
           <Route path="/" element={<HomeRoute />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

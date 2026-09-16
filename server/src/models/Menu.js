@@ -16,9 +16,6 @@ const menuSchema = new mongoose.Schema({
   timestamps: true,
 });
 
-// Index for restaurant lookup
-menuSchema.index({ restaurantId: 1 });
-
 const Menu = mongoose.model('Menu', menuSchema);
 
 export default Menu;

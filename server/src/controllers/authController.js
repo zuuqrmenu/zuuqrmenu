@@ -30,6 +30,7 @@ export const setAuthCookie = (res, user) => {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
+    path: '/',
     maxAge: 24 * 60 * 60 * 1000,
   });
 };
@@ -101,6 +102,7 @@ export const register = async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
+      path: '/',
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
     });
 
@@ -239,6 +241,10 @@ export const me = async (req, res) => {
       restaurant = await Restaurant.findById(user.restaurantId);
     }
 
+    if (user.role === 'RESTAURANT_USER' && restaurant?.status !== 'ACTIVE') {
+      return res.status(403).json({ error: 'Hesabınız şu anda restoran paneline erişemiyor.' });
+    }
+
     res.json({
       user: {
         id: user._id,
@@ -268,7 +274,7 @@ export const me = async (req, res) => {
 export const logout = async (req, res) => {
   try {
     // Clear cookie
-    res.clearCookie('token');
+    res.clearCookie('token', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict', path: '/' });
     
     res.json({ message: 'Logout successful' });
   } catch (error) {
