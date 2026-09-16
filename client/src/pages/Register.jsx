@@ -46,8 +46,13 @@ const Register = () => {
     setLoading(true);
 
     try {
-      if (auth.currentUser) await signOut(auth);
-      await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+      const currentFirebaseUser = auth.currentUser;
+      const isGoogleRegistration = currentFirebaseUser?.providerData.some(({ providerId }) => providerId === 'google.com');
+      const reuseGoogleUser = Boolean(isGoogleRegistration && currentFirebaseUser.email === formData.email);
+      if (!reuseGoogleUser) {
+        if (currentFirebaseUser) await signOut(auth);
+        await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+      }
       const result = await authService.registerFirebase({
         ...formData,
         ownerName: formData.name,

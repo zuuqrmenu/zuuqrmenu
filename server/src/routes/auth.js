@@ -1,5 +1,5 @@
 import express from 'express';
-import { register, login, me, logout, updateProfile, createMenuIdentity, changePassword, reauthenticate, updateEmail, firebaseSession } from '../controllers/authController.js';
+import { login, me, logout, updateProfile, createMenuIdentity, changePassword, reauthenticate, updateEmail, firebaseSession } from '../controllers/authController.js';
 import { auth } from '../middleware/auth.js';
 import { linkFirebaseAccount } from '../controllers/firebaseLinkController.js';
 import { firebaseAuth } from '../middleware/firebaseAuth.js';
@@ -7,7 +7,6 @@ import { registerFirebase } from '../controllers/firebaseRegistrationController.
 
 const router = express.Router();
 
-router.post('/register', register);
 router.post('/register-firebase', firebaseAuth, registerFirebase);
 router.post('/firebase-session', firebaseAuth, firebaseSession);
 router.post('/login', login);

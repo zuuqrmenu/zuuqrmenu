@@ -37,36 +37,23 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const result = await login(formData);
-      if (result.success && result.user?.firebaseLinked) {
-        try {
-          await signInWithEmailAndPassword(auth, formData.email, formData.password);
-          const session = await authService.firebaseSession();
-          setApplicationSession(session);
-          redirectApplicationUser(session.user, session.restaurant);
-          return;
-        } catch (sessionError) {
-          await signOut(auth);
-          setError(sessionError.response?.data?.error || getFirebaseAuthError(sessionError));
-          return;
+      if (!formData.email.includes('@')) {
+        const result = await login(formData);
+        if (result.success) {
+          redirectApplicationUser(result.user, result.restaurant);
+        } else {
+          setError(result.error);
         }
-      }
-      if (result.success) {
-        redirectApplicationUser(result.user, result.restaurant);
         return;
       }
 
-      try {
-        await signInWithEmailAndPassword(auth, formData.email, formData.password);
-        const session = await authService.firebaseSession();
-        setApplicationSession(session);
-        redirectApplicationUser(session.user, session.restaurant);
-      } catch (firebaseError) {
-        await signOut(auth);
-          setError(firebaseError.response?.data?.error || result.error || getFirebaseAuthError(firebaseError));
-      }
-    } catch {
-      setError('Giriş başarısız. Lütfen tekrar deneyin.');
+      await signInWithEmailAndPassword(auth, formData.email, formData.password);
+      const session = await authService.firebaseSession();
+      setApplicationSession(session);
+      redirectApplicationUser(session.user, session.restaurant);
+    } catch (error) {
+      await signOut(auth);
+      setError(error.response?.data?.error || getFirebaseAuthError(error));
     } finally {
       setLoading(false);
     }
@@ -80,6 +67,7 @@ const Login = () => {
       await credential.user.getIdToken();
       try {
         const session = await authService.firebaseSession();
+        setApplicationSession(session);
         redirectApplicationUser(session.user, session.restaurant);
       } catch (sessionError) {
         setError(sessionError.response?.status === 409

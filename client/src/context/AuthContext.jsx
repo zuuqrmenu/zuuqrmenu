@@ -53,20 +53,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async (userData) => {
-    try {
-      const data = await authService.register(userData);
-      setUser(data.user);
-      setRestaurant(data.restaurant);
-      setError(null);
-      return { success: true };
-    } catch (err) {
-      const errorMessage = err.response?.data?.error || 'Registration failed';
-      setError(errorMessage);
-      return { success: false, error: errorMessage };
-    }
-  };
-
   const setApplicationSession = (session) => {
     setUser(session?.user || null);
     setRestaurant(session?.restaurant || null);
@@ -109,7 +95,6 @@ export const AuthProvider = ({ children }) => {
     error,
     firebaseUser,
     login,
-    register,
     setApplicationSession,
     logout,
     checkAuth,

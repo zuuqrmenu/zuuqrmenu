@@ -1,6 +1,5 @@
 import User from '../models/User.js';
 import Restaurant from '../models/Restaurant.js';
-import Menu from '../models/Menu.js';
 import { generateToken } from '../config/jwt.js';
 
 const normalizeUsername = (value) => value
@@ -35,101 +34,6 @@ export const setAuthCookie = (res, user) => {
   });
 };
 
-export const register = async (req, res) => {
-  try {
-    const {
-      email,
-      password,
-      name,
-      phone,
-      restaurantName,
-      businessType,
-      city,
-      address,
-      website,
-      instagram,
-      restaurantPhone,
-    } = req.body;
-
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ error: 'Email already registered' });
-    }
-
-    // Create user
-    const user = await User.create({
-      email,
-      password,
-      name,
-      phone,
-      role: 'RESTAURANT_USER',
-    });
-
-    // Create restaurant
-    const restaurant = await Restaurant.create({
-      name: restaurantName,
-      slug: restaurantName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-      ownerId: user._id,
-      status: 'PENDING',
-      businessType,
-      city,
-      address,
-      website,
-      instagram,
-      phone: restaurantPhone,
-    });
-
-    await Menu.create({
-      restaurantId: restaurant._id,
-      name: 'Ana Menü',
-    });
-
-    // Link restaurant to user
-    user.restaurantId = restaurant._id;
-    await user.save();
-
-    // Generate token
-    const token = generateToken({
-      userId: user._id,
-      email: user.email,
-      role: user.role,
-      restaurantId: user.restaurantId,
-    });
-
-    // Set httpOnly cookie
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      path: '/',
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    });
-
-    res.status(201).json({
-      message: 'Registration successful. Your account is pending approval.',
-      user: {
-        id: user._id,
-        email: user.email,
-        name: user.name,
-        username: user.username || '',
-        firebaseLinked: Boolean(user.firebaseUid),
-        role: user.role,
-        restaurantId: user.restaurantId,
-      },
-      restaurant: {
-        id: restaurant._id,
-        name: restaurant.name,
-        slug: restaurant.slug,
-        status: restaurant.status,
-      },
-    });
-  } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({ error: 'Registration failed' });
-  }
-};
-
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -144,6 +48,10 @@ export const login = async (req, res) => {
     
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    if (user.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Restoran kullanıcıları Firebase ile giriş yapmalıdır.' });
     }
 
     if (!user.password) {
