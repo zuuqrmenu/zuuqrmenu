@@ -30,8 +30,8 @@ const PublicMenu = () => {
       .then((result) => {
         if (!mounted) return;
         setData(result);
-        if (result.status === 'PREPARING') {
-          setStatus('preparing');
+        if (result.status === 'PREPARING' || result.status === 'HIDDEN') {
+          setStatus(result.status === 'HIDDEN' ? 'hidden' : 'preparing');
           return;
         }
         setActiveCategory(result.categories[0]?.id || '');
@@ -103,6 +103,7 @@ const PublicMenu = () => {
 
   if (status === 'loading') return <div className="public-state"><div className="public-loader" /><p>Menü hazırlanıyor...</p></div>;
   if (status === 'preparing') return <div className="public-state public-state--preparing"><div className="public-state__icon">✦</div><h1>{data?.restaurant?.name || 'Menünüz'} hazırlanıyor</h1><p>Bu menü henüz yayına alınmadı. Çok yakında burada olacağız.</p></div>;
+  if (status === 'hidden') return <div className="public-state public-state--hidden"><div className="public-state__icon">—</div><h1>Menü geçici olarak kapalı</h1><p>Bu menü sahibi tarafından geçici olarak erişime kapatıldı.</p></div>;
   if (status === 'unavailable') return <div className="public-state"><div className="public-state__icon">—</div><h1>Menü bulunamadı.</h1><p>Bu menü şu anda kullanılamıyor.</p></div>;
 
   const theme = getPublicMenuTheme(data.restaurant.theme);

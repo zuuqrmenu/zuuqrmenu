@@ -17,6 +17,15 @@ export const getPublicMenu = async (req, res, next) => {
 
     if (!restaurant) return unavailableResponse(res);
 
+    if (restaurant.menuStatus === 'HIDDEN') {
+      return res.json({
+        status: 'HIDDEN',
+        restaurant: { name: restaurant.name, slug: restaurant.slug, menuStatus: restaurant.menuStatus },
+        menu: null,
+        categories: [],
+      });
+    }
+
     if (restaurant.menuStatus !== 'PUBLISHED') {
       return res.json({
         status: 'PREPARING',
