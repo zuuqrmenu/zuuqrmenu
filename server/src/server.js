@@ -25,6 +25,19 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', message: 'ZuuLab QR API is running' });
+});
+
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/menu', menuRoutes);
@@ -32,10 +45,6 @@ app.use('/api/public', publicRoutes);
 app.use('/api/restaurant/settings', restaurantSettingsRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/restaurant/profile', restaurantProfileRoutes);
-
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'ZuuLab QR API is running' });
-});
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
