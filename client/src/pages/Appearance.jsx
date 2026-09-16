@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import RestaurantLayout from '../components/RestaurantLayout';
 import { restaurantSettingsService } from '../services/restaurantSettingsService';
 import { getPublicMenuTheme, publicMenuThemes } from '../utils/publicMenuTheme';
+import DashboardSkeleton from '../components/DashboardSkeleton';
 
 const defaults = { primaryColor: '#1F2937', secondaryColor: '#FFFFFF', theme: 'MINIMAL' };
 const themeLabels = { MINIMAL: 'Minimal', ELEGANT: 'Elegant', WARM: 'Warm', MODERN: 'Modern', DARK: 'Dark', CLASSIC: 'Classic' };
@@ -84,7 +85,7 @@ const Appearance = () => {
         {notice && <div className={`settings-status settings-status--success ${noticeVisible ? 'is-visible' : 'is-hiding'}`} role="status">{notice}</div>}
         {error && <div className="settings-status settings-status--error" role="alert">{error}</div>}
 
-        {loading ? <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center text-sm text-slate-500">Görünüm yükleniyor...</div> : (
+        {loading ? <DashboardSkeleton variant="panel" /> : (
           <form onSubmit={save} className="appearance-layout">
             <div className="appearance-controls space-y-5">
               <section className="appearance-panel">

@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { restaurantSettingsService } from '../services/restaurantSettingsService';
 import { getPublicMenuUrl } from '../utils/publicMenuUrl';
 import { createQrSvg, qrOptions } from '../utils/qrCode';
+import DashboardSkeleton from '../components/DashboardSkeleton';
 
 const QrManagement = () => {
   const { user, restaurant } = useAuth();
@@ -94,7 +95,7 @@ const QrManagement = () => {
         {error && <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>}
 
         {loading ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-500">QR ayarları yükleniyor...</div>
+          <DashboardSkeleton variant="panel" />
         ) : !publicUrl ? (
           <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">Önce menü kullanıcı adınızı oluşturun.</div>
         ) : (

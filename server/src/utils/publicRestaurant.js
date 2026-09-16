@@ -4,5 +4,5 @@ import User from '../models/User.js';
 export const findPublicRestaurant = async (identifier, projection = '_id ownerId name slug menuStatus address') => {
   const user = await User.findOne({ username: identifier, role: 'RESTAURANT_USER' }).select('restaurantId').lean();
   if (!user?.restaurantId) return null;
-  return Restaurant.findOne({ _id: user.restaurantId, status: 'ACTIVE', menuStatus: 'PUBLISHED' }).select(projection).lean();
+  return Restaurant.findOne({ _id: user.restaurantId, status: 'ACTIVE' }).select(projection).lean();
 };

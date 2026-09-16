@@ -108,7 +108,7 @@ const MenuManagement = () => {
 
   const menuStatus = overview?.stats?.menuStatus || 'DRAFT';
   const statusCopy = {
-    PUBLISHED: ['Menünüz yayında', 'Menünüz müşterileriniz için erişilebilir.', 'Yayından Kaldır', 'HIDDEN'],
+    PUBLISHED: ['Menünüz yayında', 'Menünüz müşterileriniz için erişilebilir.', 'Taslağa Al', 'DRAFT'],
     HIDDEN: ['Menünüz şu anda gizli', 'Müşteriler menünüze erişemiyor.', 'Menüyü Yayınla', 'PUBLISHED'],
     DRAFT: ['Menünüz taslak halinde', 'Menünüz henüz yayınlanmadı.', 'Menüyü Yayınla', 'PUBLISHED'],
   }[menuStatus];

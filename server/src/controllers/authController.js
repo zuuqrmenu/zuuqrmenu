@@ -238,7 +238,10 @@ export const createMenuIdentity = async (req, res, next) => {
     if (taken) return res.status(409).json({ error: 'Bu kullanıcı adı zaten kullanılıyor.' });
     user.username = username;
     await user.save();
-    if (user.restaurantId) await Restaurant.updateOne({ _id: user.restaurantId, ownerId: user._id }, { $set: { menuStatus: 'PUBLISHED', publishedAt: new Date() } });
+    if (user.restaurantId) await Restaurant.updateOne(
+      { _id: user.restaurantId, ownerId: user._id },
+      { $set: { menuStatus: 'DRAFT' }, $unset: { publishedAt: 1 } },
+    );
     res.json({ message: 'Menünüz başarıyla oluşturuldu.', user: { id: user._id, username: user.username, role: user.role, restaurantId: user.restaurantId } });
   } catch (error) {
     if (error?.code === 11000 && error?.keyPattern?.username) return res.status(409).json({ error: 'Bu kullanıcı adı zaten kullanılıyor.' });

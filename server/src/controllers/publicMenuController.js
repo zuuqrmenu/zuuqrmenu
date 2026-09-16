@@ -17,6 +17,15 @@ export const getPublicMenu = async (req, res, next) => {
 
     if (!restaurant) return unavailableResponse(res);
 
+    if (restaurant.menuStatus !== 'PUBLISHED') {
+      return res.json({
+        status: 'PREPARING',
+        restaurant: { name: restaurant.name, slug: restaurant.slug, menuStatus: restaurant.menuStatus },
+        menu: null,
+        categories: [],
+      });
+    }
+
     const [settings, menu, categories] = await Promise.all([
       RestaurantSettings.findOne({ restaurantId: restaurant._id })
         .select('description logo coverImage storeImage primaryColor secondaryColor theme socialMedia')
@@ -87,6 +96,7 @@ export const getPublicMenu = async (req, res, next) => {
         secondaryColor: settings?.secondaryColor || '#ffffff',
         theme: settings?.theme || 'MINIMAL',
         socialMedia: Array.isArray(settings?.socialMedia) ? settings.socialMedia.filter((item) => item && item.url).map((item) => ({ platform: item.platform, url: item.url.trim() })) : [],
+        menuStatus: restaurant.menuStatus,
       },
       menu: { name: menu.name },
       categories: publicCategories,

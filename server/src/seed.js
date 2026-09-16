@@ -108,7 +108,7 @@ const seed = async () => {
       slug: 'test-restoran',
       ownerId: restaurantUser._id,
       status: 'ACTIVE',
-      menuStatus: 'PUBLISHED',
+      menuStatus: 'DRAFT',
       businessType: 'RESTAURANT',
       city: 'Istanbul',
       address: 'Development address',
@@ -117,7 +117,7 @@ const seed = async () => {
   } else {
     restaurant.name = 'Test Restoran';
     restaurant.status = 'ACTIVE';
-    restaurant.menuStatus = 'PUBLISHED';
+    restaurant.menuStatus = 'DRAFT';
   }
 
   const linkedRestaurantUser = await upsertUser({

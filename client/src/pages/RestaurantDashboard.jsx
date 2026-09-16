@@ -6,10 +6,12 @@ import { useAuth } from '../context/AuthContext';
 import { menuService } from '../services/menuService';
 import { getPublicMenuUrl } from '../utils/publicMenuUrl';
 import MenuOnboardingModal from '../components/MenuOnboardingModal';
+import DashboardSkeleton from '../components/DashboardSkeleton';
 
 const statusLabels = { DRAFT: 'Taslak', PUBLISHED: 'Yayında', HIDDEN: 'Gizli' };
 const statusDescriptions = { DRAFT: 'Menünüz henüz yayınlanmadı.', PUBLISHED: 'Menünüz misafirleriniz için yayında.', HIDDEN: 'Menünüz şu anda ziyaretçilere gizli.' };
 const statusActions = { DRAFT: ['Menüyü Düzenle', '/dashboard/menu'], PUBLISHED: ['Menüyü Görüntüle', null], HIDDEN: ['Menü Ayarlarını Aç', '/dashboard/menu'] };
+const statusTone = { DRAFT: 'draft', PUBLISHED: 'published', HIDDEN: 'hidden' };
 
 const OverviewStat = ({ icon, label, value, detail }) => (
   <article className="overview-stat-card">
@@ -60,6 +62,7 @@ const RestaurantDashboard = () => {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [onboardingOpen, setOnboardingOpen] = useState(() => Boolean(user && !user.username));
+  const [statusDialog, setStatusDialog] = useState(false);
 
   useEffect(() => {
     menuService.getOverview().then(setOverview).catch(() => setError('Dashboard verileri yüklenirken bir sorun oluştu.')).finally(() => setLoading(false));
@@ -97,6 +100,21 @@ const RestaurantDashboard = () => {
     return result;
   };
 
+  const updateMenuStatus = async (nextStatus) => {
+    try {
+      const result = await menuService.updateStatus(nextStatus);
+      setOverview((current) => ({
+        ...current,
+        stats: { ...current.stats, menuStatus: result.restaurant.menuStatus },
+        restaurant: { ...current.restaurant, ...result.restaurant },
+      }));
+      setStatusDialog(false);
+      setNotice(result.message);
+    } catch (statusError) {
+      setError(statusError.response?.data?.error || 'Menü durumu güncellenemedi.');
+    }
+  };
+
   const menuAction = menuIdentity
     ? <PublicMenuButton username={menuIdentity} label="Menüyü Görüntüle" />
     : <button type="button" className="overview-panel__action" onClick={() => setOnboardingOpen(true)}>Menüyü Oluştur <span aria-hidden="true">→</span></button>;
@@ -106,13 +124,18 @@ const RestaurantDashboard = () => {
       <div className="mx-auto max-w-7xl space-y-6 px-5 py-8 sm:px-8">
         <section className="overview-welcome">
           <div><p className="text-sm font-medium text-emerald-600">Genel Bakış</p><h2>Hoş geldin, {overview?.restaurant?.name || restaurant?.name}</h2><p>Menünüzün ve işletmenizin genel durumuna buradan göz atabilirsiniz.</p></div>
-          {menuAction}
+          <div className="overview-welcome__actions">
+            <button type="button" className={`overview-menu-status overview-menu-status--${statusTone[currentStatus] || 'draft'}`} onClick={() => setStatusDialog(true)}>
+              <span><i /> Menü {statusLabels[currentStatus] || 'Taslak'}</span><b aria-hidden="true">✎</b>
+            </button>
+            {menuAction}
+          </div>
         </section>
 
         {notice && <div className="settings-status settings-status--success is-visible" role="status">{notice}</div>}
         {error && <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700" role="alert">{error}</div>}
 
-        {loading ? <div className="overview-skeleton"><span /><span /><span /><span /></div> : <>
+        {loading ? <DashboardSkeleton variant="overview" /> : <>
           <section className="overview-stat-grid">
             <OverviewStat icon="◷" label="Menü görüntülenmeleri" value={overview?.stats?.totalViews ?? 0} detail="Toplam ziyaret" />
             <OverviewStat icon="▦" label="Kategoriler" value={overview?.stats?.categoryCount ?? 0} detail="Menü kategorisi" />
@@ -122,7 +145,7 @@ const RestaurantDashboard = () => {
 
           <section className="overview-main-grid">
             <article className="overview-panel overview-status-panel">
-              <div className="overview-panel__heading"><div><p className="overview-eyebrow">Menü durumu</p><h3>{statusLabels[currentStatus] || currentStatus}</h3></div><span className={`overview-status-dot overview-status-dot--${currentStatus.toLowerCase()}`} /></div>
+              <div className="overview-panel__heading"><div><p className="overview-eyebrow">Menü durumu</p><h3>{statusLabels[currentStatus] || currentStatus}</h3></div><div className="overview-status-heading-actions"><span className={`overview-status-dot overview-status-dot--${currentStatus.toLowerCase()}`} /><button type="button" onClick={() => setStatusDialog(true)} aria-label="Menü durumunu düzenle">✎</button></div></div>
               <p className="overview-panel__description">{statusDescriptions[currentStatus] || 'Menünüzün mevcut durumunu buradan takip edin.'}</p>
               {menuIdentity ? (currentStatus === 'PUBLISHED' ? <PublicMenuButton username={menuIdentity} label="Menüyü Görüntüle" compact /> : <Link to={statusRoute} className="overview-panel__action">{statusAction} <span aria-hidden="true">→</span></Link>) : <button type="button" className="overview-panel__action" onClick={() => setOnboardingOpen(true)}>Menüyü Oluştur <span aria-hidden="true">→</span></button>}
             </article>
@@ -142,6 +165,7 @@ const RestaurantDashboard = () => {
           <section className="overview-panel"><div className="overview-panel__heading"><div><p className="overview-eyebrow">Son Aktiviteler</p><h3>Menünüzdeki son değişiklikler</h3></div></div>{overview?.activity?.length ? <div className="overview-activity-list">{overview.activity.map((item, index) => <div className="overview-activity" key={`${item.type}-${item.date}-${index}`}><span className="overview-activity__icon" aria-hidden="true">{getActivityIcon(item.type, item.label)}</span><span><b>{item.label}</b><small>{formatActivityDate(item.date)}</small></span></div>)}</div> : <p className="overview-empty">Henüz bir aktivite bulunmuyor.</p>}</section>
         </>}
       </div>
+      {statusDialog && <div className="overview-status-dialog-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setStatusDialog(false)}><div className="overview-status-dialog" role="dialog" aria-modal="true" aria-labelledby="overview-status-dialog-title"><div className="overview-status-dialog__heading"><div><p className="overview-eyebrow">Menü durumu</p><h2 id="overview-status-dialog-title">Menünüzü yönetin</h2></div><button type="button" onClick={() => setStatusDialog(false)} aria-label="Kapat">×</button></div><p>Menünüzün public linkte görünür olup olmayacağını seçin.</p><div className="overview-status-options">{[['DRAFT', 'Taslak', 'Menü hazırlanıyor ekranı gösterilir.'], ['PUBLISHED', 'Yayında', 'Misafirler menünüzü görüntüleyebilir.'], ['HIDDEN', 'Gizli', 'Menü geçici olarak erişime kapatılır.']].map(([value, label, description]) => <button type="button" key={value} onClick={() => updateMenuStatus(value)} className={currentStatus === value ? 'is-active' : ''}><span><b>{label}</b><small>{description}</small></span><i>{currentStatus === value ? '✓' : '›'}</i></button>)}</div></div></div>}
       {onboardingOpen && <MenuOnboardingModal restaurantName={restaurant?.name || overview?.restaurant?.name || 'Restoranınız'} onCreate={createMenu} />}
     </RestaurantLayout>
   );

@@ -6,6 +6,7 @@ import SettingsSecurityTab from '../components/settings/SettingsSecurityTab';
 import { useAuth } from '../context/AuthContext';
 import { restaurantSettingsService } from '../services/restaurantSettingsService';
 import { restaurantProfileService } from '../services/restaurantProfileService';
+import DashboardSkeleton from '../components/DashboardSkeleton';
 
 const initialSettings = { description: '', primaryColor: '#1F2937', secondaryColor: '#FFFFFF', theme: 'MINIMAL', socialMedia: [], logo: null, coverImage: null, storeImage: null };
 const initialProfile = { name: '', businessType: 'RESTAURANT', city: '', address: '', phone: '', email: '', status: 'ACTIVE' };
@@ -55,7 +56,7 @@ const RestaurantSettings = () => {
           <main className="settings-main">
             {notice && <div className="settings-notice" role="status">{notice}</div>}
             {error && <div className="settings-error" role="alert">{error}</div>}
-            {loading ? <div className="settings-loading">Ayarlar yükleniyor...</div> : activeTab === 'profile' ? <SettingsProfileTab settings={settings} setSettings={setSettings} profile={profile} setProfile={setProfile} account={account} setAccount={setAccount} onNotice={setNotice} onError={setError} /> : activeTab === 'general' ? <SettingsGeneralTab /> : <SettingsSecurityTab email={account.email} onEmailChanged={(email) => setAccount((current) => ({ ...current, email }))} onNotice={setNotice} onError={setError} />}
+            {loading ? <DashboardSkeleton variant="panel" /> : activeTab === 'profile' ? <SettingsProfileTab settings={settings} setSettings={setSettings} profile={profile} setProfile={setProfile} account={account} setAccount={setAccount} onNotice={setNotice} onError={setError} /> : activeTab === 'general' ? <SettingsGeneralTab /> : <SettingsSecurityTab email={account.email} onEmailChanged={(email) => setAccount((current) => ({ ...current, email }))} onNotice={setNotice} onError={setError} />}
           </main>
         </div>
         <section className="settings-logout-bar"><div><span className="settings-eyebrow">Oturum</span><strong>Çıkış Yap</strong><p>Bu cihazdaki restoran paneli oturumunu kapatın.</p></div><button type="button" onClick={logout} className="settings-danger-button">Çıkış Yap</button></section>

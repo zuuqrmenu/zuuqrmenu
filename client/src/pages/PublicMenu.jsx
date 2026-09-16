@@ -30,6 +30,10 @@ const PublicMenu = () => {
       .then((result) => {
         if (!mounted) return;
         setData(result);
+        if (result.status === 'PREPARING') {
+          setStatus('preparing');
+          return;
+        }
         setActiveCategory(result.categories[0]?.id || '');
         setStatus('ready');
       })
@@ -98,6 +102,7 @@ const PublicMenu = () => {
   const selectLanguage = (value) => { setLanguage(value); localStorage.setItem('zuulab-language', value); };
 
   if (status === 'loading') return <div className="public-state"><div className="public-loader" /><p>Menü hazırlanıyor...</p></div>;
+  if (status === 'preparing') return <div className="public-state public-state--preparing"><div className="public-state__icon">✦</div><h1>{data?.restaurant?.name || 'Menünüz'} hazırlanıyor</h1><p>Bu menü henüz yayına alınmadı. Çok yakında burada olacağız.</p></div>;
   if (status === 'unavailable') return <div className="public-state"><div className="public-state__icon">—</div><h1>Menü bulunamadı.</h1><p>Bu menü şu anda kullanılamıyor.</p></div>;
 
   const theme = getPublicMenuTheme(data.restaurant.theme);
