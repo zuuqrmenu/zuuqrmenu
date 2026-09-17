@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import CategoryNavigation from '../components/public-menu/CategoryNavigation';
 import CategorySection from '../components/public-menu/CategorySection';
@@ -22,6 +22,8 @@ const PublicMenu = () => {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [language, setLanguage] = useState(() => localStorage.getItem('zuulab-language') || 'tr');
   const [showTop, setShowTop] = useState(false);
+  const categoryScrollLock = useRef(false);
+  const categoryScrollTimer = useRef(null);
 
   useEffect(() => {
     let mounted = true;
@@ -48,6 +50,7 @@ const PublicMenu = () => {
   useEffect(() => {
     if (!data?.categories.length) return undefined;
     const updateActiveCategory = () => {
+      if (categoryScrollLock.current) return;
       const sections = categoryIds
         .map((id) => document.getElementById(id))
         .filter(Boolean);
@@ -59,7 +62,10 @@ const PublicMenu = () => {
     };
     updateActiveCategory();
     window.addEventListener('scroll', updateActiveCategory, { passive: true });
-    return () => window.removeEventListener('scroll', updateActiveCategory);
+    return () => {
+      window.removeEventListener('scroll', updateActiveCategory);
+      window.clearTimeout(categoryScrollTimer.current);
+    };
   }, [categoryIds, data]);
 
   useEffect(() => {
@@ -89,7 +95,17 @@ const PublicMenu = () => {
     setActiveCategory(categoryId);
     setDrawer('');
     publicMenuService.trackEvent(username, { eventType: 'CATEGORY_VIEW', categoryId }).catch(() => {});
-    document.getElementById(`category-${categoryId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const section = document.getElementById(`category-${categoryId}`);
+    const categoryNav = document.querySelector('.category-nav');
+    if (!section) return;
+    const offset = (categoryNav?.getBoundingClientRect().height || 0) + 8;
+    categoryScrollLock.current = true;
+    window.clearTimeout(categoryScrollTimer.current);
+    window.scrollTo({ top: Math.max(0, section.getBoundingClientRect().top + window.scrollY - offset), behavior: 'smooth' });
+    categoryScrollTimer.current = window.setTimeout(() => {
+      categoryScrollLock.current = false;
+      window.dispatchEvent(new Event('scroll'));
+    }, 700);
   };
 
   const selectProduct = (product) => {
@@ -135,7 +151,7 @@ const PublicMenu = () => {
       {reviewOpen && <ReviewSheet username={username} onClose={() => setReviewOpen(false)} />}
       {searchOpen && <SearchSheet value={search} onChange={setSearch} results={searchResults} onSelect={(product) => { selectProduct(product); setSearchOpen(false); }} onClose={() => { setSearchOpen(false); setSearch(''); }} />}
       <div className="public-floating-actions">
-        <button type="button" className={`floating-action floating-action--search ${showTop ? 'is-raised' : 'is-lowered'}`} onClick={() => setSearchOpen(true)} aria-label="Ürün ara">⌕</button>
+        <button type="button" className={`floating-action floating-action--search ${showTop ? 'is-raised' : 'is-lowered'}`} onClick={() => setSearchOpen(true)} aria-label="Ürün ara"><span className="floating-action__icon">⌕</span></button>
         <button type="button" className={`floating-action floating-action--top ${showTop ? 'is-visible' : 'is-hidden'}`} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} aria-label="Başa dön">↑</button>
       </div>
     </div>

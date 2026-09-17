@@ -11,7 +11,7 @@ const CategoryNavigation = ({ categories, activeCategory, onSelect }) => {
     const buttonCenter = button.offsetLeft + button.offsetWidth / 2;
     const targetLeft = buttonCenter - nav.clientWidth / 2;
     const maxScroll = nav.scrollWidth - nav.clientWidth;
-    nav.scrollTo({ left: Math.max(0, Math.min(targetLeft, maxScroll)), behavior: 'smooth' });
+    nav.scrollTo({ left: Math.max(0, Math.min(targetLeft, maxScroll)), behavior: 'auto' });
   }, [activeCategory]);
 
   const handleSelect = (categoryId) => {

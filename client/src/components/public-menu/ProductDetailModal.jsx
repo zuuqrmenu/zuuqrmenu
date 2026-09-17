@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const dietaryLabels = {
   VEGAN: 'Vegan', VEGETARIAN: 'Vejetaryen', GLUTEN_FREE: 'Glutensiz',
@@ -13,8 +13,17 @@ const detailIcons = {
 
 const ProductDetailModal = ({ product, onClose }) => {
   const [closing, setClosing] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
+  const sheetRef = useRef(null);
+  const dragStartY = useRef(null);
+  const dragOffsetRef = useRef(0);
 
-  useEffect(() => setClosing(false), [product]);
+  useEffect(() => {
+    setClosing(false);
+    setDragOffset(0);
+    dragOffsetRef.current = 0;
+    dragStartY.current = null;
+  }, [product]);
 
   if (!product) return null;
 
@@ -24,11 +33,32 @@ const ProductDetailModal = ({ product, onClose }) => {
     window.setTimeout(onClose, 220);
   };
 
+  const handlePointerDown = (event) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    if (sheetRef.current?.scrollTop === 0) dragStartY.current = event.clientY;
+  };
+
+  const handlePointerMove = (event) => {
+    if (dragStartY.current === null || closing) return;
+    const offset = event.clientY - dragStartY.current;
+    const nextOffset = Math.max(0, offset);
+    dragOffsetRef.current = nextOffset;
+    setDragOffset(nextOffset);
+  };
+
+  const handlePointerUp = () => {
+    if (dragStartY.current === null) return;
+    const shouldClose = dragOffsetRef.current > 100;
+    dragStartY.current = null;
+    dragOffsetRef.current = 0;
+    if (shouldClose) handleClose();
+    else setDragOffset(0);
+  };
+
   return (
     <div className={`public-modal-backdrop ${closing ? 'is-closing' : ''}`} role="presentation" onMouseDown={(event) => event.target === event.currentTarget && handleClose()}>
-      <div className="public-modal public-sheet" role="dialog" aria-modal="true" aria-labelledby="product-detail-title">
+      <div ref={sheetRef} className="public-modal public-sheet" role="dialog" aria-modal="true" aria-labelledby="product-detail-title" onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} style={dragOffset ? { transform: `translateY(${dragOffset}px)` } : undefined}>
         <button type="button" className="public-modal__close" onClick={handleClose} aria-label="Kapat">×</button>
-        <div className="public-modal__accent" />
         <div className="public-modal__content">
           <div className="sheet-handle" />
           {product.image && <img className="public-modal__image" src={product.image} alt="" />}
