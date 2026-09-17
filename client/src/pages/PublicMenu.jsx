@@ -207,8 +207,31 @@ const PublicMenu = () => {
       {reviewOpen && <ReviewSheet username={username} onClose={() => setReviewOpen(false)} />}
       {searchOpen && <SearchSheet value={search} onChange={setSearch} results={searchResults} onSelect={(product) => { selectProduct(product); setSearchOpen(false); }} onClose={() => { setSearchOpen(false); setSearch(''); }} />}
       <div className="public-floating-actions">
-        <button type="button" className={`floating-action floating-action--search ${showTop ? 'is-raised' : 'is-lowered'}`} onClick={() => setSearchOpen(true)} aria-label="Ürün ara"><span className="floating-action__icon">⌕</span></button>
-        <button type="button" className={`floating-action floating-action--top ${showTop ? 'is-visible' : 'is-hidden'}`} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} aria-label="Başa dön">↑</button>
+        <button
+          type="button"
+          className={`floating-action floating-action--search ${showTop ? 'is-raised' : 'is-lowered'}`}
+          onClick={() => setSearchOpen(true)}
+          aria-label="Ürün ara"
+        >
+          <span className="floating-action__icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </span>
+        </button>
+        <button
+          type="button"
+          className={`floating-action floating-action--top ${showTop ? 'is-visible' : 'is-hidden'}`}
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          aria-label="Başa dön"
+        >
+          <span className="floating-action__icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="m18 15-6-6-6 6" />
+            </svg>
+          </span>
+        </button>
       </div>
     </div>
   );

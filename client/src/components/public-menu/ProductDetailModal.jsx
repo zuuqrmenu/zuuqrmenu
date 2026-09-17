@@ -14,15 +14,22 @@ const detailIcons = {
 const ProductDetailModal = ({ product, onClose }) => {
   const [closing, setClosing] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
   const sheetRef = useRef(null);
   const dragStartY = useRef(null);
+  const isDragging = useRef(false);
+  const isHandleDrag = useRef(false);
   const dragOffsetRef = useRef(0);
 
   useEffect(() => {
     setClosing(false);
     setDragOffset(0);
     dragOffsetRef.current = 0;
+    setIsTransitioning(false);
     dragStartY.current = null;
+    isDragging.current = false;
+    isHandleDrag.current = false;
   }, [product]);
 
   if (!product) return null;
@@ -33,36 +40,126 @@ const ProductDetailModal = ({ product, onClose }) => {
     window.setTimeout(onClose, 220);
   };
 
-  const handlePointerDown = (event) => {
-    if (event.pointerType === 'mouse' && event.button !== 0) return;
-    dragStartY.current = event.clientY;
-    event.currentTarget.setPointerCapture?.(event.pointerId);
+  // Dedicated handle drag (mouse & touch)
+  const handleTopDragStart = (e) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    dragStartY.current = e.clientY;
+    isDragging.current = true;
+    isHandleDrag.current = true;
+    setIsTransitioning(false);
+    e.currentTarget.setPointerCapture?.(e.pointerId);
   };
 
-  const handlePointerMove = (event) => {
-    if (dragStartY.current === null || closing) return;
-    const offset = event.clientY - dragStartY.current;
-    const nextOffset = Math.max(0, offset);
-    event.preventDefault();
-    dragOffsetRef.current = nextOffset;
-    setDragOffset(nextOffset);
+  const handleHandlePointerMove = (e) => {
+    if (!isHandleDrag.current || dragStartY.current === null || closing) return;
+    const deltaY = e.clientY - dragStartY.current;
+    if (deltaY > 0) {
+      dragOffsetRef.current = deltaY;
+      setDragOffset(deltaY);
+    } else {
+      dragOffsetRef.current = 0;
+      setDragOffset(0);
+    }
   };
 
-  const handlePointerUp = () => {
-    if (dragStartY.current === null) return;
-    const shouldClose = dragOffsetRef.current > 100;
+  const handleHandlePointerUp = () => {
+    if (!isHandleDrag.current) return;
+    const currentOffset = dragOffsetRef.current;
+    isHandleDrag.current = false;
     dragStartY.current = null;
-    dragOffsetRef.current = 0;
-    if (shouldClose) handleClose();
-    else setDragOffset(0);
+    isDragging.current = false;
+
+    if (currentOffset > 80) {
+      handleClose();
+    } else {
+      setIsTransitioning(true);
+      dragOffsetRef.current = 0;
+      setDragOffset(0);
+      window.setTimeout(() => setIsTransitioning(false), 240);
+    }
+  };
+
+  // Sheet body touch swipe down when scrolled to top
+  const handleSheetTouchStart = (e) => {
+    if (e.touches.length !== 1 || closing) return;
+    const touch = e.touches[0];
+    const scrollTop = sheetRef.current?.scrollTop || 0;
+    if (scrollTop <= 2) {
+      dragStartY.current = touch.clientY;
+      isDragging.current = false;
+      setIsTransitioning(false);
+    }
+  };
+
+  const handleSheetTouchMove = (e) => {
+    if (dragStartY.current === null || closing) return;
+    const touch = e.touches[0];
+    const deltaY = touch.clientY - dragStartY.current;
+    const scrollTop = sheetRef.current?.scrollTop || 0;
+
+    if (deltaY > 0 && scrollTop <= 2) {
+      isDragging.current = true;
+      if (e.cancelable) {
+        e.preventDefault();
+      }
+      dragOffsetRef.current = deltaY;
+      setDragOffset(deltaY);
+    } else if (deltaY < 0 && isDragging.current) {
+      dragOffsetRef.current = 0;
+      setDragOffset(0);
+      isDragging.current = false;
+    }
+  };
+
+  const handleSheetTouchEnd = () => {
+    if (dragStartY.current === null) return;
+    const currentOffset = dragOffsetRef.current;
+    dragStartY.current = null;
+    isDragging.current = false;
+
+    if (currentOffset > 80) {
+      handleClose();
+    } else {
+      setIsTransitioning(true);
+      dragOffsetRef.current = 0;
+      setDragOffset(0);
+      window.setTimeout(() => setIsTransitioning(false), 240);
+    }
   };
 
   return (
-    <div className={`public-modal-backdrop ${closing ? 'is-closing' : ''}`} role="presentation" onMouseDown={(event) => event.target === event.currentTarget && handleClose()}>
-      <div ref={sheetRef} className="public-modal public-sheet" role="dialog" aria-modal="true" aria-labelledby="product-detail-title" style={dragOffset ? { transform: `translateY(${dragOffset}px)` } : undefined}>
+    <div
+      className={`public-modal-backdrop ${closing ? 'is-closing' : ''}`}
+      role="presentation"
+      onMouseDown={(event) => event.target === event.currentTarget && handleClose()}
+      style={dragOffset > 0 ? { opacity: Math.max(0.15, 1 - dragOffset / 420) } : undefined}
+    >
+      <div
+        ref={sheetRef}
+        className="public-modal public-sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="product-detail-title"
+        onTouchStart={handleSheetTouchStart}
+        onTouchMove={handleSheetTouchMove}
+        onTouchEnd={handleSheetTouchEnd}
+        onTouchCancel={handleSheetTouchEnd}
+        style={{
+          transform: dragOffset ? `translateY(${dragOffset}px)` : undefined,
+          transition: isTransitioning ? 'transform 0.24s cubic-bezier(0.16, 1, 0.3, 1)' : undefined,
+        }}
+      >
         <button type="button" className="public-modal__close" onClick={handleClose} aria-label="Kapat">×</button>
         <div className="public-modal__content">
-          <div className="sheet-handle" onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} role="button" tabIndex="0" aria-label="Aşağı kaydırarak kapat" />
+          <div
+            className="sheet-handle-zone"
+            onPointerDown={handleTopDragStart}
+            onPointerMove={handleHandlePointerMove}
+            onPointerUp={handleHandlePointerUp}
+            onPointerCancel={handleHandlePointerUp}
+          >
+            <div className="sheet-handle" role="button" tabIndex="0" aria-label="Aşağı kaydırarak kapat" />
+          </div>
           {product.image && <img className="public-modal__image" src={product.image} alt={`${product.name} görseli`} />}
           {product.isFeatured && <span className="featured-badge">Öne Çıkan</span>}
           <h2 id="product-detail-title">{product.name}</h2>
@@ -82,4 +179,4 @@ const ProductDetailModal = ({ product, onClose }) => {
   );
 };
 
-export default ProductDetailModal;
+export default ProductDetailModal;
