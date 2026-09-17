@@ -9,7 +9,7 @@ const uploadToCloudinary = (buffer, restaurantId) => new Promise((resolve, rejec
   const stream = cloudinary.uploader.upload_stream({
     folder: productImageFolder(restaurantId),
     resource_type: 'image',
-    transformation: [{ width: 1200, height: 1200, crop: 'limit', quality: 'auto', fetch_format: 'auto' }],
+    transformation: [{ width: 1200, height: 1200, crop: 'limit', quality: 'auto:good', fetch_format: 'auto' }],
   }, (error, result) => (error ? reject(error) : resolve(result)));
   stream.end(buffer);
 });
