@@ -1,11 +1,34 @@
 import mongoose from 'mongoose';
 
+const menuThemeSchema = new mongoose.Schema({
+  slot: { type: Number, min: 1, max: 5, default: 1 },
+  name: { type: String, required: true, trim: true, maxlength: 60 },
+  theme: { type: String, enum: ['MINIMAL', 'BISTRO', 'ELEGANT', 'WARM', 'MODERN', 'DARK', 'CLASSIC'], default: 'MINIMAL' },
+  mode: { type: String, enum: ['LIGHT', 'DARK'], default: 'LIGHT' },
+  font: { type: String, default: 'Inter', maxlength: 40 },
+  primaryColor: { type: String, default: '#1F2937', match: /^#[0-9A-Fa-f]{6}$/ },
+  secondaryColor: { type: String, default: '#FFFFFF', match: /^#[0-9A-Fa-f]{6}$/ },
+  layout: {
+    showImages: { type: Boolean, default: true },
+    showDescriptions: { type: Boolean, default: true },
+    showPrices: { type: Boolean, default: true },
+    emphasizeFeatured: { type: Boolean, default: true },
+    style: { type: String, enum: ['STANDARD', 'COMPACT', 'EDITORIAL'], default: 'STANDARD' },
+  },
+}, { _id: true, timestamps: true });
+
 const restaurantSettingsSchema = new mongoose.Schema({
   restaurantId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Restaurant',
     required: [true, 'Restaurant ID is required'],
     unique: true,
+  },
+  activeMenuId: {
+    type: mongoose.Schema.Types.ObjectId,
+  },
+  activeMenuThemeId: {
+    type: mongoose.Schema.Types.ObjectId,
   },
   logo: {
     type: String,
@@ -35,8 +58,18 @@ const restaurantSettingsSchema = new mongoose.Schema({
   },
   theme: {
     type: String,
-    enum: ['MINIMAL', 'ELEGANT', 'WARM', 'MODERN', 'DARK', 'CLASSIC'],
+    enum: ['MINIMAL', 'BISTRO', 'ELEGANT', 'WARM', 'MODERN', 'DARK', 'CLASSIC'],
     default: 'MINIMAL',
+  },
+  menuThemes: {
+    type: [menuThemeSchema],
+    default: [],
+    validate: { validator: (themes) => themes.length <= 5, message: 'En fazla 5 menü teması kaydedebilirsiniz.' },
+  },
+  savedMenus: {
+    type: [menuThemeSchema],
+    default: [],
+    validate: { validator: (themes) => themes.length <= 5, message: 'En fazla 5 menü kaydı oluşturabilirsiniz.' },
   },
   seoEnabled: {
     type: Boolean,

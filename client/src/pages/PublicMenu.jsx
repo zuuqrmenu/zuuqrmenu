@@ -7,8 +7,9 @@ import ProductDetailModal from '../components/public-menu/ProductDetailModal';
 import InfoDrawer from '../components/public-menu/InfoDrawer';
 import ReviewSheet from '../components/public-menu/ReviewSheet';
 import SearchSheet from '../components/public-menu/SearchSheet';
+import BistroFeaturedStories from '../components/public-menu/BistroFeaturedStories';
 import { publicMenuService } from '../services/publicMenuService';
-import { getPublicMenuTheme } from '../utils/publicMenuTheme';
+import { getPublicMenuTheme, publicMenuFonts } from '../utils/publicMenuTheme';
 
 const PublicMenu = () => {
   const { username } = useParams();
@@ -122,26 +123,34 @@ const PublicMenu = () => {
   if (status === 'hidden') return <div className="public-state public-state--hidden"><div className="public-state__icon">—</div><h1>Menü geçici olarak kapalı</h1><p>Bu menü sahibi tarafından geçici olarak erişime kapatıldı.</p></div>;
   if (status === 'unavailable') return <div className="public-state"><div className="public-state__icon">—</div><h1>Menü bulunamadı.</h1><p>Bu menü şu anda kullanılamıyor.</p></div>;
 
-  const theme = getPublicMenuTheme(data.restaurant.theme);
+  const theme = getPublicMenuTheme(data.restaurant.theme || 'MINIMAL');
+  const menuTheme = data.restaurant.menuTheme;
+  const menuMode = menuTheme?.mode || 'LIGHT';
+  const menuLayout = menuTheme?.layout || { showImages: true, showDescriptions: true, showPrices: true, emphasizeFeatured: true, style: 'STANDARD' };
+  const selectedTheme = getPublicMenuTheme(menuTheme?.theme || data.restaurant.theme || 'MINIMAL', menuMode);
   const style = {
-    '--menu-primary': data.restaurant.primaryColor,
-    '--menu-secondary': data.restaurant.secondaryColor,
-    '--menu-background': theme.background,
-    '--menu-surface': theme.surface,
-    '--menu-text': theme.text,
-    '--menu-muted': theme.muted,
-    '--menu-border': theme.border,
-    '--menu-radius': theme.radius,
-    '--menu-shadow': theme.shadow,
+    '--menu-primary': menuTheme?.primaryColor || data.restaurant.primaryColor,
+    '--menu-secondary': menuTheme?.secondaryColor || data.restaurant.secondaryColor,
+    '--menu-background': selectedTheme.background || theme.background,
+    '--menu-surface': selectedTheme.surface || theme.surface,
+    '--menu-text': selectedTheme.text || theme.text,
+    '--menu-muted': selectedTheme.muted || theme.muted,
+    '--menu-border': selectedTheme.border || theme.border,
+    '--menu-radius': selectedTheme.radius || theme.radius,
+    '--menu-shadow': selectedTheme.shadow || theme.shadow,
+    '--menu-font': publicMenuFonts[menuTheme?.font] || publicMenuFonts.Inter,
   };
 
   return (
-    <div className="public-menu-shell" data-theme={data.restaurant.theme} style={style}>
+    <div className="public-menu-shell" data-theme={menuTheme?.theme || data.restaurant.theme || 'MINIMAL'} data-mode={menuMode} data-layout={menuLayout.style || 'STANDARD'} data-show-featured={menuLayout.emphasizeFeatured !== false} style={style}>
       <div className="public-menu-page">
         <MenuHeader restaurant={data.restaurant} onOpenCategories={() => setDrawer('categories')} onOpenInfo={() => setDrawer('info')} />
+        {menuTheme?.theme === 'BISTRO' && (
+          <BistroFeaturedStories products={allProducts} onSelect={selectProduct} />
+        )}
         {data.categories.length > 0 && <CategoryNavigation categories={data.categories} activeCategory={activeCategory} onSelect={scrollToCategory} />}
         <main className="public-menu-content">
-          {data.categories.length === 0 ? <div className="public-empty"><span>✦</span><h2>Menü hazırlanıyor</h2><p>Bu restoranda henüz yayınlanmış ürün bulunmuyor.</p></div> : data.categories.map((category) => <CategorySection key={category.id} category={category} onProductSelect={selectProduct} />)}
+          {data.categories.length === 0 ? <div className="public-empty"><span>✦</span><h2>Menü hazırlanıyor</h2><p>Bu restoranda henüz yayınlanmış ürün bulunmuyor.</p></div> : data.categories.map((category) => <CategorySection key={category.id} category={category} layout={menuLayout} onProductSelect={selectProduct} />)}
         </main>
         <footer className="public-footer">zuuqrmenu <span>•</span> Dijital Menü</footer>
       </div>

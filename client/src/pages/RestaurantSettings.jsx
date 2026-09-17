@@ -37,7 +37,7 @@ const RestaurantSettings = () => {
 
   useEffect(() => {
     if (!notice) return undefined;
-    const timer = window.setTimeout(() => setNotice(''), 2800);
+    const timer = window.setTimeout(() => setNotice(''), 3300);
     return () => window.clearTimeout(timer);
   }, [notice]);
 

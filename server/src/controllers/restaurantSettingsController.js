@@ -2,10 +2,70 @@ import Restaurant from '../models/Restaurant.js';
 import RestaurantSettings from '../models/RestaurantSettings.js';
 import { cloudinary, cloudinaryConfigured } from '../config/cloudinary.js';
 
-const themes = ['MINIMAL', 'ELEGANT', 'WARM', 'MODERN', 'DARK', 'CLASSIC'];
+const themes = ['MINIMAL', 'BISTRO', 'ELEGANT', 'WARM', 'MODERN', 'DARK', 'CLASSIC'];
+const fonts = ['Inter', 'DM Sans', 'Playfair Display', 'Lora'];
+const layoutStyles = ['STANDARD', 'COMPACT', 'EDITORIAL'];
 const hexColor = /^#[0-9A-Fa-f]{6}$/;
 const validPlatforms = ['instagram', 'facebook', 'x', 'youtube', 'tiktok', 'linkedin', 'whatsapp', 'website'];
 const getRestaurantId = (req) => req.restaurant._id;
+
+const getDefaultSavedMenu = (fallback = {}) => ({
+  slot: 1,
+  name: 'Varsayılan Menü',
+  theme: fallback.theme || 'MINIMAL',
+  mode: fallback.mode || 'LIGHT',
+  font: fallback.font || 'Inter',
+  primaryColor: fallback.primaryColor || '#1F2937',
+  secondaryColor: fallback.secondaryColor || '#FFFFFF',
+  layout: {
+    showImages: fallback.layout?.showImages ?? true,
+    showDescriptions: fallback.layout?.showDescriptions ?? true,
+    showPrices: fallback.layout?.showPrices ?? true,
+    emphasizeFeatured: fallback.layout?.emphasizeFeatured ?? true,
+    style: fallback.layout?.style || 'STANDARD',
+  },
+});
+
+const normalizeSavedMenuEntries = (entries, fallback = {}) => {
+  const source = Array.isArray(entries) ? entries.filter(Boolean) : [];
+  const normalized = source.map((entry) => {
+    if (!entry || typeof entry !== 'object') return null;
+    const layout = entry.layout || {};
+    const slot = Number.isInteger(entry.slot) ? Math.min(5, Math.max(1, entry.slot)) : 1;
+    return {
+      ...(entry._id ? { _id: entry._id } : {}),
+      slot,
+      name: typeof entry.name === 'string' ? entry.name.trim().slice(0, 60) : 'Menü',
+      theme: themes.includes(entry.theme) ? entry.theme : fallback.theme || 'MINIMAL',
+      mode: ['LIGHT', 'DARK'].includes(entry.mode) ? entry.mode : fallback.mode || 'LIGHT',
+      font: fonts.includes(entry.font) ? entry.font : fallback.font || 'Inter',
+      primaryColor: typeof entry.primaryColor === 'string' && hexColor.test(entry.primaryColor) ? entry.primaryColor.toUpperCase() : fallback.primaryColor || '#1F2937',
+      secondaryColor: typeof entry.secondaryColor === 'string' && hexColor.test(entry.secondaryColor) ? entry.secondaryColor.toUpperCase() : fallback.secondaryColor || '#FFFFFF',
+      layout: {
+        showImages: layout.showImages !== false,
+        showDescriptions: layout.showDescriptions !== false,
+        showPrices: layout.showPrices !== false,
+        emphasizeFeatured: layout.emphasizeFeatured !== false,
+        style: layoutStyles.includes(layout.style) ? layout.style : fallback.layout?.style || 'STANDARD',
+      },
+    };
+  }).filter((entry) => entry && entry.name);
+
+  if (!normalized.length) {
+    return [getDefaultSavedMenu(fallback)];
+  }
+
+  const ordered = [...normalized].sort((a, b) => (Number(a.slot) || 1) - (Number(b.slot) || 1));
+  const unique = [];
+  const seen = new Set();
+  ordered.forEach((entry, index) => {
+    const key = String(entry._id || entry.name || index);
+    if (seen.has(key)) return;
+    seen.add(key);
+    unique.push({ ...entry, slot: index === 0 ? 1 : Math.min(5, index + 1) });
+  });
+  return unique.slice(0, 5);
+};
 
 const getSettings = (restaurantId) => RestaurantSettings.findOneAndUpdate(
   { restaurantId },
@@ -84,6 +144,63 @@ export const updateRestaurantSettings = async (req, res, next) => {
     if (req.body.theme !== undefined) {
       if (!themes.includes(req.body.theme)) return res.status(400).json({ error: 'Geçersiz tema seçimi.' });
       updates.theme = req.body.theme;
+    }
+
+    if (req.body.mode !== undefined) {
+      if (!['LIGHT', 'DARK'].includes(req.body.mode)) return res.status(400).json({ error: 'Geçersiz menü modu seçimi.' });
+      updates.mode = req.body.mode;
+    }
+
+    if (req.body.activeMenuId !== undefined) {
+      if (req.body.activeMenuId !== null && !/^[a-f\d]{24}$/i.test(String(req.body.activeMenuId))) return res.status(400).json({ error: 'Geçersiz aktif menü seçimi.' });
+      updates.activeMenuId = req.body.activeMenuId;
+    }
+
+    if (req.body.activeMenuThemeId !== undefined) {
+      if (req.body.activeMenuThemeId !== null && !/^[a-f\d]{24}$/i.test(String(req.body.activeMenuThemeId))) return res.status(400).json({ error: 'Geçersiz menü teması seçimi.' });
+      updates.activeMenuThemeId = req.body.activeMenuThemeId;
+    }
+
+    if (req.body.savedMenus !== undefined) {
+      if (!Array.isArray(req.body.savedMenus) || req.body.savedMenus.length > 5) return res.status(400).json({ error: 'En fazla 5 menü kaydı oluşturabilirsiniz.' });
+      const normalizedMenus = normalizeSavedMenuEntries(req.body.savedMenus, {
+        theme: req.body.theme || 'MINIMAL',
+        mode: req.body.mode || 'LIGHT',
+        font: req.body.font || 'Inter',
+        primaryColor: req.body.primaryColor || '#1F2937',
+        secondaryColor: req.body.secondaryColor || '#FFFFFF',
+        layout: { style: 'STANDARD' },
+      });
+      if (normalizedMenus.some((entry) => !entry || !entry.name)) return res.status(400).json({ error: 'Menü adı zorunludur.' });
+      updates.savedMenus = normalizedMenus;
+      updates.menuThemes = normalizedMenus;
+      if (updates.activeMenuId && !normalizedMenus.some((entry) => String(entry._id || entry.name) === String(updates.activeMenuId))) updates.activeMenuId = normalizedMenus[0]?._id || null;
+      if (updates.activeMenuThemeId && !normalizedMenus.some((entry) => String(entry._id || entry.name) === String(updates.activeMenuThemeId))) updates.activeMenuThemeId = normalizedMenus[0]?._id || null;
+      if (!updates.activeMenuId && !updates.activeMenuThemeId) {
+        updates.activeMenuId = normalizedMenus[0]?._id || null;
+        updates.activeMenuThemeId = normalizedMenus[0]?._id || null;
+      }
+    }
+
+    if (req.body.menuThemes !== undefined) {
+      if (!Array.isArray(req.body.menuThemes) || req.body.menuThemes.length > 5) return res.status(400).json({ error: 'En fazla 5 menü kaydı oluşturabilirsiniz.' });
+      const normalizedThemes = normalizeSavedMenuEntries(req.body.menuThemes, {
+        theme: req.body.theme || 'MINIMAL',
+        mode: req.body.mode || 'LIGHT',
+        font: req.body.font || 'Inter',
+        primaryColor: req.body.primaryColor || '#1F2937',
+        secondaryColor: req.body.secondaryColor || '#FFFFFF',
+        layout: { style: 'STANDARD' },
+      });
+      if (normalizedThemes.some((entry) => !entry || !entry.name)) return res.status(400).json({ error: 'Tema adı zorunludur.' });
+      updates.savedMenus = normalizedThemes;
+      updates.menuThemes = normalizedThemes;
+      if (updates.activeMenuId && !normalizedThemes.some((entry) => String(entry._id || entry.name) === String(updates.activeMenuId))) updates.activeMenuId = normalizedThemes[0]?._id || null;
+      if (updates.activeMenuThemeId && !normalizedThemes.some((entry) => String(entry._id || entry.name) === String(updates.activeMenuThemeId))) updates.activeMenuThemeId = normalizedThemes[0]?._id || null;
+      if (!updates.activeMenuId && !updates.activeMenuThemeId) {
+        updates.activeMenuId = normalizedThemes[0]?._id || null;
+        updates.activeMenuThemeId = normalizedThemes[0]?._id || null;
+      }
     }
 
     if (req.body.socialMedia !== undefined) {

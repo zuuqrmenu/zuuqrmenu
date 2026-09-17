@@ -70,7 +70,7 @@ const RestaurantDashboard = () => {
 
   useEffect(() => {
     if (!notice) return undefined;
-    const timer = window.setTimeout(() => setNotice(''), 2800);
+    const timer = window.setTimeout(() => setNotice(''), 3300);
     return () => window.clearTimeout(timer);
   }, [notice]);
 
@@ -157,7 +157,7 @@ const RestaurantDashboard = () => {
           </section>
 
           <section className="overview-lower-grid">
-            <article className="overview-panel"><div className="overview-panel__heading"><div><p className="overview-eyebrow">Hızlı İşlemler</p><h3>Sık kullanılanlar</h3></div></div><div className="overview-quick-actions"><Link to="/dashboard/menu" className="overview-quick-action"><span>＋</span><b>Ürün Ekle</b><small>Menü yönetimine git</small></Link><Link to="/dashboard/menu" className="overview-quick-action"><span>▦</span><b>Kategori Ekle</b><small>Kategorileri yönet</small></Link><button type="button" onClick={() => menuIdentity ? window.open(publicUrl, '_blank', 'noopener,noreferrer') : setOnboardingOpen(true)} className="overview-quick-action"><span>↗</span><b>{menuIdentity ? 'Menüyü Görüntüle' : 'Menüyü Oluştur'}</b><small>{menuIdentity ? 'Misafir görünümü' : 'Menü adresini belirle'}</small></button><Link to="/dashboard/qr" className="overview-quick-action"><span>⌁</span><b>QR Kodunu Aç</b><small>QR yönetimine git</small></Link><Link to="/dashboard/appearance" className="overview-quick-action"><span>✦</span><b>Görünümü Düzenle</b><small>Tema ve renkler</small></Link></div></article>
+            <article className="overview-panel"><div className="overview-panel__heading"><div><p className="overview-eyebrow">Hızlı İşlemler</p><h3>Sık kullanılanlar</h3></div></div><div className="overview-quick-actions"><Link to="/dashboard/menu" className="overview-quick-action"><span>＋</span><b>Ürün Ekle</b><small>Menü yönetimine git</small></Link><Link to="/dashboard/menu" className="overview-quick-action"><span>▦</span><b>Kategori Ekle</b><small>Kategorileri yönet</small></Link><button type="button" onClick={() => menuIdentity ? window.open(publicUrl, '_blank', 'noopener,noreferrer') : setOnboardingOpen(true)} className="overview-quick-action"><span>↗</span><b>{menuIdentity ? 'Menüyü Görüntüle' : 'Menüyü Oluştur'}</b><small>{menuIdentity ? 'Misafir görünümü' : 'Menü adresini belirle'}</small></button><Link to="/dashboard/qr" className="overview-quick-action"><span>⌁</span><b>QR Kodunu Aç</b><small>QR yönetimine git</small></Link></div></article>
 
             <article className="overview-panel overview-url-panel"><div className="overview-panel__heading"><div><p className="overview-eyebrow">Public menü</p><h3>Bağlantınız</h3></div></div><div className="overview-url-box"><span>{publicUrl || 'Menü bağlantısı hazırlanıyor'}</span><button type="button" onClick={copyUrl} disabled={!publicUrl}>Kopyala</button></div><p className="overview-panel__hint">Bu bağlantıyı misafirlerinizle paylaşabilirsiniz.</p></article>
           </section>

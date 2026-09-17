@@ -36,7 +36,7 @@ const QrManagement = () => {
 
   const showFeedback = (message) => {
     setFeedback(message);
-    window.setTimeout(() => setFeedback(''), 2200);
+    window.setTimeout(() => setFeedback(''), 3300);
   };
 
   const copyUrl = async () => {

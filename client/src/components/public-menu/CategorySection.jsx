@@ -1,12 +1,12 @@
 import ProductCard from './ProductCard';
 
-const CategorySection = ({ category, onProductSelect }) => (
+const CategorySection = ({ category, onProductSelect, layout }) => (
   <section id={`category-${category.id}`} className="public-category">
     <div className="public-category__heading">
       <h2>{category.name}</h2>
     </div>
     <div className="public-products">
-      {category.products.map((product) => <ProductCard key={product.id} product={product} onSelect={onProductSelect} />)}
+      {category.products.map((product) => <ProductCard key={product.id} product={product} layout={layout} onSelect={onProductSelect} />)}
     </div>
   </section>
 );

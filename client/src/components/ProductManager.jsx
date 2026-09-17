@@ -140,8 +140,8 @@ const ProductModal = ({ product, categoryId, categories, onClose, onSaved }) => 
     }
   };
 
-  return <div className="fixed inset-0 z-20 flex items-center justify-center bg-slate-900/40 px-4" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-    <div role="dialog" aria-modal="true" className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+  return <div className="product-modal-backdrop fixed inset-0 z-20 flex items-center justify-center bg-slate-900/40 px-4" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+    <div role="dialog" aria-modal="true" className="product-modal-panel max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
       <div className="flex items-start justify-between gap-4"><div><p className="text-sm font-medium text-emerald-600">Ürün Yönetimi</p><h2 className="mt-1 text-xl font-semibold">{product ? 'Ürünü düzenle' : 'Ürün ekle'}</h2></div><button type="button" onClick={onClose} className="text-2xl leading-none text-slate-400" aria-label="Kapat">×</button></div>
       {error && <div className="mt-5 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
       <form onSubmit={handleSubmit} className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -197,3 +197,5 @@ const ProductManager = ({ category, products, categories, onChanged, onMessage }
 };
 
 export default ProductManager;
+
+export { ProductModal };

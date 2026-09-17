@@ -37,7 +37,7 @@ export const getPublicMenu = async (req, res, next) => {
 
     const [settings, menu, categories] = await Promise.all([
       RestaurantSettings.findOne({ restaurantId: restaurant._id })
-        .select('description logo coverImage storeImage primaryColor secondaryColor theme socialMedia')
+        .select('description logo coverImage storeImage primaryColor secondaryColor theme socialMedia activeMenuId activeMenuThemeId savedMenus menuThemes')
         .lean(),
       Menu.findOne({ restaurantId: restaurant._id }).select('name').lean(),
       Category.find({ restaurantId: restaurant._id, isActive: true })
@@ -92,6 +92,20 @@ export const getPublicMenu = async (req, res, next) => {
       }))
       .filter((category) => category.products.length > 0);
 
+    const sourceMenus = Array.isArray(settings?.savedMenus) && settings.savedMenus.length ? settings.savedMenus : (Array.isArray(settings?.menuThemes) ? settings.menuThemes : []);
+    const activeMenuId = settings?.activeMenuId || settings?.activeMenuThemeId || sourceMenus[0]?._id || null;
+    const savedTheme = sourceMenus.find((item) => String(item._id) === String(activeMenuId)) || sourceMenus[0] || null;
+    const menuTheme = savedTheme ? {
+      id: savedTheme._id,
+      name: savedTheme.name,
+      font: savedTheme.font,
+      layout: savedTheme.layout,
+      theme: savedTheme.theme,
+      mode: savedTheme.mode || 'LIGHT',
+      primaryColor: savedTheme.primaryColor,
+      secondaryColor: savedTheme.secondaryColor,
+    } : null;
+
     res.json({
       restaurant: {
         name: restaurant.name,
@@ -106,6 +120,9 @@ export const getPublicMenu = async (req, res, next) => {
         theme: settings?.theme || 'MINIMAL',
         socialMedia: Array.isArray(settings?.socialMedia) ? settings.socialMedia.filter((item) => item && item.url).map((item) => ({ platform: item.platform, url: item.url.trim() })) : [],
         menuStatus: restaurant.menuStatus,
+        menuTheme,
+        activeMenuId,
+        savedMenus: sourceMenus,
       },
       menu: { name: menu.name },
       categories: publicCategories,

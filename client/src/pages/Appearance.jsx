@@ -31,8 +31,8 @@ const Appearance = () => {
   useEffect(() => {
     if (!notice) return undefined;
     setNoticeVisible(true);
-    const fadeTimer = window.setTimeout(() => setNoticeVisible(false), 2500);
-    const clearTimer = window.setTimeout(() => setNotice(''), 2800);
+    const fadeTimer = window.setTimeout(() => setNoticeVisible(false), 3000);
+    const clearTimer = window.setTimeout(() => setNotice(''), 3300);
     return () => { window.clearTimeout(fadeTimer); window.clearTimeout(clearTimer); };
   }, [notice]);
 

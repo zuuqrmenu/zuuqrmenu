@@ -9,7 +9,6 @@ import RestaurantDashboard from './pages/RestaurantDashboard';
 import MenuManagement from './pages/MenuManagement';
 import PublicMenu from './pages/PublicMenu';
 import RestaurantSettings from './pages/RestaurantSettings';
-import Appearance from './pages/Appearance';
 import QrManagement from './pages/QrManagement';
 import Analytics from './pages/Analytics';
 import LandingPage from './pages/LandingPage';
@@ -63,12 +62,12 @@ const AdminRoute = () => {
   return isAdmin ? <AdminDashboard /> : <Navigate to="/dashboard" replace />;
 };
 
-const RestaurantRoute = ({ menu = false, settings = false, appearance = false, analytics = false, qr = false }) => {
+const RestaurantRoute = ({ menu = false, settings = false, analytics = false, qr = false }) => {
   const { loading, isAuthenticated, isRestaurantUser, isRestaurantAccessible } = useAuth();
   if (loading) return <RouteLoading />;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   if (!isRestaurantUser) return <Navigate to="/admin" replace />;
-  return isRestaurantAccessible ? (qr ? <QrManagement /> : analytics ? <Analytics /> : appearance ? <Appearance /> : settings ? <RestaurantSettings /> : menu ? <MenuManagement /> : <RestaurantDashboard />) : <Navigate to="/pending-approval" replace />;
+  return isRestaurantAccessible ? (qr ? <QrManagement /> : analytics ? <Analytics /> : settings ? <RestaurantSettings /> : menu ? <MenuManagement /> : <RestaurantDashboard />) : <Navigate to="/pending-approval" replace />;
 };
 
 const PendingRoute = () => {
@@ -102,7 +101,6 @@ function App() {
           <Route path="/dashboard" element={<RestaurantRoute />} />
           <Route path="/dashboard/menu" element={<RestaurantRoute menu />} />
           <Route path="/dashboard/settings" element={<RestaurantRoute settings />} />
-          <Route path="/dashboard/appearance" element={<RestaurantRoute appearance />} />
           <Route path="/dashboard/analytics" element={<RestaurantRoute analytics />} />
           <Route path="/dashboard/qr" element={<RestaurantRoute qr />} />
           <Route path="/:username/menu" element={<PublicMenu />} />

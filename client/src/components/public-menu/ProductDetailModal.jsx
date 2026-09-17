@@ -35,13 +35,15 @@ const ProductDetailModal = ({ product, onClose }) => {
 
   const handlePointerDown = (event) => {
     if (event.pointerType === 'mouse' && event.button !== 0) return;
-    if (sheetRef.current?.scrollTop === 0) dragStartY.current = event.clientY;
+    dragStartY.current = event.clientY;
+    event.currentTarget.setPointerCapture?.(event.pointerId);
   };
 
   const handlePointerMove = (event) => {
     if (dragStartY.current === null || closing) return;
     const offset = event.clientY - dragStartY.current;
     const nextOffset = Math.max(0, offset);
+    event.preventDefault();
     dragOffsetRef.current = nextOffset;
     setDragOffset(nextOffset);
   };
@@ -57,10 +59,10 @@ const ProductDetailModal = ({ product, onClose }) => {
 
   return (
     <div className={`public-modal-backdrop ${closing ? 'is-closing' : ''}`} role="presentation" onMouseDown={(event) => event.target === event.currentTarget && handleClose()}>
-      <div ref={sheetRef} className="public-modal public-sheet" role="dialog" aria-modal="true" aria-labelledby="product-detail-title" onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} style={dragOffset ? { transform: `translateY(${dragOffset}px)` } : undefined}>
+      <div ref={sheetRef} className="public-modal public-sheet" role="dialog" aria-modal="true" aria-labelledby="product-detail-title" style={dragOffset ? { transform: `translateY(${dragOffset}px)` } : undefined}>
         <button type="button" className="public-modal__close" onClick={handleClose} aria-label="Kapat">×</button>
         <div className="public-modal__content">
-          <div className="sheet-handle" />
+          <div className="sheet-handle" onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} role="button" tabIndex="0" aria-label="Aşağı kaydırarak kapat" />
           {product.image && <img className="public-modal__image" src={product.image} alt="" />}
           {product.isFeatured && <span className="featured-badge">Öne Çıkan</span>}
           <h2 id="product-detail-title">{product.name}</h2>
