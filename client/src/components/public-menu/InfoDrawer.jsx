@@ -43,7 +43,7 @@ const InfoDrawer = ({ restaurant, language, onLanguage, onReview, onClose }) => 
     <div className="public-drawer-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <aside className="public-drawer public-drawer--right">
         <button type="button" className="drawer-close" onClick={onClose} aria-label="Kapat">×</button>
-        <div className="drawer-store-image">{restaurant.logo ? <img src={restaurant.logo} alt={`${restaurant.name} logosu`} /> : restaurant.storeImage ? <img src={restaurant.storeImage} alt="" /> : <span>{restaurant.name.charAt(0)}</span>}</div>
+        <div className="drawer-store-image">{restaurant.logo ? <img src={restaurant.logo} alt={`${restaurant.name} logosu`} /> : restaurant.storeImage ? <img src={restaurant.storeImage} alt={`${restaurant.name} mağaza görseli`} /> : <span aria-hidden="true">{restaurant.name.charAt(0)}</span>}</div>
         <h2>{restaurant.name}</h2>
         <p className="drawer-label">Dil</p>
         <div className="language-options">{[['tr','Türkçe'],['en','English'],['ar','العربية']].map(([value,label]) => <button type="button" key={value} className={language === value ? 'is-selected' : ''} onClick={() => onLanguage(value)}>{label}</button>)}</div>
@@ -63,6 +63,14 @@ const InfoDrawer = ({ restaurant, language, onLanguage, onReview, onClose }) => 
           <div className="drawer-address-block">
             <p className="drawer-label drawer-label--address"><span className="address-pin">⌖</span> Adres</p>
             <p className="drawer-address">{restaurant.address}</p>
+          </div>
+        )}
+        {(restaurant.phone || restaurant.email || restaurant.website) && (
+          <div className="drawer-contact-block">
+            <p className="drawer-label">İletişim</p>
+            {restaurant.phone && <a href={`tel:${restaurant.phone}`} className="drawer-contact-link">{restaurant.phone}</a>}
+            {restaurant.email && <a href={`mailto:${restaurant.email}`} className="drawer-contact-link">{restaurant.email}</a>}
+            {restaurant.website && <a href={restaurant.website} target="_blank" rel="noreferrer" className="drawer-contact-link">Web sitesini ziyaret et</a>}
           </div>
         )}
       </aside>

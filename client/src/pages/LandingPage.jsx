@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import SeoHead from '../components/SeoHead';
 
 const steps = [
   ['01', 'Restoranınızı oluşturun'],
@@ -129,6 +130,19 @@ const LandingPage = () => {
 
   return (
   <div className="landing-page">
+    <SeoHead
+      title="zuuqrmenu | Restoranlar için dijital menü platformu"
+      description="zuuqrmenu ile restoranınızın dijital menüsünü oluşturun, QR kodunuzu hazırlayın ve menü deneyiminizi yönetin."
+      canonical="https://zuuqrmenu.com/"
+      image="https://zuuqrmenu.com/logo_darkmode.svg"
+      structuredData={{
+        '@context': 'https://schema.org',
+        '@graph': [
+          { '@type': 'Organization', name: 'zuuqrmenu', url: 'https://zuuqrmenu.com/', logo: 'https://zuuqrmenu.com/logo_darkmode.svg' },
+          { '@type': 'WebSite', name: 'zuuqrmenu', url: 'https://zuuqrmenu.com/', inLanguage: 'tr-TR' },
+        ],
+      }}
+    />
     <LandingHeader />
     <main>
       <section className="landing-hero landing-reveal"><div className="landing-hero__copy"><span className="landing-kicker">RESTORANLAR İÇİN DİJİTAL MENÜ</span><h1>Menünüzü dijitale taşıyın.<br /><em>Markanız gibi görünsün.</em></h1><p>zuuqrmenu ile menünüzü oluşturun, QR kodunuzu hazırlayın ve müşterilerinizin deneyimini tek bir yerden yönetin.</p><div className="landing-hero__actions"><Link to="/register" className="landing-button">Restoranını Oluştur <span>↗</span></Link><a href="/demo/menu" className="landing-button landing-button--quiet">Demo Menüyü Gör <span>→</span></a></div><div className="landing-hero__note"><span>●</span> Menü · QR · analizler tek platformda</div></div><ProductPreview /></section>

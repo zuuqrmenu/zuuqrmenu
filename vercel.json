@@ -2,7 +2,22 @@
   "buildCommand": "npm --prefix client run build",
   "installCommand": "npm --prefix client install",
   "outputDirectory": "client/dist",
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" }
+      ]
+    }
+  ],
   "rewrites": [
+    {
+      "source": "/sitemap.xml",
+      "destination": "https://api.zuuqrmenu.com/sitemap.xml"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"

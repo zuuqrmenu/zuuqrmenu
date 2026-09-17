@@ -1,4 +1,5 @@
 import { useAuth } from '../context/AuthContext';
+import SeoHead from '../components/SeoHead';
 
 const PendingApproval = () => {
   const { user, restaurant, logout } = useAuth();
@@ -23,6 +24,7 @@ const PendingApproval = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <SeoHead title="Başvuru Durumu | zuuqrmenu" description="zuuqrmenu restoran başvuru durumu." canonical="https://zuuqrmenu.com/pending-approval" robots="noindex,nofollow,noarchive" />
       <div className="max-w-md w-full">
         <div className="bg-white rounded-lg shadow-md p-8 text-center">
           <div className="mb-6">

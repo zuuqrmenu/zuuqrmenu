@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import SeoHead from './SeoHead';
 
 const RestaurantLayout = ({ children }) => {
   const { user, restaurant, logout } = useAuth();
@@ -33,6 +34,7 @@ const RestaurantLayout = ({ children }) => {
 
   return (
     <div className="dashboard-shell min-h-screen bg-slate-50 text-slate-900">
+      <SeoHead title="Restoran Paneli | zuuqrmenu" description="zuuqrmenu restoran yönetim paneli." canonical="https://zuuqrmenu.com/dashboard" robots="noindex,nofollow,noarchive" />
       <aside className="dashboard-sidebar fixed inset-y-0 left-0 hidden w-64 lg:flex lg:flex-col">
         <div className="dashboard-brand"><span className="dashboard-brand__logo-wrap"><img src="/logo.svg" alt="zuuqrmenu" className="dashboard-brand__logo dashboard-brand__logo--light" /><img src="/logo_darkmode.svg" alt="" className="dashboard-brand__logo dashboard-brand__logo--dark" /></span><div><h1>Restoran Paneli</h1></div></div>
         <div className="dashboard-restaurant"><p className="truncate">{restaurant?.name}</p><span className="truncate">{user?.email}</span></div>

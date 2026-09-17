@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import SeoHead from '../components/SeoHead';
 import { authService } from '../services/authService';
 import { auth } from '../config/firebase';
 import { getFirebaseAuthError } from '../utils/firebaseAuthErrors';
@@ -93,6 +94,7 @@ const Login = () => {
 
   return (
     <div className="auth-page login-shell">
+      <SeoHead title="Giriş Yap | zuuqrmenu" description="zuuqrmenu restoran panelinize güvenli şekilde giriş yapın." canonical="https://zuuqrmenu.com/login" robots="noindex,nofollow" />
       <aside className="login-shell__brand">
         <Link to="/" className="landing-brand"><img src="/logo_darkmode.svg" alt="zuuqrmenu" className="landing-brand__logo" /></Link>
         <h1>Dijital menünüz, işletmenizin ritmine ayak uydursun.</h1>

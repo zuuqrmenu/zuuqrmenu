@@ -4,7 +4,7 @@ const ProductCard = ({ product, onSelect, layout = {} }) => (
     className={`public-product ${product.isFeatured && layout.emphasizeFeatured !== false ? 'is-featured' : ''} ${!product.isAvailable ? 'is-unavailable' : ''}`}
     onClick={() => onSelect(product)}
   >
-    {layout.showImages !== false && <span className="public-product__visual" aria-hidden="true">{product.image ? <img src={product.image} alt="" /> : '✦'}</span>}
+    {layout.showImages !== false && <span className="public-product__visual">{product.image ? <img src={product.image} alt={`${product.name} görseli`} loading="lazy" /> : '✦'}</span>}
     <span className="public-product__body">
       <span className="public-product__topline">
         <span className="public-product__name">{product.name}</span>

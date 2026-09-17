@@ -11,6 +11,7 @@ import publicRoutes from './routes/public.js';
 import restaurantSettingsRoutes from './routes/restaurantSettings.js';
 import analyticsRoutes from './routes/analytics.js';
 import restaurantProfileRoutes from './routes/restaurantProfile.js';
+import { getPublicSitemap } from './controllers/publicMenuController.js';
 
 dotenv.config();
 
@@ -37,6 +38,8 @@ app.use(async (req, res, next) => {
     next(error);
   }
 });
+
+app.get('/sitemap.xml', getPublicSitemap);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);

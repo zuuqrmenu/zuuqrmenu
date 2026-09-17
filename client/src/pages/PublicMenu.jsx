@@ -7,12 +7,14 @@ import ProductDetailModal from '../components/public-menu/ProductDetailModal';
 import InfoDrawer from '../components/public-menu/InfoDrawer';
 import ReviewSheet from '../components/public-menu/ReviewSheet';
 import SearchSheet from '../components/public-menu/SearchSheet';
+import SeoHead from '../components/SeoHead';
 import BistroFeaturedStories from '../components/public-menu/BistroFeaturedStories';
 import { publicMenuService } from '../services/publicMenuService';
 import { getPublicMenuTheme, publicMenuFonts } from '../utils/publicMenuTheme';
 
 const PublicMenu = () => {
   const { username } = useParams();
+  const publicSiteOrigin = 'https://zuuqrmenu.com';
   const [data, setData] = useState(null);
   const [status, setStatus] = useState('loading');
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -128,6 +130,50 @@ const PublicMenu = () => {
   const menuMode = menuTheme?.mode || 'LIGHT';
   const menuLayout = menuTheme?.layout || { showImages: true, showDescriptions: true, showPrices: true, emphasizeFeatured: true, style: 'STANDARD' };
   const selectedTheme = getPublicMenuTheme(menuTheme?.theme || data.restaurant.theme || 'MINIMAL', menuMode);
+  const canonicalUrl = `${publicSiteOrigin}/${encodeURIComponent(username)}/menu`;
+  const seoTitle = `${data.restaurant.name} Menü | zuuqrmenu`;
+  const seoDescription = data.restaurant.description || `${data.restaurant.name} dijital menüsünü inceleyin. Menü, ürünler ve güncel fiyatlar zuuqrmenu'da.`;
+  const absoluteImage = (value) => value ? new URL(value, window.location.origin).toString() : undefined;
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Restaurant',
+        '@id': `${canonicalUrl}#restaurant`,
+        name: data.restaurant.name,
+        description: seoDescription,
+        url: canonicalUrl,
+        image: [data.restaurant.logo, data.restaurant.coverImage].filter(Boolean).map(absoluteImage),
+        telephone: data.restaurant.phone || undefined,
+        email: data.restaurant.email || undefined,
+        address: data.restaurant.address || data.restaurant.city ? { '@type': 'PostalAddress', streetAddress: data.restaurant.address || undefined, addressLocality: data.restaurant.city || undefined } : undefined,
+        sameAs: [...(data.restaurant.socialMedia?.map((item) => item.url).filter(Boolean) || []), data.restaurant.website].filter(Boolean),
+        hasMenu: {
+          '@type': 'Menu',
+          name: data.menu?.name || `${data.restaurant.name} Menü`,
+          hasMenuSection: data.categories.map((category) => ({
+            '@type': 'MenuSection',
+            name: category.name,
+            description: category.description || undefined,
+            hasMenuItem: category.products.map((product) => ({
+              '@type': 'MenuItem',
+              name: product.name,
+              description: product.description || product.shortDescription || undefined,
+              image: absoluteImage(product.image),
+              offers: { '@type': 'Offer', price: product.price, priceCurrency: 'TRY', availability: product.isAvailable ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock' },
+            })),
+          })),
+        },
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Ana Sayfa', item: 'https://zuuqrmenu.com/' },
+          { '@type': 'ListItem', position: 2, name: data.restaurant.name, item: canonicalUrl },
+        ],
+      },
+    ],
+  };
   const style = {
     '--menu-primary': menuTheme?.primaryColor || data.restaurant.primaryColor,
     '--menu-secondary': menuTheme?.secondaryColor || data.restaurant.secondaryColor,
@@ -143,6 +189,7 @@ const PublicMenu = () => {
 
   return (
     <div className="public-menu-shell" data-theme={menuTheme?.theme || data.restaurant.theme || 'MINIMAL'} data-mode={menuMode} data-layout={menuLayout.style || 'STANDARD'} data-show-featured={menuLayout.emphasizeFeatured !== false} style={style}>
+      <SeoHead title={seoTitle} description={seoDescription} canonical={canonicalUrl} image={absoluteImage(data.restaurant.coverImage || data.restaurant.logo)} structuredData={structuredData} />
       <div className="public-menu-page">
         <MenuHeader restaurant={data.restaurant} onOpenCategories={() => setDrawer('categories')} onOpenInfo={() => setDrawer('info')} />
         {menuTheme?.theme === 'BISTRO' && (
@@ -155,7 +202,7 @@ const PublicMenu = () => {
         <footer className="public-footer">zuuqrmenu <span>•</span> Dijital Menü</footer>
       </div>
       <ProductDetailModal product={selectedProduct} onClose={() => setSelectedProduct(null)} />
-      {drawer === 'categories' && <div className="public-drawer-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setDrawer('')}><aside className="public-drawer"><button type="button" className="drawer-close" onClick={() => setDrawer('')} aria-label="Kapat">×</button><div className="drawer-store-image">{data.restaurant.storeImage ? <img src={data.restaurant.storeImage} alt="" /> : <span>{data.restaurant.name.charAt(0)}</span>}</div><h2>{data.restaurant.name}</h2><p className="drawer-label">Kategoriler</p>{data.categories.map((category) => <button type="button" className="drawer-category" key={category.id} onClick={() => scrollToCategory(category.id)}>{category.name}</button>)}</aside></div>}
+      {drawer === 'categories' && <div className="public-drawer-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setDrawer('')}><aside className="public-drawer"><button type="button" className="drawer-close" onClick={() => setDrawer('')} aria-label="Kapat">×</button><div className="drawer-store-image">{data.restaurant.storeImage ? <img src={data.restaurant.storeImage} alt={`${data.restaurant.name} mağaza görseli`} /> : <span aria-hidden="true">{data.restaurant.name.charAt(0)}</span>}</div><h2>{data.restaurant.name}</h2><p className="drawer-label">Kategoriler</p>{data.categories.map((category) => <button type="button" className="drawer-category" key={category.id} onClick={() => scrollToCategory(category.id)}>{category.name}</button>)}</aside></div>}
       {drawer === 'info' && <InfoDrawer restaurant={data.restaurant} language={language} onLanguage={selectLanguage} onReview={() => setReviewOpen(true)} onClose={() => setDrawer('')} />}
       {reviewOpen && <ReviewSheet username={username} onClose={() => setReviewOpen(false)} />}
       {searchOpen && <SearchSheet value={search} onChange={setSearch} results={searchResults} onSelect={(product) => { selectProduct(product); setSearchOpen(false); }} onClose={() => { setSearchOpen(false); setSearch(''); }} />}

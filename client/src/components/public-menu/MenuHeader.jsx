@@ -29,7 +29,10 @@ const MenuHeader = ({ restaurant, onOpenCategories, onOpenInfo }) => {
     <header className={`public-header ${lightBackground ? 'public-header--light' : 'public-header--dark'}`} style={restaurant.coverImage ? { backgroundImage: `url(${restaurant.coverImage})` } : undefined}>
       <div className="public-header__bar">
         <button type="button" className="header-control" onClick={onOpenCategories} aria-label="Kategorileri aç">☰</button>
-        <span className="public-header__title">{restaurant.name}</span>
+        <div className="public-header__identity">
+          <h1 className="public-header__title">{restaurant.name}</h1>
+          {restaurant.description && <p className="public-header__description">{restaurant.description}</p>}
+        </div>
         <button type="button" className="header-control" onClick={onOpenInfo} aria-label="Restoran bilgilerini aç">ⓘ</button>
       </div>
     </header>

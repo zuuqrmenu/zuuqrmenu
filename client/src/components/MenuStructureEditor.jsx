@@ -38,7 +38,7 @@ export const ProductIcon = ({ name }) => {
   return <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">{paths[name]}</svg>;
 };
 
-const OverflowActionMenu = ({ label, items, disabled = false, menuId, openMenuId, onOpenMenu }) => {
+const OverflowActionMenu = ({ label, items, disabled = false }) => {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -102,30 +102,30 @@ const OverflowActionMenu = ({ label, items, disabled = false, menuId, openMenuId
   );
 };
 
-const SortableProduct = ({ product, disabled, onEdit, onToggleAvailability, onToggleFeatured, onDelete, openMenuId, onOpenMenu }) => {
+const SortableProduct = ({ product, disabled, onEdit, onToggleAvailability, onToggleFeatured, onDelete }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: `product:${getId(product)}` });
   const style = { transform: CSS.Transform.toString(transform), transition };
 
   return (
     <article ref={setNodeRef} style={style} className={`menu-structure-product ${isDragging ? 'is-dragging' : ''}`}>
       <button type="button" className="menu-structure-product__handle" {...attributes} {...listeners} aria-label={`${product.name} ürününü taşı`}><DragHandle label="Ürünü taşı" /></button>
-      {product.image ? <img className="menu-structure-product__image" src={product.image} alt="" /> : <span className="menu-structure-product__image menu-structure-product__image--empty" aria-hidden="true">✦</span>}
+      {product.image ? <img className="menu-structure-product__image" src={product.image} alt={`${product.name} görseli`} /> : <span className="menu-structure-product__image menu-structure-product__image--empty" aria-hidden="true">✦</span>}
       <div className="menu-structure-product__content"><div className="menu-structure-product__title-row"><h4>{product.name}</h4><span className={product.isAvailable ? 'is-available' : 'is-unavailable'}>{product.isAvailable ? 'Mevcut' : 'Tükendi'}</span>{product.isFeatured && <span className="is-featured">Öne Çıkan</span>}</div><p>₺{Number(product.price).toFixed(2)}</p>{product.shortDescription && <small>{product.shortDescription}</small>}</div>
-      <OverflowActionMenu menuId={`product:${getId(product)}`} openMenuId={openMenuId} onOpenMenu={onOpenMenu} label={`${product.name} işlemleri`} disabled={disabled} items={[{ label: 'Düzenle', icon: 'edit', onSelect: () => onEdit(product) }, { label: product.isAvailable ? 'Pasifleştir' : 'Aktifleştir', icon: product.isAvailable ? 'pause' : 'play', tone: product.isAvailable ? 'neutral' : 'success', onSelect: () => onToggleAvailability(product) }, { label: product.isFeatured ? 'Öne Çıkarmayı Kaldır' : 'Öne Çıkar', icon: 'star', tone: product.isFeatured ? 'featured' : 'gold', onSelect: () => onToggleFeatured(product) }, { label: 'Sil', icon: 'trash', tone: 'danger', onSelect: () => onDelete(product) }]} />
+      <OverflowActionMenu label={`${product.name} işlemleri`} disabled={disabled} items={[{ label: 'Düzenle', icon: 'edit', onSelect: () => onEdit(product) }, { label: product.isAvailable ? 'Pasifleştir' : 'Aktifleştir', icon: product.isAvailable ? 'pause' : 'play', tone: product.isAvailable ? 'neutral' : 'success', onSelect: () => onToggleAvailability(product) }, { label: product.isFeatured ? 'Öne Çıkarmayı Kaldır' : 'Öne Çıkar', icon: 'star', tone: product.isFeatured ? 'featured' : 'gold', onSelect: () => onToggleFeatured(product) }, { label: 'Sil', icon: 'trash', tone: 'danger', onSelect: () => onDelete(product) }]} />
     </article>
   );
 };
 
-const SortableCategory = ({ column, actionId, onEdit, onToggle, onDelete, onAddProduct, openMenuId, onOpenMenu }) => {
+const SortableCategory = ({ column, actionId, onEdit, onToggle, onDelete, onAddProduct }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: `category:${getId(column.category)}` });
   const { setNodeRef: setDropRef, isOver } = useDroppable({ id: `category-drop:${getId(column.category)}` });
   const setRefs = (node) => { setNodeRef(node); setDropRef(node); };
 
   return (
     <section ref={setRefs} style={{ transform: CSS.Transform.toString(transform), transition }} className={`menu-structure-category ${isDragging ? 'is-dragging' : ''} ${isOver ? 'is-drop-target' : ''}`}>
-      <header className="menu-structure-category__header"><div className="menu-structure-category__identity"><button type="button" className="menu-structure-category__handle" {...attributes} {...listeners} aria-label={`${column.category.name} kategorisini taşı`}><DragHandle label="Kategoriyi taşı" /></button><div><h3>{column.category.name}</h3>{column.category.description && <p>{column.category.description}</p>}<small>{column.products.length} ürün</small></div></div><OverflowActionMenu menuId={`category:${getId(column.category)}`} openMenuId={openMenuId} onOpenMenu={onOpenMenu} label={`${column.category.name} işlemleri`} disabled={!!actionId} items={[{ label: 'Düzenle', icon: 'edit', onSelect: () => onEdit(column.category) }, { label: column.category.isActive ? 'Pasifleştir' : 'Aktifleştir', icon: column.category.isActive ? 'pause' : 'play', tone: column.category.isActive ? 'neutral' : 'success', onSelect: () => onToggle(column.category) }, { label: 'Sil', icon: 'trash', tone: 'danger', onSelect: () => onDelete(column.category) }]} openMenuId={openMenuId} onOpenMenu={onOpenMenu} />
+      <header className="menu-structure-category__header"><div className="menu-structure-category__identity"><button type="button" className="menu-structure-category__handle" {...attributes} {...listeners} aria-label={`${column.category.name} kategorisini taşı`}><DragHandle label="Kategoriyi taşı" /></button><div><h3>{column.category.name}</h3>{column.category.description && <p>{column.category.description}</p>}<small>{column.products.length} ürün</small></div></div><OverflowActionMenu label={`${column.category.name} işlemleri`} disabled={!!actionId} items={[{ label: 'Düzenle', icon: 'edit', onSelect: () => onEdit(column.category) }, { label: column.category.isActive ? 'Pasifleştir' : 'Aktifleştir', icon: column.category.isActive ? 'pause' : 'play', tone: column.category.isActive ? 'neutral' : 'success', onSelect: () => onToggle(column.category) }, { label: 'Sil', icon: 'trash', tone: 'danger', onSelect: () => onDelete(column.category) }]} />
       </header>
-      <div ref={setDropRef} className={`menu-structure-category__products ${isOver ? 'is-drop-target' : ''}`}><SortableContext items={column.products.map((product) => `product:${getId(product)}`)} strategy={verticalListSortingStrategy}>{column.products.map((product) => <SortableProduct key={getId(product)} product={product} disabled={!!actionId} openMenuId={openMenuId} onOpenMenu={onOpenMenu} onEdit={onAddProduct.edit} onToggleAvailability={onAddProduct.toggleAvailability} onToggleFeatured={onAddProduct.toggleFeatured} onDelete={onAddProduct.delete} />)}</SortableContext>{column.products.length === 0 && <p className="menu-structure-empty">Bu kategoride henüz ürün yok.</p>}</div>
+      <div ref={setDropRef} className={`menu-structure-category__products ${isOver ? 'is-drop-target' : ''}`}><SortableContext items={column.products.map((product) => `product:${getId(product)}`)} strategy={verticalListSortingStrategy}>{column.products.map((product) => <SortableProduct key={getId(product)} product={product} disabled={!!actionId} onEdit={onAddProduct.edit} onToggleAvailability={onAddProduct.toggleAvailability} onToggleFeatured={onAddProduct.toggleFeatured} onDelete={onAddProduct.delete} />)}</SortableContext>{column.products.length === 0 && <p className="menu-structure-empty">Bu kategoride henüz ürün yok.</p>}</div>
     </section>
   );
 };
@@ -136,7 +136,6 @@ const MenuStructureEditor = ({ categories, products, actionId, onEditCategory, o
   const [editingProduct, setEditingProduct] = useState(null);
   const [productModalCategory, setProductModalCategory] = useState(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState(null);
-  const [openMenuId, setOpenMenuId] = useState(null);
   const dragStartColumns = useRef(columns);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }), useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 6 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
 

@@ -604,6 +604,8 @@ body .rounded-xl.border.border-rose-200.bg-rose-50.px-4.py-3.text-sm.text-rose-7
   font-weight: 700;
   letter-spacing: -.02em;
 }
+.public-header__identity { min-width: 0; }
+.public-header__description { max-width: 32rem; margin: .25rem auto 0; overflow: hidden; color: inherit; font-size: .68rem; font-weight: 500; line-height: 1.35; opacity: .9; text-overflow: ellipsis; white-space: nowrap; }
 .header-control {
   display: grid;
   width: 2.2rem;

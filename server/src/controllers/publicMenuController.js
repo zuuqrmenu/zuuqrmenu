@@ -4,7 +4,30 @@ import Menu from '../models/Menu.js';
 import Category from '../models/Category.js';
 import Product from '../models/Product.js';
 import MenuView from '../models/MenuView.js';
+import User from '../models/User.js';
 import { findPublicRestaurant } from '../utils/publicRestaurant.js';
+
+const escapeXml = (value) => String(value).replace(/[<>&'\"]/g, (character) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' }[character]));
+
+export const getPublicSitemap = async (req, res, next) => {
+  try {
+    const users = await User.find({ role: 'RESTAURANT_USER' })
+      .select('username restaurantId')
+      .populate({ path: 'restaurantId', match: { status: 'ACTIVE', menuStatus: 'PUBLISHED' }, select: 'updatedAt' })
+      .lean();
+    const urls = users
+      .filter((user) => user.restaurantId && user.username)
+      .map((user) => {
+        const url = escapeXml(`https://zuuqrmenu.com/${encodeURIComponent(user.username)}/menu`);
+        return `  <url><loc>${url}</loc>${user.restaurantId.updatedAt ? `<lastmod>${new Date(user.restaurantId.updatedAt).toISOString()}</lastmod>` : ''}<changefreq>daily</changefreq><priority>0.8</priority></url>`;
+      })
+      .join('\n');
+    const homepage = '  <url><loc>https://zuuqrmenu.com/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>';
+    res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${homepage}${urls ? `\n${urls}` : ''}\n</urlset>`);
+  } catch (error) {
+    next(error);
+  }
+};
 
 const unavailableResponse = (res) => res.status(404).json({
   error: 'Bu menü şu anda kullanılamıyor.',
@@ -112,6 +135,10 @@ export const getPublicMenu = async (req, res, next) => {
         slug: restaurant.slug,
         description: settings?.description || '',
         address: restaurant.address || '',
+        city: restaurant.city || '',
+        phone: restaurant.phone || '',
+        email: restaurant.email || '',
+        website: restaurant.website || '',
         logo: settings?.logo || null,
         coverImage: settings?.coverImage || null,
         storeImage: settings?.storeImage || null,

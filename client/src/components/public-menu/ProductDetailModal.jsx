@@ -63,7 +63,7 @@ const ProductDetailModal = ({ product, onClose }) => {
         <button type="button" className="public-modal__close" onClick={handleClose} aria-label="Kapat">×</button>
         <div className="public-modal__content">
           <div className="sheet-handle" onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} role="button" tabIndex="0" aria-label="Aşağı kaydırarak kapat" />
-          {product.image && <img className="public-modal__image" src={product.image} alt="" />}
+          {product.image && <img className="public-modal__image" src={product.image} alt={`${product.name} görseli`} />}
           {product.isFeatured && <span className="featured-badge">Öne Çıkan</span>}
           <h2 id="product-detail-title">{product.name}</h2>
           <div className="public-modal__prices">

@@ -18,7 +18,7 @@ const BistroFeaturedStories = ({ products, onSelect }) => {
             aria-label={product.name}
           >
             <span className="bistro-story__thumb" aria-hidden="true">
-              {product.image ? <img src={product.image} alt="" /> : <span>{product.name.charAt(0)}</span>}
+              {product.image ? <img src={product.image} alt={`${product.name} görseli`} loading="lazy" /> : <span aria-hidden="true">{product.name.charAt(0)}</span>}
             </span>
             <span className="bistro-story__name">{product.name}</span>
           </button>

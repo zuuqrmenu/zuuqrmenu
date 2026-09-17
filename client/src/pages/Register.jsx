@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import SeoHead from '../components/SeoHead';
 import { authService } from '../services/authService';
 import { auth } from '../config/firebase';
 import { getFirebaseAuthError } from '../utils/firebaseAuthErrors';
@@ -101,6 +102,7 @@ const Register = () => {
 
   return (
     <div className="auth-page min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8">
+      <SeoHead title="Restoranını Oluştur | zuuqrmenu" description="Restoranınız için zuuqrmenu dijital menü hesabı oluşturun." canonical="https://zuuqrmenu.com/register" robots="noindex,nofollow" />
       <div className="max-w-2xl w-full">
         <div className="text-center mb-8">
           <img src="/logo.svg" alt="zuuqrmenu" className="mx-auto h-auto w-40" />
