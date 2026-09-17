@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react';
 import {
   DESIGN_STYLES,
   PAPER_SIZES,
-  QR_LAYOUTS,
   buildPaperRatio,
   buildPrintPreviewConfig,
   exportQrPrintPdf,
@@ -13,8 +12,33 @@ import {
   isLogoAvailable,
 } from '../../utils/qrPrintDesigner';
 
+const LAYOUT_TITLES = {
+  A: 'Üst Logo & QR',
+  B: 'Ortalanmış Düzen',
+  C: 'Yan Yana Düzen',
+  D: 'Büyük QR Vurgulu',
+  E: 'Minimal Alt Bilgi',
+};
+
+const PAPER_DETAILS = {
+  A4: { desc: 'Tam Menü Boyutu', isRecommended: false },
+  A5: { desc: 'Masa Standı (Önerilen)', isRecommended: true },
+  A6: { desc: 'Kompakt Kart', isRecommended: false },
+  A7: { desc: 'Mini Stand', isRecommended: false },
+};
+
+const STYLE_DETAILS = {
+  Minimal: { label: 'Minimal', desc: 'Sade & Net' },
+  Modern: { label: 'Modern', desc: 'Canlı & Çağdaş' },
+  Elegant: { label: 'Zarif', desc: 'Sıcak & Klasik' },
+  Bold: { label: 'Vurgulu', desc: 'Güçlü & Kontrast' },
+};
+
 const QRPreview = ({ qrSvg, restaurant, settings, paperId, styleId, layoutId }) => {
-  const config = useMemo(() => buildPrintPreviewConfig({ restaurant, settings, paperId, styleId, layoutId }), [restaurant, settings, paperId, styleId, layoutId]);
+  const config = useMemo(
+    () => buildPrintPreviewConfig({ restaurant, settings, paperId, styleId, layoutId }),
+    [restaurant, settings, paperId, styleId, layoutId]
+  );
   const { paper, style, layout, primary, secondary, brandText } = config;
   const logoAvailable = isLogoAvailable(settings);
 
@@ -105,8 +129,8 @@ const QRPreview = ({ qrSvg, restaurant, settings, paperId, styleId, layoutId }) 
     <div className="qr-print-paper" style={{ aspectRatio: buildPaperRatio(paperId) }}>
       <div className="qr-print-sheet" data-style={style.id} style={{ background: style.background, borderColor: style.accent, color: style.text }}>
         <div className="qr-print-sheet__header" style={{ background: primary, color: secondary }}>
-          <span>QR Print</span>
-          <span>{paper.label}</span>
+          <span>Masa Standı</span>
+          <span>{paper.label} · {paper.width}×{paper.height}mm</span>
         </div>
         {template}
       </div>
@@ -114,12 +138,18 @@ const QRPreview = ({ qrSvg, restaurant, settings, paperId, styleId, layoutId }) 
   );
 };
 
-const QrPrintDesigner = ({ restaurant, settings, qrSvg, onDownloadPng, onDownloadSvg, setFeedback }) => {
+const QrPrintDesigner = ({
+  restaurant,
+  settings,
+  qrSvg,
+  setFeedback,
+}) => {
   const paperOptions = Object.values(PAPER_SIZES);
   const styleOptions = Object.values(DESIGN_STYLES);
   const [paperId, setPaperId] = useState(getDefaultPaperSize());
   const [styleId, setStyleId] = useState('Minimal');
   const [layoutId, setLayoutId] = useState(getDefaultLayout(getDefaultPaperSize()));
+  const [isExporting, setIsExporting] = useState(false);
 
   const availableLayouts = useMemo(() => getCompatibleLayouts(paperId), [paperId]);
   const activeLayoutId = availableLayouts.some((layout) => layout.id === layoutId)
@@ -127,7 +157,8 @@ const QrPrintDesigner = ({ restaurant, settings, qrSvg, onDownloadPng, onDownloa
     : getDefaultLayout(paperId);
 
   const handlePdfDownload = async () => {
-    if (!qrSvg) return;
+    if (!qrSvg || isExporting) return;
+    setIsExporting(true);
     try {
       await exportQrPrintPdf({
         restaurant,
@@ -135,97 +166,191 @@ const QrPrintDesigner = ({ restaurant, settings, qrSvg, onDownloadPng, onDownloa
         qrSvg,
         paperId,
         styleId,
-        layoutId,
+        layoutId: activeLayoutId,
       });
-      setFeedback?.('PDF indirildi');
+      setFeedback?.('Baskıya hazır masa standı PDF dosyası indirildi!');
     } catch {
-      setFeedback?.('PDF oluşturulamadı.');
+      setFeedback?.('PDF oluşturulamadı. Lütfen tekrar deneyin.');
+    } finally {
+      setIsExporting(false);
     }
   };
 
   return (
-    <div className="qr-print-designer">
-      <div className="qr-print-designer__controls">
-        <div className="qr-print-section">
-          <div className="qr-print-section__title-row">
-            <h3>Kağıt Boyutu</h3>
-            <span>{PAPER_SIZES[paperId]?.width} × {PAPER_SIZES[paperId]?.height} mm</span>
+    <div className="qr-stand-shell">
+      <div className="qr-stand-layout">
+        {/* Left Column: Customization Controls */}
+        <div className="qr-stand-controls">
+          {/* Section 1: Paper Size Selection */}
+          <div className="qr-stand-card">
+            <div className="qr-stand-card__header">
+              <div>
+                <h3 className="qr-stand-card__title">Kağıt & Stand Boyutu</h3>
+                <p className="qr-stand-card__subtitle">Kullanacağınız pleksi stand veya menü ölçüsü</p>
+              </div>
+              <span className="qr-stand-card__badge">{PAPER_SIZES[paperId]?.width} × {PAPER_SIZES[paperId]?.height} mm</span>
+            </div>
+
+            <div className="qr-paper-grid">
+              {paperOptions.map((paper) => {
+                const isSelected = paper.id === paperId;
+                const detail = PAPER_DETAILS[paper.id] || { desc: '', isRecommended: false };
+                return (
+                  <button
+                    key={paper.id}
+                    type="button"
+                    onClick={() => setPaperId(paper.id)}
+                    className={`qr-paper-card ${isSelected ? 'is-selected' : ''}`}
+                  >
+                    <div className="qr-paper-card__top">
+                      <span className="qr-paper-card__label">{paper.label}</span>
+                      {detail.isRecommended && (
+                        <span className="qr-paper-card__recommended">Önerilen</span>
+                      )}
+                    </div>
+                    <span className="qr-paper-card__desc">{detail.desc}</span>
+                    <span className="qr-paper-card__dims">{paper.width} × {paper.height} mm</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-          <div className="qr-print-option-grid qr-print-option-grid--paper">
-            {paperOptions.map((paper) => (
-              <button
-                key={paper.id}
-                type="button"
-                onClick={() => setPaperId(paper.id)}
-                className={`qr-print-option ${paper.id === paperId ? 'is-selected' : ''}`}
-              >
-                <span>{paper.label}</span>
-                <small>{paper.width} × {paper.height} mm</small>
-              </button>
-            ))}
+
+          {/* Section 2: Design Style Selection */}
+          <div className="qr-stand-card">
+            <div className="qr-stand-card__header">
+              <div>
+                <h3 className="qr-stand-card__title">Tasarım Stili & Renkler</h3>
+                <p className="qr-stand-card__subtitle">Masa standınızın görsel teması</p>
+              </div>
+            </div>
+
+            <div className="qr-style-grid">
+              {styleOptions.map((style) => {
+                const isSelected = style.id === styleId;
+                const detail = STYLE_DETAILS[style.id] || { label: style.name, desc: '' };
+                return (
+                  <button
+                    key={style.id}
+                    type="button"
+                    onClick={() => setStyleId(style.id)}
+                    className={`qr-style-card ${isSelected ? 'is-selected' : ''}`}
+                  >
+                    <div className="qr-style-card__preview" style={{ background: style.background, borderColor: style.accent }}>
+                      <span className="qr-style-card__dot" style={{ background: style.primary }} />
+                      <span className="qr-style-card__bar" style={{ background: style.text }} />
+                    </div>
+                    <div className="qr-style-card__text">
+                      <span className="qr-style-card__name">{detail.label}</span>
+                      <span className="qr-style-card__desc">{detail.desc}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Section 3: Layout Arrangement */}
+          <div className="qr-stand-card">
+            <div className="qr-stand-card__header">
+              <div>
+                <h3 className="qr-stand-card__title">Yerleşim Şablonu</h3>
+                <p className="qr-stand-card__subtitle">{getLayoutSupportLabel(paperId)}</p>
+              </div>
+            </div>
+
+            <div className="qr-layout-grid">
+              {availableLayouts.map((layout) => {
+                const isSelected = layout.id === activeLayoutId;
+                return (
+                  <button
+                    key={layout.id}
+                    type="button"
+                    onClick={() => setLayoutId(layout.id)}
+                    className={`qr-layout-card ${isSelected ? 'is-selected' : ''}`}
+                  >
+                    <div className="qr-layout-card__check">
+                      {isSelected ? (
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><circle cx="12" cy="12" r="10" /></svg>
+                      ) : (
+                        <span className="qr-layout-card__dot" />
+                      )}
+                    </div>
+                    <div className="qr-layout-card__info">
+                      <span className="qr-layout-card__name">{LAYOUT_TITLES[layout.id] || layout.name}</span>
+                      <span className="qr-layout-card__sample">{layout.headline}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
-        <div className="qr-print-section">
-          <div className="qr-print-section__title-row">
-            <h3>Tasarım</h3>
-          </div>
-          <div className="qr-print-option-grid qr-print-option-grid--style">
-            {styleOptions.map((style) => (
-              <button
-                key={style.id}
-                type="button"
-                onClick={() => setStyleId(style.id)}
-                className={`qr-print-option ${style.id === styleId ? 'is-selected' : ''}`}
-              >
-                <span className="qr-print-option__swatch" style={{ background: `linear-gradient(135deg, ${style.primary}, ${style.background})` }} />
-                <span>{style.name}</span>
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* Right Column: Live Interactive Preview Sheet */}
+        <div className="qr-stand-preview-wrapper">
+          <div className="qr-stand-preview-panel">
+            <div className="qr-stand-preview-topbar">
+              <div className="qr-stand-preview-info">
+                <span className="qr-stand-preview-badge">
+                  {PAPER_SIZES[paperId]?.label} · {STYLE_DETAILS[styleId]?.label || styleId}
+                </span>
+                <span className="qr-stand-preview-layout-tag">
+                  {LAYOUT_TITLES[activeLayoutId] || 'Standart Şablon'}
+                </span>
+              </div>
 
-        <div className="qr-print-section">
-          <div className="qr-print-section__title-row">
-            <h3>Yerleşim</h3>
-            <span>{getLayoutSupportLabel(paperId)}</span>
-          </div>
-          <div className="qr-print-option-grid qr-print-option-grid--layout">
-            {availableLayouts.map((layout) => (
-              <button
-                key={layout.id}
-                type="button"
-                onClick={() => setLayoutId(layout.id)}
-                className={`qr-print-layout-card ${layout.id === activeLayoutId ? 'is-selected' : ''}`}
-              >
-                <span>{layout.name}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
+              <div className="qr-stand-preview-actions">
+                <button
+                  type="button"
+                  onClick={handlePdfDownload}
+                  disabled={isExporting}
+                  className="qr-stand-print-btn"
+                  title="Seçtiğiniz ölçü ve stilde baskıya hazır PDF indir"
+                >
+                  {isExporting ? (
+                    <>
+                      <span className="qr-studio-spinner" />
+                      <span>Hazırlanıyor...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                      </svg>
+                      <span>Baskıya Hazır PDF İndir</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
 
-      <div className="qr-print-preview-panel">
-        <div className="qr-print-preview-header">
-          <div>
-            <p>Önizleme</p>
-            <strong>{PAPER_SIZES[paperId]?.label || 'A5'} · {QR_LAYOUTS.find((layout) => layout.id === activeLayoutId)?.name || 'Logo Top / QR Bottom'}</strong>
+            {/* Workstation Frame */}
+            <div className="qr-stand-workstation">
+              <div className="qr-stand-workstation-inner">
+                <QRPreview
+                  qrSvg={qrSvg}
+                  restaurant={restaurant}
+                  settings={settings}
+                  paperId={paperId}
+                  styleId={styleId}
+                  layoutId={activeLayoutId}
+                />
+              </div>
+            </div>
+
+            {/* Practical Advice Note */}
+            <div className="qr-stand-tip-footer">
+              <div className="qr-stand-tip-icon">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              </div>
+              <p className="qr-stand-tip-text">
+                <strong>Baskı & Kullanım Önerisi:</strong> İndirdiğiniz PDF dosyasını seçtiğiniz kağıt boyutunda (A5 veya A6) kuşe kağıda basıp akrilik masa standlarına yerleştirerek masalarınızda profesyonel bir deneyim sunabilirsiniz.
+              </p>
+            </div>
           </div>
-          <div className="qr-print-preview-actions">
-            <button type="button" className="download-button" onClick={handlePdfDownload}>PDF Olarak İndir</button>
-            <button type="button" className="download-button" onClick={onDownloadPng}>PNG Olarak İndir</button>
-            <button type="button" className="download-button" onClick={onDownloadSvg}>SVG Olarak İndir</button>
-          </div>
-        </div>
-        <div className="qr-print-preview-shell">
-          <QRPreview
-            qrSvg={qrSvg}
-            restaurant={restaurant}
-            settings={settings}
-            paperId={paperId}
-            styleId={styleId}
-            layoutId={activeLayoutId}
-          />
         </div>
       </div>
     </div>

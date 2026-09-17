@@ -49,8 +49,14 @@ const RestaurantSettings = () => {
 
   return (
     <RestaurantLayout>
-      <div className="settings-page-shell">
-        <header className="settings-page-header"><div><p className="settings-eyebrow">Ayarlar</p><h2>Ayarlar</h2><p>Restoranınızın kimliğini, tercihlerini ve hesabını tek bir yerden yönetin.</p></div></header>
+      <div className="settings-page-shell mx-auto max-w-7xl space-y-8 px-5 py-8 sm:px-8">
+        <header className="settings-page-header">
+          <div>
+            <p className="text-sm font-medium text-emerald-600">Ayarlar</p>
+            <h2 className="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">Restoran Ayarlarınız</h2>
+            <p className="mt-1 text-sm text-slate-500">Restoranınızın kimliğini, tercihlerini ve hesabını tek bir yerden yönetin.</p>
+          </div>
+        </header>
         <div className="settings-layout">
           <nav className="settings-tabs" aria-label="Ayarlar bölümleri">{tabs.map((tab) => <button type="button" key={tab.id} onClick={() => setActiveTab(tab.id)} className={`settings-tab ${activeTab === tab.id ? 'is-active' : ''}`}><strong>{tab.label}</strong><span>{tab.description}</span></button>)}</nav>
           <main className="settings-main">
