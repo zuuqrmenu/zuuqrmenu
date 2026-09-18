@@ -23,6 +23,7 @@ const getDefaultSavedMenu = (fallback = {}) => ({
     showPrices: fallback.layout?.showPrices ?? true,
     emphasizeFeatured: fallback.layout?.emphasizeFeatured ?? true,
     style: fallback.layout?.style || 'STANDARD',
+    showStories: fallback.layout?.showStories ?? false,
   },
 });
 
@@ -47,6 +48,7 @@ const normalizeSavedMenuEntries = (entries, fallback = {}) => {
         showPrices: layout.showPrices !== false,
         emphasizeFeatured: layout.emphasizeFeatured !== false,
         style: layoutStyles.includes(layout.style) ? layout.style : fallback.layout?.style || 'STANDARD',
+        showStories: layout.showStories === true,
       },
     };
   }).filter((entry) => entry && entry.name);

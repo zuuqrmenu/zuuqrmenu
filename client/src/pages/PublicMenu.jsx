@@ -232,10 +232,10 @@ const PublicMenu = () => {
             setDrawer('info');
           }}
         />
+        {data.categories.length > 0 && <CategoryNavigation categories={data.categories} activeCategory={activeCategory} onSelect={scrollToCategory} />}
         {menuLayout?.showStories && (
           <BistroFeaturedStories products={allProducts} onSelect={selectProduct} />
         )}
-        {data.categories.length > 0 && <CategoryNavigation categories={data.categories} activeCategory={activeCategory} onSelect={scrollToCategory} />}
         <main className="public-menu-content">
           {data.categories.length === 0 ? <div className="public-empty"><span>✦</span><h2>Menü hazırlanıyor</h2><p>Bu restoranda henüz yayınlanmış ürün bulunmuyor.</p></div> : data.categories.map((category) => <CategorySection key={category.id} category={category} layout={menuLayout} onProductSelect={selectProduct} />)}
         </main>

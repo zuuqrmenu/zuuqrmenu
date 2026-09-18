@@ -102,8 +102,8 @@ export const ThemePreview = ({ draft }) => {
     <div className="public-menu-shell preview-menu-shell" data-theme={draft.theme || 'MINIMAL'} data-mode={previewMode} data-layout={previewLayout.style || 'STANDARD'} data-show-featured={previewLayout.emphasizeFeatured !== false} style={previewStyle}>
       <div className="public-menu-page preview-public-page">
         <MenuHeader restaurant={{ ...previewDemoRestaurant, name: 'Demo Restoran' }} onOpenCategories={() => {}} onOpenInfo={() => {}} />
-        {previewLayout.showStories && <BistroFeaturedStories products={previewDemoCategories.flatMap((category) => category.products)} onSelect={() => {}} />}
         <CategoryNavigation categories={previewDemoCategories} activeCategory={previewDemoCategories[0].id} onSelect={() => {}} />
+        {previewLayout.showStories && <BistroFeaturedStories products={previewDemoCategories.flatMap((category) => category.products)} onSelect={() => {}} />}
         <main className="public-menu-content preview-menu-content">
           {previewDemoCategories.map((category) => (
             <CategorySection key={category.id} category={category} layout={previewLayout} onProductSelect={() => {}} />

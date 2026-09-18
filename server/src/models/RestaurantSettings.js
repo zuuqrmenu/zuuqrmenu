@@ -14,6 +14,7 @@ const menuThemeSchema = new mongoose.Schema({
     showPrices: { type: Boolean, default: true },
     emphasizeFeatured: { type: Boolean, default: true },
     style: { type: String, enum: ['STANDARD', 'COMPACT', 'EDITORIAL'], default: 'STANDARD' },
+    showStories: { type: Boolean, default: false },
   },
 }, { _id: true, timestamps: true });
 
