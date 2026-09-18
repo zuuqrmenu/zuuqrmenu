@@ -232,7 +232,7 @@ const PublicMenu = () => {
             setDrawer('info');
           }}
         />
-        {menuTheme?.theme === 'BISTRO' && (
+        {menuLayout?.showStories && (
           <BistroFeaturedStories products={allProducts} onSelect={selectProduct} />
         )}
         {data.categories.length > 0 && <CategoryNavigation categories={data.categories} activeCategory={activeCategory} onSelect={scrollToCategory} />}

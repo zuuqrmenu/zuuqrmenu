@@ -41,7 +41,6 @@ const previewDemoCategories = [
 
 const themeOptions = [
   { value: 'MINIMAL', label: 'Varsayılan', accent: '#1F2937', description: 'Temel ve güvenli', kind: 'Standart görünüm' },
-  { value: 'BISTRO', label: 'Story', accent: '#b85c3b', description: 'Hikâyelerle öne çıkan menü', kind: 'Öne çıkan hikâyeler' },
 ];
 const fonts = ['Inter', 'DM Sans', 'Playfair Display', 'Lora'];
 const fontMeta = {
@@ -62,7 +61,7 @@ const defaults = {
   font: 'Inter',
   primaryColor: '#1F2937',
   secondaryColor: '#FFFFFF',
-  layout: { showImages: true, showDescriptions: true, showPrices: true, emphasizeFeatured: true, style: 'STANDARD' },
+  layout: { showImages: true, showDescriptions: true, showPrices: true, emphasizeFeatured: true, style: 'STANDARD', showStories: false },
 };
 
 export const buildDefaultMenuTemplate = (overrides = {}) => ({
@@ -103,7 +102,7 @@ export const ThemePreview = ({ draft }) => {
     <div className="public-menu-shell preview-menu-shell" data-theme={draft.theme || 'MINIMAL'} data-mode={previewMode} data-layout={previewLayout.style || 'STANDARD'} data-show-featured={previewLayout.emphasizeFeatured !== false} style={previewStyle}>
       <div className="public-menu-page preview-public-page">
         <MenuHeader restaurant={{ ...previewDemoRestaurant, name: 'Demo Restoran' }} onOpenCategories={() => {}} onOpenInfo={() => {}} />
-        {draft.theme === 'BISTRO' && <BistroFeaturedStories products={previewDemoCategories.flatMap((category) => category.products)} onSelect={() => {}} />}
+        {previewLayout.showStories && <BistroFeaturedStories products={previewDemoCategories.flatMap((category) => category.products)} onSelect={() => {}} />}
         <CategoryNavigation categories={previewDemoCategories} activeCategory={previewDemoCategories[0].id} onSelect={() => {}} />
         <main className="public-menu-content preview-menu-content">
           {previewDemoCategories.map((category) => (
@@ -253,6 +252,12 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, editingIndex 
               placeholder="Tema adı"
             />
             <button type="button" className="menu-compact-save" onClick={save} disabled={saving} aria-label="Kaydet" title={saving ? 'Kaydediliyor...' : 'Kaydet'}>{saving ? 'Kaydediliyor...' : 'Kaydet'}</button>
+            <button type="button" className="menu-compact-close-btn" onClick={onClose} aria-label="Kapat" title="Kapat">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
           </div>
         </header>
 
@@ -368,6 +373,7 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, editingIndex 
                     ['showDescriptions', 'Ürün açıklamasını göster', 'Ürün açıklamalarını görünür tut.'],
                     ['showPrices', 'Fiyatları göster', 'Ürün fiyatlarını göstermek için açık tut.'],
                     ['emphasizeFeatured', 'Öne çıkan ürünü vurgula', 'Öne çıkan ürünleri daha belirgin göster.'],
+                    ['showStories', 'Hikayeler alanını göster', 'Öne çıkan ürünleri dairesel hikaye olarak üstte göster.'],
                   ].map(([field, title, helper]) => (
                     <label key={field} className="menu-toggle-row">
                       <span className="menu-toggle-copy">
@@ -375,7 +381,7 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, editingIndex 
                         <small>{helper}</small>
                       </span>
                       <span className="menu-toggle-switch">
-                        <input type="checkbox" checked={draft.layout[field]} onChange={(event) => updateLayout(field, event.target.checked)} />
+                        <input type="checkbox" checked={!!draft.layout[field]} onChange={(event) => updateLayout(field, event.target.checked)} />
                         <i aria-hidden="true" />
                       </span>
                     </label>
