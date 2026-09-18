@@ -6,6 +6,7 @@ import { authService } from '../services/authService';
 import { auth } from '../config/firebase';
 import { getFirebaseAuthError } from '../utils/firebaseAuthErrors';
 import { GoogleAuthProvider, createUserWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth';
+import { trackEvent } from '../utils/analytics';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -60,6 +61,8 @@ const Register = () => {
         ownerPhone: formData.phone,
       });
       if (result.success) {
+        trackEvent('sign_up', { method: 'email' });
+        trackEvent('create_restaurant', { business_type: formData.businessType || 'RESTAURANT' });
         await signOut(auth);
         setRegistrationComplete(true);
       } else {
@@ -80,6 +83,7 @@ const Register = () => {
       await credential.user.getIdToken();
       try {
         const session = await authService.firebaseSession();
+        trackEvent('login', { method: 'google' });
         setApplicationSession(session);
         redirectApplicationUser(session.user, session.restaurant);
         return;
@@ -91,6 +95,8 @@ const Register = () => {
         ownerName: name,
         restaurantName: `${name} Restoranı`,
       });
+      trackEvent('sign_up', { method: 'google' });
+      trackEvent('create_restaurant', { method: 'google' });
       setApplicationSession(result);
       navigate('/pending-approval');
     } catch (firebaseError) {

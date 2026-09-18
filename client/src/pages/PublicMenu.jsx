@@ -11,6 +11,7 @@ import SeoHead from '../components/SeoHead';
 import BistroFeaturedStories from '../components/public-menu/BistroFeaturedStories';
 import { publicMenuService } from '../services/publicMenuService';
 import { getPublicMenuTheme, publicMenuFonts } from '../utils/publicMenuTheme';
+import { trackEvent } from '../utils/analytics';
 
 const PublicMenu = () => {
   const { username } = useParams();
@@ -98,6 +99,16 @@ const PublicMenu = () => {
     setActiveCategory(categoryId);
     setDrawer('');
     publicMenuService.trackEvent(username, { eventType: 'CATEGORY_VIEW', categoryId }).catch(() => {});
+
+    // GA4: Kategori tıklama ve görüntüleme takibi
+    const category = data?.categories?.find((c) => c.id === categoryId);
+    trackEvent('select_category', {
+      restaurant_username: username,
+      restaurant_name: data?.restaurant?.name,
+      category_id: String(categoryId),
+      category_name: category?.name || String(categoryId),
+    });
+
     const section = document.getElementById(`category-${categoryId}`);
     const categoryNav = document.querySelector('.category-nav');
     if (!section) return;
@@ -113,12 +124,31 @@ const PublicMenu = () => {
 
   const selectProduct = (product) => {
     publicMenuService.trackEvent(username, { eventType: 'PRODUCT_VIEW', productId: product.id, categoryId: product.categoryId }).catch(() => {});
+
+    // GA4: Ürün detay tıklama takibi (Standart e-ticaret view_item etkinliği)
+    const category = data?.categories?.find((c) => c.id === product.categoryId);
+    trackEvent('view_item', {
+      restaurant_username: username,
+      restaurant_name: data?.restaurant?.name,
+      item_id: String(product.id),
+      item_name: product.name,
+      item_category: category?.name || undefined,
+      price: typeof product.price === 'number' ? product.price : parseFloat(product.price) || 0,
+      currency: 'TRY',
+    });
     setSelectedProduct(product);
   };
 
   const allProducts = data?.categories.flatMap((category) => category.products) || [];
   const searchResults = allProducts.filter((product) => `${product.name} ${product.description} ${product.shortDescription}`.toLocaleLowerCase('tr').includes(search.toLocaleLowerCase('tr')));
-  const selectLanguage = (value) => { setLanguage(value); localStorage.setItem('zuulab-language', value); };
+  const selectLanguage = (value) => {
+    trackEvent('select_language', {
+      restaurant_username: username,
+      language: value,
+    });
+    setLanguage(value);
+    localStorage.setItem('zuulab-language', value);
+  };
 
   if (status === 'loading') return <div className="public-state"><div className="public-loader" /><p>Menü hazırlanıyor...</p></div>;
   if (status === 'preparing') return <div className="public-state public-state--preparing"><div className="public-state__icon">✦</div><h1>{data?.restaurant?.name || 'Menünüz'} hazırlanıyor</h1><p>Bu menü henüz yayına alınmadı. Çok yakında burada olacağız.</p></div>;
@@ -191,7 +221,17 @@ const PublicMenu = () => {
     <div className="public-menu-shell" data-theme={menuTheme?.theme || data.restaurant.theme || 'MINIMAL'} data-mode={menuMode} data-layout={menuLayout.style || 'STANDARD'} data-show-featured={menuLayout.emphasizeFeatured !== false} style={style}>
       <SeoHead title={seoTitle} description={seoDescription} canonical={canonicalUrl} image={absoluteImage(data.restaurant.coverImage || data.restaurant.logo)} structuredData={structuredData} />
       <div className="public-menu-page">
-        <MenuHeader restaurant={data.restaurant} onOpenCategories={() => setDrawer('categories')} onOpenInfo={() => setDrawer('info')} />
+        <MenuHeader
+          restaurant={data.restaurant}
+          onOpenCategories={() => setDrawer('categories')}
+          onOpenInfo={() => {
+            trackEvent('view_restaurant_info', {
+              restaurant_username: username,
+              restaurant_name: data?.restaurant?.name,
+            });
+            setDrawer('info');
+          }}
+        />
         {menuTheme?.theme === 'BISTRO' && (
           <BistroFeaturedStories products={allProducts} onSelect={selectProduct} />
         )}
@@ -205,12 +245,38 @@ const PublicMenu = () => {
       {drawer === 'categories' && <div className="public-drawer-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setDrawer('')}><aside className="public-drawer"><button type="button" className="drawer-close" onClick={() => setDrawer('')} aria-label="Kapat">×</button><div className="drawer-store-image">{data.restaurant.storeImage ? <img src={data.restaurant.storeImage} alt={`${data.restaurant.name} mağaza görseli`} /> : <span aria-hidden="true">{data.restaurant.name.charAt(0)}</span>}</div><h2>{data.restaurant.name}</h2><p className="drawer-label">Kategoriler</p>{data.categories.map((category) => <button type="button" className="drawer-category" key={category.id} onClick={() => scrollToCategory(category.id)}>{category.name}</button>)}</aside></div>}
       {drawer === 'info' && <InfoDrawer restaurant={data.restaurant} language={language} onLanguage={selectLanguage} onReview={() => setReviewOpen(true)} onClose={() => setDrawer('')} />}
       {reviewOpen && <ReviewSheet username={username} onClose={() => setReviewOpen(false)} />}
-      {searchOpen && <SearchSheet value={search} onChange={setSearch} results={searchResults} onSelect={(product) => { selectProduct(product); setSearchOpen(false); }} onClose={() => { setSearchOpen(false); setSearch(''); }} />}
+      {searchOpen && (
+        <SearchSheet
+          value={search}
+          onChange={setSearch}
+          results={searchResults}
+          onSelect={(product) => {
+            if (search.trim()) {
+              trackEvent('search', {
+                restaurant_username: username,
+                search_term: search.trim(),
+              });
+            }
+            selectProduct(product);
+            setSearchOpen(false);
+          }}
+          onClose={() => {
+            setSearchOpen(false);
+            setSearch('');
+          }}
+        />
+      )}
       <div className="public-floating-actions">
         <button
           type="button"
           className={`floating-action floating-action--search ${showTop ? 'is-raised' : 'is-lowered'}`}
-          onClick={() => setSearchOpen(true)}
+          onClick={() => {
+            trackEvent('open_search', {
+              restaurant_username: username,
+              restaurant_name: data?.restaurant?.name,
+            });
+            setSearchOpen(true);
+          }}
           aria-label="Ürün ara"
         >
           <span className="floating-action__icon">

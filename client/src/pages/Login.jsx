@@ -6,6 +6,7 @@ import { authService } from '../services/authService';
 import { auth } from '../config/firebase';
 import { getFirebaseAuthError } from '../utils/firebaseAuthErrors';
 import { GoogleAuthProvider, signInWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth';
+import { trackEvent } from '../utils/analytics';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -41,6 +42,7 @@ const Login = () => {
       if (!formData.email.includes('@')) {
         const result = await login(formData);
         if (result.success) {
+          trackEvent('login', { method: 'username' });
           redirectApplicationUser(result.user, result.restaurant);
         } else {
           setError(result.error);
@@ -50,6 +52,7 @@ const Login = () => {
 
       await signInWithEmailAndPassword(auth, formData.email, formData.password);
       const session = await authService.firebaseSession();
+      trackEvent('login', { method: 'email' });
       setApplicationSession(session);
       redirectApplicationUser(session.user, session.restaurant);
     } catch (error) {
@@ -68,6 +71,7 @@ const Login = () => {
       await credential.user.getIdToken();
       try {
         const session = await authService.firebaseSession();
+        trackEvent('login', { method: 'google' });
         setApplicationSession(session);
         redirectApplicationUser(session.user, session.restaurant);
       } catch (sessionError) {
@@ -79,6 +83,8 @@ const Login = () => {
             restaurantName: `${name} Restoranı`,
           });
           setApplicationSession(registration);
+          trackEvent('sign_up', { method: 'google' });
+          trackEvent('create_restaurant', { method: 'google' });
           navigate('/pending-approval');
         } catch (registrationError) {
           setError(registrationError.response?.data?.error || 'Google hesabınızla kayıt tamamlanamadı. Lütfen tekrar deneyin.');

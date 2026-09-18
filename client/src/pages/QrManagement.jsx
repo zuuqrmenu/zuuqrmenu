@@ -28,12 +28,14 @@ const QrManagement = () => {
   }, []);
 
   useEffect(() => {
-    if (!publicUrl || !settings || !canvasRef.current) return undefined;
+    if (!publicUrl || !settings) return undefined;
     let active = true;
-    QRCode.toCanvas(canvasRef.current, publicUrl, qrOptions(settings.primaryColor), () => {});
+    if (canvasRef.current) {
+      QRCode.toCanvas(canvasRef.current, publicUrl, qrOptions(settings.primaryColor), () => {});
+    }
     createQrSvg(publicUrl, settings.primaryColor).then((value) => active && setSvg(value));
     return () => { active = false; };
-  }, [publicUrl, settings]);
+  }, [publicUrl, settings, activeTab]);
 
   const showFeedback = (message) => {
     setFeedback(message);
@@ -146,9 +148,11 @@ const QrManagement = () => {
           <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">
             Önce menü kullanıcı adınızı oluşturun.
           </div>
-        ) : activeTab === 'simple' ? (
-          /* Tab 1: Direct QR Code Hub */
-          <div className="grid gap-6 lg:grid-cols-12 items-start">
+        ) : (
+          <>
+            {/* Tab 1: Direct QR Code Hub */}
+            <div className={activeTab === 'simple' ? 'block' : 'hidden'}>
+              <div className="grid gap-6 lg:grid-cols-12 items-start">
             {/* Left Column: QR Code Display & Quick Downloads */}
             <div className="lg:col-span-7 flex flex-col gap-6">
               {/* Public Menu URL Card */}
@@ -203,7 +207,15 @@ const QrManagement = () => {
                 {/* QR Code Presentation Box (190px - clean, clear contrast, white background) */}
                 <div className="qr-direct-preview-zone">
                   <div className="qr-direct-frame">
-                    <canvas ref={canvasRef} aria-label="Restoran public menü QR kodu" />
+                    <canvas
+                      ref={(node) => {
+                        canvasRef.current = node;
+                        if (node && publicUrl && settings) {
+                          QRCode.toCanvas(node, publicUrl, qrOptions(settings.primaryColor), () => {});
+                        }
+                      }}
+                      aria-label="Restoran public menü QR kodu"
+                    />
                   </div>
                   <div className="qr-direct-caption">
                     <p className="qr-direct-name">{restaurant?.name || 'Menümüz'}</p>
@@ -349,19 +361,23 @@ const QrManagement = () => {
                     <span><strong>Sosyal Medya:</strong> Menü linkinizi Instagram veya Google İşletme profilinize ekleyerek menünüzü online olarak da paylaşabilirsiniz.</span>
                   </li>
                 </ul>
+                </div>
               </div>
             </div>
           </div>
-        ) : (
-          /* Tab 2: Customizable Table Stand Print Designer */
-          <QrPrintDesigner
-            restaurant={restaurant}
-            settings={settings}
-            publicUrl={publicUrl}
-            qrSvg={svg}
-            canvasRef={canvasRef}
-            setFeedback={showFeedback}
-          />
+
+            {/* Tab 2: Customizable Table Stand Print Designer */}
+            <div className={activeTab === 'stand' ? 'block' : 'hidden'}>
+              <QrPrintDesigner
+                restaurant={restaurant}
+                settings={settings}
+                publicUrl={publicUrl}
+                qrSvg={svg}
+                canvasRef={canvasRef}
+                setFeedback={showFeedback}
+              />
+            </div>
+          </>
         )}
       </div>
     </RestaurantLayout>

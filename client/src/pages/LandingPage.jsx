@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import SeoHead from '../components/SeoHead';
+import { trackEvent } from '../utils/analytics';
 
 const steps = [
   ['01', 'Restoranınızı oluşturun'],
@@ -22,7 +23,16 @@ const LandingHeader = () => {
           <a href="#features" onClick={close}>Özellikler</a>
           <a href="#how-it-works" onClick={close}>Nasıl Çalışır?</a>
           <Link to="/login" onClick={close}>Giriş Yap</Link>
-          <Link to="/register" className="landing-button landing-button--small" onClick={close}>Restoranını Oluştur</Link>
+          <Link
+            to="/register"
+            className="landing-button landing-button--small"
+            onClick={() => {
+              trackEvent('click_cta', { cta_name: 'create_restaurant', location: 'header' });
+              close();
+            }}
+          >
+            Restoranını Oluştur
+          </Link>
         </nav>
         <button type="button" className="landing-menu-button" aria-label="Menüyü aç" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
           <span />
@@ -145,14 +155,38 @@ const LandingPage = () => {
     />
     <LandingHeader />
     <main>
-      <section className="landing-hero landing-reveal"><div className="landing-hero__copy"><span className="landing-kicker">RESTORANLAR İÇİN DİJİTAL MENÜ</span><h1>Menünüzü dijitale taşıyın.<br /><em>Markanız gibi görünsün.</em></h1><p>zuuqrmenu ile menünüzü oluşturun, QR kodunuzu hazırlayın ve müşterilerinizin deneyimini tek bir yerden yönetin.</p><div className="landing-hero__actions"><Link to="/register" className="landing-button">Restoranını Oluştur <span>↗</span></Link><a href="/demo/menu" className="landing-button landing-button--quiet">Demo Menüyü Gör <span>→</span></a></div><div className="landing-hero__note"><span>●</span> Menü · QR · analizler tek platformda</div></div><ProductPreview /></section>
+      <section className="landing-hero landing-reveal"><div className="landing-hero__copy"><span className="landing-kicker">RESTORANLAR İÇİN DİJİTAL MENÜ</span><h1>Menünüzü dijitale taşıyın.<br /><em>Markanız gibi görünsün.</em></h1><p>zuuqrmenu ile menünüzü oluşturun, QR kodunuzu hazırlayın ve müşterilerinizin deneyimini tek bir yerden yönetin.</p><div className="landing-hero__actions">
+  <Link
+    to="/register"
+    className="landing-button"
+    onClick={() => trackEvent('click_cta', { cta_name: 'create_restaurant', location: 'hero' })}
+  >
+    Restoranını Oluştur <span>↗</span>
+  </Link>
+  <a
+    href="/demo/menu"
+    className="landing-button landing-button--quiet"
+    onClick={() => trackEvent('click_cta', { cta_name: 'view_demo', location: 'hero' })}
+  >
+    Demo Menüyü Gör <span>→</span>
+  </a>
+</div><div className="landing-hero__note"><span>●</span> Menü · QR · analizler tek platformda</div></div><ProductPreview /></section>
       <section className="landing-value-strip"><span><b>01</b>Tek bir menü sistemi</span><span><b>02</b>Her ekranda iyi görünür</span><span><b>03</b>QR ile anında erişim</span><span><b>04</b>Veriyle daha iyi kararlar</span></section>
       <MenuExperience />
       <HowItWorksSection />
       <ProductShowcase />
       <QrShowcase />
       <AnalyticsShowcase />
-      <section className="landing-final-cta landing-reveal"><span className="landing-kicker">HAZIR MISINIZ?</span><h2>Menünüzü dijitale taşıyın.</h2><p>Restoranınız için daha iyi bir menü deneyimi bugün başlayabilir.</p><div><Link to="/register" className="landing-button">Restoranını Oluştur <span>↗</span></Link><Link to="/login" className="landing-button landing-button--quiet">Giriş Yap</Link></div></section>
+      <section className="landing-final-cta landing-reveal"><span className="landing-kicker">HAZIR MISINIZ?</span><h2>Menünüzü dijitale taşıyın.</h2><p>Restoranınız için daha iyi bir menü deneyimi bugün başlayabilir.</p><div>
+        <Link
+          to="/register"
+          className="landing-button"
+          onClick={() => trackEvent('click_cta', { cta_name: 'create_restaurant', location: 'footer_cta' })}
+        >
+          Restoranını Oluştur <span>↗</span>
+        </Link>
+        <Link to="/login" className="landing-button landing-button--quiet">Giriş Yap</Link>
+      </div></section>
     </main>
     <footer className="landing-footer"><div><Link to="/" className="landing-brand"><img src="/logo_darkmode.svg" alt="zuuqrmenu" className="landing-brand__logo" /></Link><p>Restoranlar için modern dijital menü platformu.</p></div><nav><a href="#features">Özellikler</a><a href="#how-it-works">Nasıl Çalışır?</a><Link to="/login">Giriş Yap</Link><Link to="/register">Restoranını Oluştur</Link></nav><small>© 2026 zuuqrmenu</small></footer>
   </div>

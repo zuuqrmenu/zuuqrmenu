@@ -60,20 +60,22 @@ export const getAnalyticsOverview = async (req, res, next) => {
     const eventMatch = matchEvents(restaurantId, start, end);
     const viewMatch = matchViews(restaurantId, start, end);
     const previousViewMatch = matchViews(restaurantId, previousStart, previousEnd);
-    const [views, previousViews, dailyViews, dailyEvents, dailyCategoryEvents, productRows, categoryRows, busiestHours, eventHours, previousEvents] = await Promise.all([
+    const [views, previousViews, uniqueIps, dailyViews, dailyEvents, dailyCategoryEvents, productRows, categoryRows, busiestHours, eventHours, previousEvents] = await Promise.all([
       MenuView.countDocuments(viewMatch),
       MenuView.countDocuments(previousViewMatch),
+      MenuView.distinct('ip', viewMatch),
       MenuView.aggregate([{ $match: viewMatch }, { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$viewedAt' } }, count: { $sum: 1 } } }, { $sort: { _id: 1 } }]),
       MenuEvent.aggregate([{ $match: eventMatch }, { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$eventAt' } }, count: { $sum: 1 } } }, { $sort: { _id: 1 } }]),
       MenuEvent.aggregate([{ $match: { ...eventMatch, eventType: 'CATEGORY_VIEW' } }, { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$eventAt' } }, count: { $sum: 1 } } }, { $sort: { _id: 1 } }]),
-      MenuEvent.aggregate([{ $match: { ...eventMatch, eventType: 'PRODUCT_VIEW', productId: { $exists: true } } }, { $group: { _id: '$productId', count: { $sum: 1 } } }, { $sort: { count: -1 } }, { $limit: 5 }, { $lookup: { from: 'products', localField: '_id', foreignField: '_id', as: 'product' } }, { $unwind: '$product' }, { $lookup: { from: 'categories', localField: 'product.categoryId', foreignField: '_id', as: 'category' } }, { $unwind: { path: '$category', preserveNullAndEmptyArrays: true } }, { $project: { _id: 0, count: 1, productId: '$_id', name: '$product.name', image: '$product.image', categoryName: '$category.name' } }]),
-      MenuEvent.aggregate([{ $match: { ...eventMatch, eventType: 'CATEGORY_VIEW', categoryId: { $exists: true } } }, { $group: { _id: '$categoryId', count: { $sum: 1 } } }, { $sort: { count: -1 } }, { $limit: 6 }, { $lookup: { from: 'categories', localField: '_id', foreignField: '_id', as: 'category' } }, { $unwind: '$category' }, { $project: { _id: 0, categoryId: '$_id', count: 1, name: '$category.name' } }]),
+      MenuEvent.aggregate([{ $match: { ...eventMatch, eventType: 'PRODUCT_VIEW', productId: { $exists: true } } }, { $group: { _id: '$productId', count: { $sum: 1 } } }, { $sort: { count: -1 } }, { $limit: 50 }, { $lookup: { from: 'products', localField: '_id', foreignField: '_id', as: 'product' } }, { $unwind: '$product' }, { $lookup: { from: 'categories', localField: 'product.categoryId', foreignField: '_id', as: 'category' } }, { $unwind: { path: '$category', preserveNullAndEmptyArrays: true } }, { $project: { _id: 0, count: 1, productId: '$_id', name: '$product.name', image: '$product.image', categoryName: '$category.name' } }]),
+      MenuEvent.aggregate([{ $match: { ...eventMatch, eventType: 'CATEGORY_VIEW', categoryId: { $exists: true } } }, { $group: { _id: '$categoryId', count: { $sum: 1 } } }, { $sort: { count: -1 } }, { $limit: 50 }, { $lookup: { from: 'categories', localField: '_id', foreignField: '_id', as: 'category' } }, { $unwind: '$category' }, { $project: { _id: 0, categoryId: '$_id', count: 1, name: '$category.name' } }]),
       MenuView.aggregate([{ $match: viewMatch }, { $group: { _id: { $hour: '$viewedAt' }, count: { $sum: 1 } } }, { $sort: { count: -1 } }, { $limit: 5 }]),
       MenuEvent.aggregate([{ $match: eventMatch }, { $group: { _id: { $hour: '$eventAt' }, count: { $sum: 1 } } }, { $sort: { count: -1 } }, { $limit: 5 }]),
       MenuEvent.countDocuments({ ...matchEvents(restaurantId, previousStart, previousEnd), eventType: 'PRODUCT_VIEW' }),
     ]);
     const productInteractions = await MenuEvent.countDocuments({ ...eventMatch, eventType: 'PRODUCT_VIEW' });
     const categoryInteractions = await MenuEvent.countDocuments({ ...eventMatch, eventType: 'CATEGORY_VIEW' });
+    const uniqueVisitors = Math.min(views, Math.max(uniqueIps.filter(Boolean).length, views > 0 ? 1 : 0));
     const previousTotal = previousViews + previousEvents;
     const currentTotal = views + productInteractions;
     const comparison = previousTotal > 0 ? Math.round(((currentTotal - previousTotal) / previousTotal) * 100) : null;
@@ -84,7 +86,7 @@ export const getAnalyticsOverview = async (req, res, next) => {
     const combinedHours = new Map([...busiestHours, ...eventHours].map((row) => [row._id, 0]));
     [...busiestHours, ...eventHours].forEach((row) => combinedHours.set(row._id, (combinedHours.get(row._id) || 0) + row.count));
     const busiestHour = [...combinedHours.entries()].sort((a, b) => b[1] - a[1])[0];
-    res.json({ range: { start, end, days }, summary: { views, productInteractions, categoryInteractions, comparison, topProduct: productRows[0] || null, topCategory: categoryRows[0] || null, busiestDay: busiestDays[0] || null, busiestHour: busiestHour ? { hour: busiestHour[0], count: busiestHour[1] } : null }, dailyViews: dailySeries(dailyViews, start, days), dailyInteractions: dailySeries(dailyEvents, start, days), dailyCategoryInteractions: dailySeries(dailyCategoryEvents, start, days), topProducts: productRows, topCategories: categoryRows, busiestDays, busiestHours: [...combinedHours.entries()].sort((a, b) => b[1] - a[1]).map(([hour, count]) => ({ hour, count })).slice(0, 8), heatmap: dailySeries(dailyViews, start, days).map((row, index) => ({ ...row, interactions: dailyEvents[index]?.count || 0, categoryInteractions: dailyCategoryEvents[index]?.count || 0 })), });
+    res.json({ range: { start, end, days }, summary: { views, uniqueVisitors, productInteractions, categoryInteractions, comparison, topProduct: productRows[0] || null, topCategory: categoryRows[0] || null, busiestDay: busiestDays[0] || null, busiestHour: busiestHour ? { hour: busiestHour[0], count: busiestHour[1] } : null }, dailyViews: dailySeries(dailyViews, start, days), dailyInteractions: dailySeries(dailyEvents, start, days), dailyCategoryInteractions: dailySeries(dailyCategoryEvents, start, days), topProducts: productRows, topCategories: categoryRows, busiestDays, busiestHours: [...combinedHours.entries()].sort((a, b) => b[1] - a[1]).map(([hour, count]) => ({ hour, count })).slice(0, 24), heatmap: dailySeries(dailyViews, start, days).map((row, index) => ({ ...row, interactions: dailyEvents[index]?.count || 0, categoryInteractions: dailyCategoryEvents[index]?.count || 0 })), });
   } catch (error) {
     next(error);
   }

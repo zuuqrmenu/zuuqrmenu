@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { initGA, trackPageView } from './utils/analytics';
 import { BrowserRouter as Router, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './pages/Login';
@@ -12,6 +13,9 @@ import RestaurantSettings from './pages/RestaurantSettings';
 import QrManagement from './pages/QrManagement';
 import Analytics from './pages/Analytics';
 import LandingPage from './pages/LandingPage';
+
+// Initialise GA4 once when the module is first loaded
+initGA();
 
 const RouteLoading = () => (
   <div className="route-loading">
@@ -55,6 +59,21 @@ const DashboardThemeController = () => {
   return null;
 };
 
+// Tracks SPA route changes as GA4 page_view events
+const GAPageTracker = () => {
+  const location = useLocation();
+  const prevPath = useRef(null);
+
+  useEffect(() => {
+    // Skip if path hasn't changed (e.g. only hash/query changed)
+    if (prevPath.current === location.pathname) return;
+    prevPath.current = location.pathname;
+    trackPageView(location.pathname, document.title);
+  }, [location.pathname]);
+
+  return null;
+};
+
 const AdminRoute = () => {
   const { loading, isAuthenticated, isAdmin } = useAuth();
   if (loading) return <RouteLoading />;
@@ -92,6 +111,7 @@ function App() {
     <AuthProvider>
       <Router>
         <DashboardThemeController />
+        <GAPageTracker />
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />

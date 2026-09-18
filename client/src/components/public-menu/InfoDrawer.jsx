@@ -1,3 +1,5 @@
+import { trackEvent } from '../../utils/analytics';
+
 const platformLabels = {
   instagram: 'Instagram',
   facebook: 'Facebook',
@@ -47,12 +49,39 @@ const InfoDrawer = ({ restaurant, language, onLanguage, onReview, onClose }) => 
         <h2>{restaurant.name}</h2>
         <p className="drawer-label">Dil</p>
         <div className="language-options">{[['tr','Türkçe'],['en','English'],['ar','العربية']].map(([value,label]) => <button type="button" key={value} className={language === value ? 'is-selected' : ''} onClick={() => onLanguage(value)}>{label}</button>)}</div>
-        <button type="button" className="review-open-button" onClick={() => { onClose(); onReview(); }}>★ Bizi Değerlendirin</button>
+        <button
+          type="button"
+          className="review-open-button"
+          onClick={() => {
+            trackEvent('open_review', {
+              restaurant_username: restaurant.slug || restaurant.username,
+              restaurant_name: restaurant.name,
+            });
+            onClose();
+            onReview();
+          }}
+        >
+          ★ Bizi Değerlendirin
+        </button>
         {socialItems.length > 0 && (
           <div className="drawer-socials" aria-label="Sosyal medya hesapları">
             <div className="drawer-socials__list">
               {socialItems.map((item) => (
-                <a key={`${item.platform}-${item.url}`} href={item.url} target="_blank" rel="noreferrer" className="drawer-social-link" aria-label={platformLabels[item.platform] || item.platform} title={platformLabels[item.platform] || item.platform}>
+                <a
+                  key={`${item.platform}-${item.url}`}
+                  href={item.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="drawer-social-link"
+                  aria-label={platformLabels[item.platform] || item.platform}
+                  title={platformLabels[item.platform] || item.platform}
+                  onClick={() => {
+                    trackEvent('click_social', {
+                      restaurant_username: restaurant.slug || restaurant.username,
+                      platform: item.platform,
+                    });
+                  }}
+                >
                   <span className="drawer-social-link__icon">{socialIcons[item.platform] || socialIcons.website}</span>
                 </a>
               ))}
@@ -68,9 +97,50 @@ const InfoDrawer = ({ restaurant, language, onLanguage, onReview, onClose }) => 
         {(restaurant.phone || restaurant.email || restaurant.website) && (
           <div className="drawer-contact-block">
             <p className="drawer-label">İletişim</p>
-            {restaurant.phone && <a href={`tel:${restaurant.phone}`} className="drawer-contact-link">{restaurant.phone}</a>}
-            {restaurant.email && <a href={`mailto:${restaurant.email}`} className="drawer-contact-link">{restaurant.email}</a>}
-            {restaurant.website && <a href={restaurant.website} target="_blank" rel="noreferrer" className="drawer-contact-link">Web sitesini ziyaret et</a>}
+            {restaurant.phone && (
+              <a
+                href={`tel:${restaurant.phone}`}
+                className="drawer-contact-link"
+                onClick={() => {
+                  trackEvent('click_contact', {
+                    restaurant_username: restaurant.slug || restaurant.username,
+                    contact_type: 'phone',
+                  });
+                }}
+              >
+                {restaurant.phone}
+              </a>
+            )}
+            {restaurant.email && (
+              <a
+                href={`mailto:${restaurant.email}`}
+                className="drawer-contact-link"
+                onClick={() => {
+                  trackEvent('click_contact', {
+                    restaurant_username: restaurant.slug || restaurant.username,
+                    contact_type: 'email',
+                  });
+                }}
+              >
+                {restaurant.email}
+              </a>
+            )}
+            {restaurant.website && (
+              <a
+                href={restaurant.website}
+                target="_blank"
+                rel="noreferrer"
+                className="drawer-contact-link"
+                onClick={() => {
+                  trackEvent('click_contact', {
+                    restaurant_username: restaurant.slug || restaurant.username,
+                    contact_type: 'website',
+                  });
+                }}
+              >
+                Web sitesini ziyaret et
+              </a>
+            )}
           </div>
         )}
       </aside>

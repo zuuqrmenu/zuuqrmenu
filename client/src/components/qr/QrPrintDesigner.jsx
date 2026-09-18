@@ -11,6 +11,7 @@ import {
   getLayoutSupportLabel,
   isLogoAvailable,
 } from '../../utils/qrPrintDesigner';
+import { trackEvent } from '../../utils/analytics';
 
 const LAYOUT_TITLES = {
   A: 'Üst Logo & QR',
@@ -168,6 +169,7 @@ const QrPrintDesigner = ({
         styleId,
         layoutId: activeLayoutId,
       });
+      trackEvent('download_table_stand_pdf', { paper_size: paperId, style: styleId, layout: activeLayoutId });
       setFeedback?.('Baskıya hazır masa standı PDF dosyası indirildi!');
     } catch {
       setFeedback?.('PDF oluşturulamadı. Lütfen tekrar deneyin.');

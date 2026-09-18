@@ -10,7 +10,7 @@ const RestaurantLayout = ({ children }) => {
 
   const navItems = [
     { label: 'Genel Bakış', to: '/dashboard', end: true },
-    { label: 'Menü', to: '/dashboard/menu', end: false },
+    { label: 'Menü Yönetimi', to: '/dashboard/menu', end: false },
     { label: 'QR Kod', to: '/dashboard/qr', end: false },
   ];
 
