@@ -38,8 +38,134 @@ const socialIcons = {
   ),
 };
 
-const InfoDrawer = ({ restaurant, language, onLanguage, onReview, onClose }) => {
+const InfoDrawer = ({ restaurant, language, onLanguage, onReview, onClose, themeKey, mode }) => {
+  const isGrid = themeKey === 'GRID';
+  const activeMode = mode || (isGrid ? 'DARK' : 'LIGHT');
   const socialItems = (restaurant.socialMedia || []).filter((item) => item?.url && item?.platform);
+
+  if (isGrid) {
+    return (
+      <div
+        className="public-drawer-backdrop public-drawer-backdrop--grid"
+        data-theme={themeKey}
+        data-mode={activeMode}
+        role="presentation"
+        onMouseDown={(event) => event.target === event.currentTarget && onClose()}
+      >
+        <aside
+          className="public-drawer public-drawer--right public-drawer--grid public-drawer--grid-info"
+          data-theme={themeKey}
+          data-mode={activeMode}
+        >
+          <div className="drawer-grid-container drawer-grid-container--info">
+            <div className="drawer-grid-header">
+              <button
+                type="button"
+                className="drawer-grid-close"
+                onClick={onClose}
+                aria-label="Kapat"
+              >
+                <svg viewBox="0 0 24 24" width="22" height="22" stroke="#ffffff" strokeWidth="2.4" fill="none" strokeLinecap="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="drawer-grid-info-scroll">
+              {/* 1. Restoran Adı */}
+              <div className="drawer-grid-info-brand">
+                <h2 className="drawer-grid-info-title">{restaurant.name}</h2>
+                {restaurant.description && (
+                  <p className="drawer-grid-info-desc">{restaurant.description}</p>
+                )}
+              </div>
+
+              <div className="drawer-grid-divider" />
+
+              {/* 2. Adres Bilgisi */}
+              {restaurant.address && (
+                <div className="drawer-grid-card">
+                  <div className="drawer-grid-card-head">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z" />
+                      <circle cx="12" cy="10" r="3" />
+                    </svg>
+                    <span>Adres</span>
+                  </div>
+                  <p className="drawer-grid-card-text">{restaurant.address}</p>
+                </div>
+              )}
+
+              {/* 3. Telefon Bilgisi */}
+              {restaurant.phone && (
+                <div className="drawer-grid-card">
+                  <div className="drawer-grid-card-head">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                    </svg>
+                    <span>Telefon</span>
+                  </div>
+                  <a href={`tel:${restaurant.phone}`} className="drawer-grid-card-link">
+                    {restaurant.phone}
+                  </a>
+                </div>
+              )}
+
+              {/* 4. Bizi Değerlendirin Butonu */}
+              <button
+                type="button"
+                className="drawer-grid-review-btn"
+                onClick={() => {
+                  trackEvent('open_review', {
+                    restaurant_username: restaurant.slug || restaurant.username,
+                    restaurant_name: restaurant.name,
+                  });
+                  onClose();
+                  onReview();
+                }}
+              >
+                <span className="review-btn-star">★</span>
+                <span>Bizi Değerlendirin</span>
+              </button>
+
+              {/* 5. Sosyal Medya İkonları */}
+              {socialItems.length > 0 && (
+                <div className="drawer-grid-socials-block" aria-label="Sosyal medya hesapları">
+                  <div className="drawer-grid-socials-label">Bizi Takip Edin</div>
+                  <div className="drawer-grid-socials-list">
+                    {socialItems.map((item) => (
+                      <a
+                        key={`${item.platform}-${item.url}`}
+                        href={item.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="drawer-grid-social-btn"
+                        aria-label={platformLabels[item.platform] || item.platform}
+                        title={platformLabels[item.platform] || item.platform}
+                        onClick={() => {
+                          trackEvent('click_social', {
+                            restaurant_username: restaurant.slug || restaurant.username,
+                            platform: item.platform,
+                          });
+                        }}
+                      >
+                        <span className="drawer-social-link__icon">{socialIcons[item.platform] || socialIcons.website}</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="drawer-grid-footer">
+              <p className="drawer-grid-powered">POWERED BY ZUUQRMENU</p>
+            </div>
+          </div>
+        </aside>
+      </div>
+    );
+  }
 
   return (
     <div className="public-drawer-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>

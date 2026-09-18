@@ -2,7 +2,7 @@ import Restaurant from '../models/Restaurant.js';
 import RestaurantSettings from '../models/RestaurantSettings.js';
 import { cloudinary, cloudinaryConfigured } from '../config/cloudinary.js';
 
-const themes = ['MINIMAL', 'BISTRO', 'ELEGANT', 'WARM', 'MODERN', 'DARK', 'CLASSIC'];
+const themes = ['DEFAULT', 'GRID', 'MINIMAL', 'BISTRO', 'ELEGANT', 'WARM', 'MODERN', 'DARK', 'CLASSIC'];
 const fonts = ['Inter', 'DM Sans', 'Playfair Display', 'Lora'];
 const layoutStyles = ['STANDARD', 'COMPACT', 'EDITORIAL'];
 const hexColor = /^#[0-9A-Fa-f]{6}$/;
@@ -12,7 +12,7 @@ const getRestaurantId = (req) => req.restaurant._id;
 const getDefaultSavedMenu = (fallback = {}) => ({
   slot: 1,
   name: 'Varsayılan Menü',
-  theme: fallback.theme || 'MINIMAL',
+  theme: fallback.theme || 'DEFAULT',
   mode: fallback.mode || 'LIGHT',
   font: fallback.font || 'Inter',
   primaryColor: fallback.primaryColor || '#1F2937',
@@ -37,7 +37,7 @@ const normalizeSavedMenuEntries = (entries, fallback = {}) => {
       ...(entry._id ? { _id: entry._id } : {}),
       slot,
       name: typeof entry.name === 'string' ? entry.name.trim().slice(0, 60) : 'Menü',
-      theme: themes.includes(entry.theme) ? entry.theme : fallback.theme || 'MINIMAL',
+      theme: themes.includes(entry.theme) ? (entry.theme === 'BISTRO' || entry.theme === 'MINIMAL' ? 'DEFAULT' : entry.theme) : fallback.theme || 'DEFAULT',
       mode: ['LIGHT', 'DARK'].includes(entry.mode) ? entry.mode : fallback.mode || 'LIGHT',
       font: fonts.includes(entry.font) ? entry.font : fallback.font || 'Inter',
       primaryColor: typeof entry.primaryColor === 'string' && hexColor.test(entry.primaryColor) ? entry.primaryColor.toUpperCase() : fallback.primaryColor || '#1F2937',

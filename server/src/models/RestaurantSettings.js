@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 const menuThemeSchema = new mongoose.Schema({
   slot: { type: Number, min: 1, max: 5, default: 1 },
   name: { type: String, required: true, trim: true, maxlength: 60 },
-  theme: { type: String, enum: ['MINIMAL', 'BISTRO', 'ELEGANT', 'WARM', 'MODERN', 'DARK', 'CLASSIC'], default: 'MINIMAL' },
+  theme: { type: String, enum: ['DEFAULT', 'GRID', 'MINIMAL', 'BISTRO', 'ELEGANT', 'WARM', 'MODERN', 'DARK', 'CLASSIC'], default: 'DEFAULT' },
   mode: { type: String, enum: ['LIGHT', 'DARK'], default: 'LIGHT' },
   font: { type: String, default: 'Inter', maxlength: 40 },
   primaryColor: { type: String, default: '#1F2937', match: /^#[0-9A-Fa-f]{6}$/ },
@@ -59,8 +59,8 @@ const restaurantSettingsSchema = new mongoose.Schema({
   },
   theme: {
     type: String,
-    enum: ['MINIMAL', 'BISTRO', 'ELEGANT', 'WARM', 'MODERN', 'DARK', 'CLASSIC'],
-    default: 'MINIMAL',
+    enum: ['DEFAULT', 'GRID', 'MINIMAL', 'BISTRO', 'ELEGANT', 'WARM', 'MODERN', 'DARK', 'CLASSIC'],
+    default: 'DEFAULT',
   },
   menuThemes: {
     type: [menuThemeSchema],

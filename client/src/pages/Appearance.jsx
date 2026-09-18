@@ -4,8 +4,8 @@ import { restaurantSettingsService } from '../services/restaurantSettingsService
 import { getPublicMenuTheme, publicMenuThemes } from '../utils/publicMenuTheme';
 import DashboardSkeleton from '../components/DashboardSkeleton';
 
-const defaults = { primaryColor: '#1F2937', secondaryColor: '#FFFFFF', theme: 'MINIMAL' };
-const themeLabels = { MINIMAL: 'Minimal', ELEGANT: 'Elegant', WARM: 'Warm', MODERN: 'Modern', DARK: 'Dark', CLASSIC: 'Classic' };
+const defaults = { primaryColor: '#1F2937', secondaryColor: '#FFFFFF', theme: 'DEFAULT' };
+const themeLabels = { DEFAULT: 'Varsayılan', GRID: 'Modern', MINIMAL: 'Minimal', BISTRO: 'Bistro', ELEGANT: 'Elegant', WARM: 'Warm', MODERN: 'Klasik Modern', DARK: 'Dark', CLASSIC: 'Classic' };
 const fonts = ['Inter', 'Poppins', 'Manrope', 'Playfair Display'];
 
 const Appearance = () => {

@@ -1,4 +1,44 @@
 export const publicMenuThemes = {
+  DEFAULT: {
+    light: {
+      background: '#f7f5f0',
+      surface: '#fffdf8',
+      text: '#25231f',
+      muted: '#777064',
+      border: 'rgb(54 45 31 / 10%)',
+      radius: '1rem',
+      shadow: '0 0 45px rgb(54 45 31 / 7%)',
+    },
+    dark: {
+      background: '#111515',
+      surface: '#1a211f',
+      text: '#f3f0e9',
+      muted: '#a4afa8',
+      border: 'rgb(243 240 233 / 14%)',
+      radius: '1rem',
+      shadow: '0 16px 45px rgb(0 0 0 / 25%)',
+    },
+  },
+  GRID: {
+    light: {
+      background: '#f8fafc',
+      surface: '#ffffff',
+      text: '#0f172a',
+      muted: '#64748b',
+      border: 'rgba(0, 0, 0, 0.08)',
+      radius: '1.15rem',
+      shadow: '0 12px 35px rgba(0, 0, 0, 0.06)',
+    },
+    dark: {
+      background: '#0c0c0e',
+      surface: '#16161a',
+      text: '#ffffff',
+      muted: '#94a3b8',
+      border: 'rgba(255, 255, 255, 0.1)',
+      radius: '1.15rem',
+      shadow: '0 20px 50px rgba(0, 0, 0, 0.5)',
+    },
+  },
   MINIMAL: {
     light: {
       background: '#f7f5f0',
@@ -48,7 +88,7 @@ export const publicMenuThemes = {
     dark: { background: '#1e1714', surface: '#2a221f', text: '#f4e8d5', muted: '#d3b8a2', border: 'rgb(232 182 121 / 18%)', radius: '1.2rem', shadow: '0 15px 40px rgb(30 14 6 / 25%)' },
   },
   MODERN: {
-    light: { background: '#eef3f2', surface: '#ffffff', text: '#182627', muted: '#607273', border: 'rgb(24 76 77 / 14%)', radius: '.7rem', shadow: '0 12px 35px rgb(24 76 77 / 9%)' },
+    light: { background: '#eef3f2', surface: '#ffffff', text: '#182627', muted: '#607273', border: 'rgb(244 76 77 / 14%)', radius: '.7rem', shadow: '0 12px 35px rgb(24 76 77 / 9%)' },
     dark: { background: '#12191a', surface: '#1b2425', text: '#edf5f4', muted: '#b9cdcb', border: 'rgb(203 226 223 / 14%)', radius: '.7rem', shadow: '0 12px 35px rgb(6 17 18 / 24%)' },
   },
   DARK: {
@@ -63,13 +103,15 @@ export const publicMenuThemes = {
 
 export const normalizeThemeKey = (theme) => {
   const normalized = typeof theme === 'string' ? theme.trim().toUpperCase() : '';
-  if (normalized === 'BISTRO' || normalized === 'STORY') return 'BISTRO';
-  return 'MINIMAL';
+  if (normalized === 'DEFAULT' || normalized === 'MINIMAL' || normalized === 'BISTRO' || normalized === 'STORY') {
+    return 'DEFAULT';
+  }
+  return publicMenuThemes[normalized] ? normalized : 'DEFAULT';
 };
 
 export const getPublicMenuTheme = (theme, mode = 'LIGHT') => {
   const normalizedTheme = normalizeThemeKey(theme);
-  const selectedTheme = publicMenuThemes[normalizedTheme] || publicMenuThemes.MINIMAL;
+  const selectedTheme = publicMenuThemes[normalizedTheme] || publicMenuThemes.DEFAULT || publicMenuThemes.MINIMAL;
   const variant = mode === 'DARK' ? (selectedTheme.dark || selectedTheme.light) : (selectedTheme.light || selectedTheme);
   return { ...variant };
 };

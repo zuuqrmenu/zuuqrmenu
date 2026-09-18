@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 
-const SearchSheet = ({ value, onChange, results, onSelect, onClose }) => {
+const SearchSheet = ({ value, onChange, results, onSelect, onClose, themeKey, mode }) => {
   const [closing, setClosing] = useState(false);
+  const activeMode = mode || (themeKey === 'GRID' ? 'DARK' : 'LIGHT');
 
   const handleClose = () => {
     if (closing) return;
@@ -22,11 +23,15 @@ const SearchSheet = ({ value, onChange, results, onSelect, onClose }) => {
   return (
     <div
       className={`public-search-backdrop ${closing ? 'is-closing' : ''}`}
+      data-theme={themeKey}
+      data-mode={activeMode}
       role="presentation"
       onClick={(event) => event.target === event.currentTarget && handleClose()}
     >
       <div
         className={`public-search-panel ${closing ? 'is-closing' : ''}`}
+        data-theme={themeKey}
+        data-mode={activeMode}
         role="dialog"
         aria-modal="true"
         aria-label="Ürün arama"

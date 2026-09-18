@@ -1,13 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
-import BistroFeaturedStories from './public-menu/BistroFeaturedStories';
+import FeaturedStories from './public-menu/FeaturedStories';
 import CategoryNavigation from './public-menu/CategoryNavigation';
 import CategorySection from './public-menu/CategorySection';
 import MenuHeader from './public-menu/MenuHeader';
+import MenuHeroCover from './public-menu/MenuHeroCover';
+import CategoryCardGrid from './public-menu/CategoryCardGrid';
 import { getPublicMenuTheme, publicMenuFonts, publicMenuThemes } from '../utils/publicMenuTheme';
+import useBodyScrollLock from '../hooks/useBodyScrollLock';
 
 const previewDemoRestaurant = {
   name: 'Demo Restoran',
-  coverImage: '',
+  description: 'Geleneksel & Modern Lezzetler',
+  coverImage: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80',
+  logo: null,
   primaryColor: '#1F2937',
   secondaryColor: '#FFFFFF',
 };
@@ -40,7 +45,8 @@ const previewDemoCategories = [
 ];
 
 const themeOptions = [
-  { value: 'MINIMAL', label: 'Varsayılan', accent: '#1F2937', description: 'Temel ve güvenli', kind: 'Standart görünüm' },
+  { value: 'DEFAULT', label: 'Varsayılan', accent: '#1F2937', description: 'Temel ve güvenli', kind: 'Standart görünüm' },
+  { value: 'GRID', label: 'Modern', accent: '#f97316', description: 'Büyük görsel kapak & bento kartlar', kind: 'Kategori kartları' },
 ];
 const fonts = ['Inter', 'DM Sans', 'Playfair Display', 'Lora'];
 const fontMeta = {
@@ -50,13 +56,68 @@ const fontMeta = {
   Lora: 'Editoryal & sıcak',
 };
 const structures = [
-  { value: 'STANDARD', label: 'Kart düzeni', description: 'Görsel ve bilgiyi dengeli sunar', icon: '▦' },
-  { value: 'COMPACT', label: 'Sıkı liste', description: 'Daha fazla ürünü hızlı taratır', icon: '☷' },
-  { value: 'EDITORIAL', label: 'Editoryal', description: 'Ürünleri hikaye gibi öne çıkarır', icon: '▤' },
+  {
+    value: 'STANDARD',
+    label: 'Görsel Odaklı Standart',
+    description: 'Büyük ürün görselleri, detaylı açıklamalar ve öne çıkan rozetleri.',
+    highlights: ['Kart formatı', 'Geniş fotoğraf alanı', 'Açıklama & fiyat vurgusu'],
+  },
+  {
+    value: 'COMPACT',
+    label: 'Kompakt Hızlı Liste',
+    description: 'Daha sıkı aralıklar, hızlı taranabilir küçük görseller ve fiyat satırları.',
+    highlights: ['Yoğun yerleşim', 'Hızlı sipariş akışı', 'Daha az dikey kaydırma'],
+  },
+  {
+    value: 'EDITORIAL',
+    label: 'Geniş Kart Editoryal',
+    description: 'Dergi benzeri tipografi, ferah boşluklar ve güçlü ürün kartları.',
+    highlights: ['Geniş başlıklar', 'Ferah boşluklar', 'Premium restoran hissi'],
+  },
 ];
+
+const palettePresets = [
+  {
+    name: 'Sıcak Amber',
+    badge: 'Popüler',
+    preview: ['#1F2937', '#B45309', '#FFFDF8'],
+    themes: [
+      { name: 'Koyu Menü', mode: 'DARK', primaryColor: '#F59E0B', secondaryColor: '#1F2937' },
+      { name: 'Açık Menü', mode: 'LIGHT', primaryColor: '#B45309', secondaryColor: '#FFFDF8' },
+    ],
+  },
+  {
+    name: 'Modern Adaçayı',
+    badge: 'Sakin',
+    preview: ['#132A13', '#31572C', '#F7F9F6'],
+    themes: [
+      { name: 'Orman Koyu', mode: 'DARK', primaryColor: '#90A955', secondaryColor: '#132A13' },
+      { name: 'Adaçayı Açık', mode: 'LIGHT', primaryColor: '#31572C', secondaryColor: '#F7F9F6' },
+    ],
+  },
+  {
+    name: 'Gece Mavisi',
+    badge: 'Premium',
+    preview: ['#0F172A', '#2563EB', '#F8FAFC'],
+    themes: [
+      { name: 'Gece Koyu', mode: 'DARK', primaryColor: '#60A5FA', secondaryColor: '#0F172A' },
+      { name: 'Buzul Açık', mode: 'LIGHT', primaryColor: '#1D4ED8', secondaryColor: '#F8FAFC' },
+    ],
+  },
+  {
+    name: 'Zarif Şarap',
+    badge: 'Şık',
+    preview: ['#3B0910', '#881337', '#FFF5F5'],
+    themes: [
+      { name: 'Kadife Koyu', mode: 'DARK', primaryColor: '#FB7185', secondaryColor: '#2A060C' },
+      { name: 'Gül Açık', mode: 'LIGHT', primaryColor: '#881337', secondaryColor: '#FFF5F5' },
+    ],
+  },
+];
+
 const defaults = {
   name: '',
-  theme: 'MINIMAL',
+  theme: 'DEFAULT',
   mode: 'LIGHT',
   font: 'Inter',
   primaryColor: '#1F2937',
@@ -67,7 +128,7 @@ const defaults = {
 export const buildDefaultMenuTemplate = (overrides = {}) => ({
   ...defaults,
   name: 'Varsayılan Menü',
-  theme: 'MINIMAL',
+  theme: 'DEFAULT',
   mode: 'LIGHT',
   font: 'Inter',
   primaryColor: '#1F2937',
@@ -80,15 +141,18 @@ export const buildDefaultMenuTemplate = (overrides = {}) => ({
 const normalize = (theme) => ({ ...defaults, ...(theme || {}), mode: theme?.mode || 'LIGHT', layout: { ...defaults.layout, ...((theme && theme.layout) || {}) } });
 
 export const ThemePreview = ({ draft }) => {
-  const previewTheme = getPublicMenuTheme(draft.theme || 'MINIMAL', draft.mode || 'LIGHT');
+  const previewShellRef = useRef(null);
+  const [previewGridCategory, setPreviewGridCategory] = useState(null);
+  const [previewDefaultCategory, setPreviewDefaultCategory] = useState(previewDemoCategories[0].id);
+  const previewTheme = getPublicMenuTheme(draft.theme || 'DEFAULT', draft.mode || 'LIGHT');
   const previewMode = draft.mode || 'LIGHT';
   const previewLayout = draft.layout || defaults.layout;
-  const previewPrimary = draft.theme === 'BISTRO' ? '#b85c3b' : '#1F2937';
-  const previewSecondary = draft.mode === 'DARK' ? '#f4efe8' : '#fffdf8';
+  const previewPrimary = draft.primaryColor || previewDemoRestaurant.primaryColor || '#1F2937';
+  const previewSecondary = draft.secondaryColor || (draft.mode === 'DARK' ? '#f4efe8' : '#fffdf8');
   const previewStyle = {
     '--menu-primary': previewPrimary,
     '--menu-secondary': previewSecondary,
-    '--menu-background': previewTheme.background,
+    '--menu-bg': previewTheme.background,
     '--menu-surface': previewTheme.surface,
     '--menu-text': previewTheme.text,
     '--menu-muted': previewTheme.muted,
@@ -98,17 +162,144 @@ export const ThemePreview = ({ draft }) => {
     '--menu-font': publicMenuFonts[draft.font] || publicMenuFonts.Inter,
   };
 
+  const isGridTheme = draft.theme === 'GRID';
+
+  useEffect(() => {
+    if (previewShellRef.current) {
+      previewShellRef.current.scrollTop = 0;
+    }
+  }, [draft.theme, draft.mode, previewGridCategory]);
+
+  const handleDefaultCategorySelect = (id) => {
+    setPreviewDefaultCategory(id);
+    const container = previewShellRef.current;
+    if (!container) return;
+
+    if (id === previewDemoCategories[0]?.id) {
+      container.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    const target = container.querySelector(`#preview-cat-${id}`);
+    if (target) {
+      const containerRect = container.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+      const offsetTop = targetRect.top - containerRect.top + container.scrollTop;
+      container.scrollTo({
+        top: Math.max(0, offsetTop - 52),
+        behavior: 'smooth',
+      });
+    }
+  };
+
   return (
-    <div className="public-menu-shell preview-menu-shell" data-theme={draft.theme || 'MINIMAL'} data-mode={previewMode} data-layout={previewLayout.style || 'STANDARD'} data-show-featured={previewLayout.emphasizeFeatured !== false} style={previewStyle}>
+    <div ref={previewShellRef} className="public-menu-shell preview-menu-shell" data-theme={draft.theme || 'DEFAULT'} data-mode={previewMode} data-layout={previewLayout.style || 'STANDARD'} data-show-featured={previewLayout.emphasizeFeatured !== false} style={previewStyle}>
       <div className="public-menu-page preview-public-page">
-        <MenuHeader restaurant={{ ...previewDemoRestaurant, name: 'Demo Restoran' }} onOpenCategories={() => {}} onOpenInfo={() => {}} />
-        <CategoryNavigation categories={previewDemoCategories} activeCategory={previewDemoCategories[0].id} onSelect={() => {}} />
-        {previewLayout.showStories && <BistroFeaturedStories products={previewDemoCategories.flatMap((category) => category.products)} onSelect={() => {}} />}
-        <main className="public-menu-content preview-menu-content">
-          {previewDemoCategories.map((category) => (
-            <CategorySection key={category.id} category={category} layout={previewLayout} onProductSelect={() => {}} />
-          ))}
-        </main>
+        {isGridTheme ? (
+          previewGridCategory ? (
+            <header className="public-header public-header--grid-category" data-mode={previewMode}>
+              <button
+                type="button"
+                className="header-control header-control--hamburger"
+                onClick={() => {
+                  setPreviewGridCategory(null);
+                  if (previewShellRef.current) previewShellRef.current.scrollTop = 0;
+                }}
+                aria-label="Kategorileri aç"
+              >
+                <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" strokeWidth="2.4" fill="none" strokeLinecap="round">
+                  <line x1="3.5" y1="6" x2="20.5" y2="6" />
+                  <line x1="3.5" y1="12" x2="20.5" y2="12" />
+                  <line x1="3.5" y1="18" x2="20.5" y2="18" />
+                </svg>
+              </button>
+              <div className="grid-category-nav-wrapper">
+                <CategoryNavigation
+                  categories={previewDemoCategories}
+                  activeCategory={previewGridCategory}
+                  onSelect={(id) => {
+                    setPreviewGridCategory(id);
+                    if (previewShellRef.current) previewShellRef.current.scrollTop = 0;
+                  }}
+                />
+              </div>
+              <button
+                type="button"
+                className="header-control header-control--search"
+                onClick={() => {}}
+                aria-label="Restoran bilgileri"
+              >
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="9" />
+                  <line x1="12" y1="8" x2="12" y2="8.01" strokeWidth="2.8" />
+                  <line x1="12" y1="12" x2="12" y2="16" />
+                </svg>
+              </button>
+            </header>
+          ) : (
+            <>
+              <MenuHeroCover
+                restaurant={previewDemoRestaurant}
+                onExplore={() => {
+                  setPreviewGridCategory(previewDemoCategories[0].id);
+                  if (previewShellRef.current) previewShellRef.current.scrollTop = 0;
+                }}
+                onOpenCategories={() => {}}
+                onOpenInfo={() => {}}
+                onGoHome={() => {
+                  setPreviewGridCategory(null);
+                  if (previewShellRef.current) previewShellRef.current.scrollTop = 0;
+                }}
+              />
+              <CategoryCardGrid
+                categories={previewDemoCategories}
+                onSelectCategory={(id) => {
+                  setPreviewGridCategory(id);
+                  if (previewShellRef.current) previewShellRef.current.scrollTop = 0;
+                }}
+              />
+            </>
+          )
+        ) : (
+          <>
+            <MenuHeader
+              restaurant={previewDemoRestaurant}
+              onOpenCategories={() => {}}
+              onOpenInfo={() => {}}
+            />
+            <CategoryNavigation
+              categories={previewDemoCategories}
+              activeCategory={previewDefaultCategory}
+              onSelect={handleDefaultCategorySelect}
+            />
+            {previewLayout.showStories && (
+              <FeaturedStories
+                products={previewDemoCategories.flatMap((category) => category.products)}
+                onSelect={() => {}}
+              />
+            )}
+          </>
+        )}
+
+        {(!isGridTheme || previewGridCategory) && (
+          <main className="public-menu-content preview-menu-content">
+            {isGridTheme ? (
+              (() => {
+                const activeCat = previewDemoCategories.find((c) => c.id === previewGridCategory) || previewDemoCategories[0];
+                return activeCat ? (
+                  <CategorySection key={activeCat.id} category={activeCat} layout={previewLayout} onProductSelect={() => {}} themeKey={draft.theme} />
+                ) : null;
+              })()
+            ) : (
+              previewDemoCategories.map((category) => (
+                <div key={category.id} id={`preview-cat-${category.id}`}>
+                  <CategorySection category={category} layout={previewLayout} onProductSelect={() => {}} themeKey={draft.theme} />
+                </div>
+              ))
+            )}
+          </main>
+        )}
+
         <footer className="public-footer">zuuqrmenu <span>•</span> Dijital Menü</footer>
       </div>
     </div>
@@ -116,6 +307,7 @@ export const ThemePreview = ({ draft }) => {
 };
 
 const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, editingIndex = null, initialMenu = null }) => {
+  useBodyScrollLock(true);
   const [savedThemes, setSavedThemes] = useState(Array.isArray(themes) ? themes : []);
   const [draft, setDraft] = useState(normalize(initialMenu || themes?.[0] || buildDefaultMenuTemplate()));
   const [feedback, setFeedback] = useState({ kind: 'idle', message: '', id: 0, isHiding: false });
@@ -124,7 +316,28 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, editingIndex 
   const [error, setError] = useState('');
   const [showMobilePreview, setShowMobilePreview] = useState(false);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
   const feedbackTimeoutRef = useRef(null);
+
+  const handleClose = () => {
+    if (isClosing) return;
+    setIsClosing(true);
+    setTimeout(() => {
+      if (typeof onClose === 'function') {
+        onClose();
+      }
+    }, 220);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        handleClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isClosing]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
@@ -166,10 +379,14 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, editingIndex 
       feedbackTimeoutRef.current = window.setTimeout(() => {
         setFeedback((current) => (current.id === nextId ? { kind: 'idle', message: '', id: current.id + 1, isHiding: false } : current));
       }, 350);
-    }, 3000);
+    }, 2200);
   };
 
-  const update = (field, value) => setDraft((current) => ({ ...current, [field]: value }));
+  const update = (field, value) => {
+    setDraft((current) => ({ ...current, [field]: value }));
+    setError('');
+    setFeedback({ kind: 'idle', message: '', id: Date.now() + Math.random() });
+  };
   const updateLayout = (field, value) => setDraft((current) => ({ ...current, layout: { ...current.layout, [field]: value } }));
 
   const save = async () => {
@@ -217,6 +434,7 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, editingIndex 
       setDraft(normalize(selected));
       setError('');
       triggerFeedback('success', 'Tema kaydedildi.');
+      handleClose();
     } catch (err) {
       const message = err?.response?.data?.error || 'Menü kaydedilemedi. Lütfen tekrar deneyin.';
       setError(message);
@@ -232,8 +450,8 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, editingIndex 
   const showPreviewSection = !isMobileViewport || showMobilePreview;
 
   return (
-    <div className="menu-compact-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <div className={`menu-compact-modal ${feedback.kind === 'error' ? 'is-invalid' : ''} ${feedback.kind === 'success' ? 'is-success' : ''}`} role="dialog" aria-modal="true" aria-labelledby="menu-compact-title">
+    <div className={`menu-compact-backdrop ${isClosing ? 'is-closing' : ''}`} role="presentation" onMouseDown={(event) => event.target === event.currentTarget && handleClose()}>
+      <div className={`menu-compact-modal ${isClosing ? 'is-closing' : ''} ${feedback.kind === 'error' ? 'is-invalid' : ''} ${feedback.kind === 'success' ? 'is-success' : ''}`} role="dialog" aria-modal="true" aria-labelledby="menu-compact-title">
         <header className="menu-compact-header">
           <div className="menu-compact-header__title-wrap">
             <span className="menu-compact-kicker">MENÜ TASARIMI</span>
@@ -242,17 +460,61 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, editingIndex 
           </div>
 
           <div className="menu-compact-header__actions">
-            <input
-              type="text"
-              value={draft.name || ''}
-              onChange={(event) => { setDraft((current) => ({ ...current, name: event.target.value })); setNameError(false); setError(''); setFeedback({ kind: 'idle', message: '', id: Date.now() + Math.random() }); }}
-              className={`menu-theme-name-inline__input ${nameError ? 'is-invalid' : ''}`}
-              aria-label="Tema adı"
-              aria-invalid={nameError}
-              placeholder="Tema adı"
-            />
-            <button type="button" className="menu-compact-save" onClick={save} disabled={saving} aria-label="Kaydet" title={saving ? 'Kaydediliyor...' : 'Kaydet'}>{saving ? 'Kaydediliyor...' : 'Kaydet'}</button>
-            <button type="button" className="menu-compact-close-btn" onClick={onClose} aria-label="Kapat" title="Kapat">
+            <div className={`menu-theme-name-box ${nameError ? 'is-invalid' : ''}`}>
+              <span className="menu-theme-name-box__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 20h9" />
+                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                </svg>
+              </span>
+              <input
+                type="text"
+                value={draft.name || ''}
+                onChange={(event) => {
+                  setDraft((current) => ({ ...current, name: event.target.value }));
+                  setNameError(false);
+                  setError('');
+                  setFeedback({ kind: 'idle', message: '', id: Date.now() + Math.random() });
+                }}
+                className="menu-theme-name-box__input"
+                aria-label="Tema adı"
+                aria-invalid={nameError}
+                placeholder="Tema adı girin..."
+              />
+            </div>
+
+            <button
+              type="button"
+              className="menu-compact-save"
+              onClick={save}
+              disabled={saving}
+              aria-label="Kaydet"
+              title={saving ? 'Kaydediliyor...' : 'Kaydet'}
+            >
+              {saving ? (
+                <>
+                  <span className="menu-compact-spinner" aria-hidden="true" />
+                  <span>Kaydediliyor...</span>
+                </>
+              ) : (
+                <>
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                    <polyline points="17 21 17 13 7 13 7 21" />
+                    <polyline points="7 3 7 8 15 8" />
+                  </svg>
+                  <span>Kaydet</span>
+                </>
+              )}
+            </button>
+
+            <button
+              type="button"
+              className="menu-compact-close-btn"
+              onClick={handleClose}
+              aria-label="Kapat"
+              title="Kapat"
+            >
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
@@ -302,12 +564,23 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, editingIndex 
                       onClick={() => update('theme', option.value)}
                       title={`${option.label} teması`}
                     >
-                      <span className="menu-theme-card__art" style={{ background: option.value === 'BISTRO' ? '#f7f1e6' : '#f7f5f0' }}>
-                        <span className="menu-theme-card__header" style={{ background: option.value === 'BISTRO' ? '#2a1d18' : '#1f2937' }} />
-                        <span className="menu-theme-card__nav" style={{ background: option.value === 'BISTRO' ? '#efe4d7' : '#eef2f7' }} />
-                        <span className="menu-theme-card__item" style={{ background: option.value === 'BISTRO' ? '#d6a67f' : '#dfe6ef' }} />
-                        <span className="menu-theme-card__item menu-theme-card__item--secondary" style={{ background: option.value === 'BISTRO' ? '#f2dccc' : '#f3f6fb' }} />
-                      </span>
+                      {option.value === 'GRID' ? (
+                        <span className="menu-theme-card__art" style={{ background: '#0f172a' }}>
+                          <span style={{ display: 'block', height: '0.6rem', width: '38%', borderRadius: '4px', background: '#f97316' }} />
+                          <span style={{ display: 'block', height: '1.5rem', width: '100%', borderRadius: '6px', background: 'linear-gradient(90deg, #1e293b, #334155)', margin: '2px 0' }} />
+                          <span style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px', width: '100%' }}>
+                            <span style={{ height: '1.5rem', borderRadius: '5px', background: 'linear-gradient(90deg, #1e293b, #334155)' }} />
+                            <span style={{ height: '1.5rem', borderRadius: '5px', background: 'linear-gradient(90deg, #1e293b, #334155)' }} />
+                          </span>
+                        </span>
+                      ) : (
+                        <span className="menu-theme-card__art" style={{ background: '#f7f5f0' }}>
+                          <span className="menu-theme-card__header" style={{ background: '#1f2937' }} />
+                          <span className="menu-theme-card__nav" style={{ background: '#eef2f7' }} />
+                          <span className="menu-theme-card__item" style={{ background: '#dfe6ef' }} />
+                          <span className="menu-theme-card__item menu-theme-card__item--secondary" style={{ background: '#f3f6fb' }} />
+                        </span>
+                      )}
                       <span className="menu-theme-card__meta">
                         <strong>{option.label}</strong>
                         <small>{option.kind}</small>
@@ -373,7 +646,7 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, editingIndex 
                     ['showDescriptions', 'Ürün açıklamasını göster', 'Ürün açıklamalarını görünür tut.'],
                     ['showPrices', 'Fiyatları göster', 'Ürün fiyatlarını göstermek için açık tut.'],
                     ['emphasizeFeatured', 'Öne çıkan ürünü vurgula', 'Öne çıkan ürünleri daha belirgin göster.'],
-                    ['showStories', 'Hikayeler alanını göster', 'Öne çıkan ürünleri dairesel hikaye olarak üstte göster.'],
+                    ['showStories', 'Hikayeler alanını göster', 'Öne çıkan ürünleri menüde hikaye kartları olarak göster.'],
                   ].map(([field, title, helper]) => (
                     <label key={field} className="menu-toggle-row">
                       <span className="menu-toggle-copy">

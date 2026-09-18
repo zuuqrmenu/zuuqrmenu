@@ -56,29 +56,91 @@ const CategoryModal = ({ category, nextOrder, onClose, onSaved }) => {
   );
 };
 
-const SavedThemeSelectionModal = ({ themes, activeThemeId, onClose, onApply, applying }) => {
+const ThemeArtCard = ({ theme }) => {
+  const isGrid = theme?.theme === 'GRID';
+  const isDark = theme?.mode === 'DARK';
+  const primary = theme?.primaryColor || '#1F2937';
+  const bg = isDark ? '#0f172a' : '#f7f5f0';
+  const surface = isDark ? '#1e293b' : '#dfe6ef';
+  const surface2 = isDark ? '#334155' : '#f3f6fb';
+  const accent = isGrid ? (theme?.primaryColor || '#f97316') : primary;
+
+  if (isGrid) {
+    return (
+      <span className="stsm-art" style={{ background: bg }}>
+        <span style={{ display: 'block', height: '.55rem', width: '40%', borderRadius: '4px', background: accent, marginBottom: '3px' }} />
+        <span style={{ display: 'block', height: '1.4rem', width: '100%', borderRadius: '5px', background: `linear-gradient(90deg, ${surface}, ${surface2})`, marginBottom: '3px' }} />
+        <span style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px' }}>
+          <span style={{ height: '1.4rem', borderRadius: '5px', background: `linear-gradient(90deg, ${surface}, ${surface2})` }} />
+          <span style={{ height: '1.4rem', borderRadius: '5px', background: `linear-gradient(90deg, ${surface}, ${surface2})` }} />
+        </span>
+      </span>
+    );
+  }
+
+  return (
+    <span className="stsm-art" style={{ background: bg }}>
+      <span style={{ display: 'block', height: '.85rem', width: '48%', borderRadius: '999px', background: primary, marginBottom: '3px' }} />
+      <span style={{ display: 'block', height: '.35rem', width: '80%', borderRadius: '999px', background: surface, marginBottom: '4px' }} />
+      <span style={{ display: 'block', height: '.65rem', width: '78%', borderRadius: '6px', background: surface, marginBottom: '2px' }} />
+      <span style={{ display: 'block', height: '.65rem', width: '55%', borderRadius: '6px', background: surface2 }} />
+    </span>
+  );
+};
+
+const SavedThemeSelectionModal = ({ themes, activeThemeId, onClose, onApply, applying, onNewTheme }) => {
   const [selectedThemeId, setSelectedThemeId] = useState(activeThemeId || '');
   const options = [
-    { id: '', name: 'Varsayılan görünüm', theme: buildDefaultMenuTemplate({ name: 'Varsayılan görünüm' }), description: 'Klasik menü tasarımı' },
-    ...themes.map((theme) => ({ id: String(theme._id || theme.id), name: theme.name, theme, description: 'Kayıtlı menü tasarımı' })),
+    { id: '', name: 'Varsayılan', theme: buildDefaultMenuTemplate({ name: 'Varsayılan' }), description: 'Klasik menü' },
+    ...themes.map((theme) => ({ id: String(theme._id || theme.id), name: theme.name, theme, description: theme.theme === 'GRID' ? 'Modern tema' : 'Varsayılan tema' })),
   ];
 
   return (
     <div className="saved-theme-selection-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <div className="saved-theme-selection-modal" role="dialog" aria-modal="true" aria-labelledby="saved-theme-selection-title">
+      <div className="saved-theme-selection-modal stsm-redesign" role="dialog" aria-modal="true" aria-labelledby="saved-theme-selection-title">
         <header className="saved-theme-selection-modal__header">
           <div><p className="menu-publish-card__eyebrow">Menü özelleştirme</p><h2 id="saved-theme-selection-title">Menü Tasarımını Seç</h2></div>
           <button type="button" className="saved-theme-selection-modal__close" onClick={onClose} aria-label="Kapat">×</button>
         </header>
-        <div className="saved-theme-selection-grid">
+        <div className="stsm-grid">
           {options.map((option) => (
-            <button type="button" key={option.id || 'default'} className={`saved-theme-selection-card ${selectedThemeId === option.id ? 'is-selected' : ''}`} onClick={() => setSelectedThemeId(option.id)}>
-              <span className="saved-theme-selection-card__preview"><ThemePreview draft={option.theme} /></span>
-              <span className="saved-theme-selection-card__meta"><strong>{option.name}</strong><small>{option.description}</small>{selectedThemeId === option.id && <b>✓ Aktif seçim</b>}</span>
+            <button
+              type="button"
+              key={option.id || 'default'}
+              className={`stsm-card ${selectedThemeId === option.id ? 'is-selected' : ''}`}
+              onClick={() => setSelectedThemeId(option.id)}
+            >
+              <ThemeArtCard theme={option.theme} />
+              <span className="stsm-card__meta">
+                <strong>{option.name}</strong>
+                <small>{option.description}</small>
+                {selectedThemeId === option.id && <b>✓ Seçili</b>}
+              </span>
             </button>
           ))}
+          {/* Add new theme button */}
+          <button
+            type="button"
+            className="stsm-card stsm-card--new"
+            onClick={() => { onClose(); setTimeout(() => onNewTheme(), 80); }}
+            title="Yeni tema oluştur"
+          >
+            <span className="stsm-art stsm-art--new">
+              <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+            </span>
+            <span className="stsm-card__meta">
+              <strong>Yeni Tema</strong>
+              <small>Yeni özelleştirme</small>
+            </span>
+          </button>
         </div>
-        <footer className="saved-theme-selection-modal__footer"><button type="button" className="publish-dialog__cancel" onClick={onClose}>Vazgeç</button><button type="button" className="publish-dialog__confirm" onClick={() => onApply(selectedThemeId)} disabled={applying}>{applying ? 'Uygulanıyor...' : 'Seç ve Uygula'}</button></footer>
+        <footer className="saved-theme-selection-modal__footer">
+          <button type="button" className="publish-dialog__cancel" onClick={onClose}>Vazgeç</button>
+          <button type="button" className="publish-dialog__confirm" onClick={() => onApply(selectedThemeId)} disabled={applying}>{applying ? 'Uygulanıyor...' : 'Seç ve Uygula'}</button>
+        </footer>
       </div>
     </div>
   );
@@ -101,6 +163,7 @@ const MenuManagement = () => {
   const [activeMenuThemeId, setActiveMenuThemeId] = useState(null);
   const [themeSelectionOpen, setThemeSelectionOpen] = useState(false);
   const [customizationOpen, setCustomizationOpen] = useState(false);
+  const [highlightViewMenu, setHighlightViewMenu] = useState(false);
 
   useEffect(() => {
     if (!notice) return undefined;
@@ -241,7 +304,16 @@ const MenuManagement = () => {
             <h2 className="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">Menünüzü buradan yönetin</h2>
             <p className="mt-1 text-sm text-slate-500">Kategorilerinizi oluşturun, düzenleyin ve menü sıralamanızı belirleyin.</p>
           </div>
-          {overview?.stats?.menuStatus === 'PUBLISHED' && <PublicMenuButton username={user?.username} label="Menüyü Görüntüle" compact brand />}
+          {user?.username && (
+            <PublicMenuButton
+              username={user?.username}
+              label="Menüyü Görüntüle"
+              compact
+              brand
+              highlighted={highlightViewMenu}
+              onHighlightDismiss={() => setHighlightViewMenu(false)}
+            />
+          )}
         </section>
         {notice && <div className={`settings-status settings-status--success ${noticeVisible ? 'is-visible' : 'is-hiding'}`} role="status">{notice}<button onClick={() => setNotice('')} className="ml-3" aria-label="Bildirimi kapat">×</button></div>}
         {error && <div className="flex items-center justify-between rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"><span>{error}</span><button onClick={() => setError('')} aria-label="Hatayı kapat">×</button></div>}
@@ -264,8 +336,22 @@ const MenuManagement = () => {
         )}
       </div>
       {modalOpen && <CategoryModal category={editingCategory} nextOrder={categories.length} onClose={() => { setModalOpen(false); setEditingCategory(null); }} onSaved={showNotice} />}
-      {themeSelectionOpen && <SavedThemeSelectionModal themes={menuThemes} activeThemeId={activeMenuThemeId} onClose={() => setThemeSelectionOpen(false)} onApply={selectMenuTheme} applying={actionId === 'menu-theme'} />}
-      {customizationOpen && <MenuCustomizationCompactModal themes={menuThemes} onClose={() => setCustomizationOpen(false)} onSaved={async (themes) => { const settings = await saveMenuThemes(themes); if (settings?.menuThemes) setMenuThemes(settings.menuThemes); return settings; }} />}
+      {themeSelectionOpen && <SavedThemeSelectionModal themes={menuThemes} activeThemeId={activeMenuThemeId} onClose={() => setThemeSelectionOpen(false)} onApply={selectMenuTheme} applying={actionId === 'menu-theme'} onNewTheme={() => setCustomizationOpen(true)} />}
+      {customizationOpen && (
+        <MenuCustomizationCompactModal
+          themes={menuThemes}
+          onClose={() => setCustomizationOpen(false)}
+          onSaved={async (themes) => {
+            const settings = await saveMenuThemes(themes);
+            if (settings?.menuThemes) setMenuThemes(settings.menuThemes);
+            setNotice('');
+            setTimeout(() => setNotice('Tema başarıyla kaydedildi.'), 50);
+            setHighlightViewMenu(true);
+            setTimeout(() => setHighlightViewMenu(false), 9000);
+            return settings;
+          }}
+        />
+      )}
       {statusDialog && <div className="publish-dialog-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setStatusDialog(null)}><div className="publish-dialog" role="dialog" aria-modal="true" aria-labelledby="publish-dialog-title"><h2 id="publish-dialog-title">{statusDialog.status === 'PUBLISHED' ? 'Menüyü yayınla' : statusDialog.status === 'DRAFT' ? 'Menüyü taslağa al' : 'Menüyü gizle'}</h2><p>{statusDialog.status === 'PUBLISHED' ? 'Menünüz yayınlandığında müşteriler güncel menüyü görebilecek.' : statusDialog.status === 'DRAFT' ? 'Menünüz public linkte hazırlanıyor olarak görünecek.' : 'Menünüz public linkte geçici olarak erişime kapanacak.'}</p><div className="publish-dialog__actions"><button type="button" onClick={() => setStatusDialog(null)} className="publish-dialog__cancel">Vazgeç</button><button type="button" onClick={updateMenuStatus} disabled={actionId === 'menu-status'} className={statusDialog.status === 'HIDDEN' ? 'publish-dialog__confirm publish-dialog__confirm--danger' : 'publish-dialog__confirm'}>{statusDialog.status === 'PUBLISHED' ? 'Menüyü Yayınla' : statusDialog.status === 'DRAFT' ? 'Taslağa Al' : 'Menüyü Gizle'}</button></div></div></div>}
     </RestaurantLayout>
   );
