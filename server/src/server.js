@@ -32,7 +32,9 @@ app.use(cors({
     // Allow requests with no origin (like mobile apps, curl, or server-to-server)
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin) || /^https:\/\/(www\.|panel\.)?zuuqrmenu\.com$/.test(origin)) {
-      return callback(null, true);
+      // Must echo back the exact origin (not `true`) when credentials:true is used,
+      // otherwise the browser will reject the response.
+      return callback(null, origin);
     }
     return callback(new Error(`Origin ${origin} not allowed by CORS`));
   },
