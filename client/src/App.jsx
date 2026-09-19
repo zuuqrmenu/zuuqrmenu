@@ -139,6 +139,18 @@ const DashboardThemeController = () => {
   return null;
 };
 
+const ScrollToTopOnRoute = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [pathname]);
+
+  return null;
+};
+
 // Tracks SPA route changes as GA4 page_view events
 const GAPageTracker = () => {
   const location = useLocation();
@@ -213,6 +225,7 @@ function App() {
   return (
     <AuthProvider>
       <Router>
+        <ScrollToTopOnRoute />
         <HostRouterGuard />
         <DashboardThemeController />
         <GAPageTracker />

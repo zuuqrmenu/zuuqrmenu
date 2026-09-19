@@ -89,6 +89,19 @@ const RestaurantSettings = () => {
     return () => { active = false; };
   }, [user]);
 
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  };
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, []);
+
   useEffect(() => {
     if (!notice) return undefined;
     const timer = window.setTimeout(() => setNotice(''), 3300);
@@ -122,7 +135,7 @@ const RestaurantSettings = () => {
                 <button
                   type="button"
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => handleTabChange(tab.id)}
                   className={`settings-nav-item ${isActive ? 'is-active' : ''}`}
                   title={tab.label}
                   aria-label={tab.label}
