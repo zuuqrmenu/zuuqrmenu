@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import SeoHead from '../components/SeoHead';
 import { trackEvent } from '../utils/analytics';
+import { getPanelUrl } from '../utils/domainHelpers';
 
 const themes = [
   {
@@ -219,13 +220,13 @@ const MenuShowcase = () => {
               <p className="tsc-bottom-strip__label">Kendi restoranınız için kullanmak ister misiniz?</p>
               <p className="tsc-bottom-strip__sub">Restoran panelinize erişmek ve menünüzü yönetmek için giriş yapın.</p>
             </div>
-            <Link
-              to="/login"
+            <a
+              href={getPanelUrl('/login')}
               className="tsc-bottom-strip__cta"
               onClick={() => trackEvent('click_cta', { cta_name: 'login', location: 'menu_showcase_bottom' })}
             >
               Giriş Yap <span aria-hidden="true">↗</span>
-            </Link>
+            </a>
           </div>
         </div>
       </main>
@@ -239,7 +240,7 @@ const MenuShowcase = () => {
         <nav className="tsc-footer__nav" aria-label="Alt gezinme">
           <Link to="/">Ana Sayfa</Link>
           <Link to="/register">Kayıt Ol</Link>
-          <Link to="/login">Giriş Yap</Link>
+          <a href={getPanelUrl('/login')}>Giriş Yap</a>
         </nav>
       </footer>
     </div>

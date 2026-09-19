@@ -18,6 +18,17 @@ const normalizeUsername = (value) => value
   .slice(0, 40)
   .replace(/-+$/g, '');
 
+const getAuthCookieOptions = () => {
+  const isProd = process.env.NODE_ENV === 'production';
+  return {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: 'lax',
+    domain: isProd ? '.zuuqrmenu.com' : undefined,
+    path: '/',
+  };
+};
+
 export const setAuthCookie = (res, user) => {
   const token = generateToken({
     userId: user._id,
@@ -26,10 +37,7 @@ export const setAuthCookie = (res, user) => {
     restaurantId: user.restaurantId,
   });
   res.cookie('token', token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    path: '/',
+    ...getAuthCookieOptions(),
     maxAge: 24 * 60 * 60 * 1000,
   });
 };
@@ -181,8 +189,8 @@ export const me = async (req, res) => {
 
 export const logout = async (req, res) => {
   try {
-    // Clear cookie
-    res.clearCookie('token', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict', path: '/' });
+    // Clear cookie across subdomains
+    res.clearCookie('token', getAuthCookieOptions());
     
     res.json({ message: 'Logout successful' });
   } catch (error) {

@@ -7,6 +7,7 @@ import { auth } from '../config/firebase';
 import { getFirebaseAuthError } from '../utils/firebaseAuthErrors';
 import { GoogleAuthProvider, signInWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth';
 import { trackEvent } from '../utils/analytics';
+import { isLocalhost, isMainDomain, getMainSiteUrl } from '../utils/domainHelpers';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -21,7 +22,13 @@ const Login = () => {
 
   const redirectApplicationUser = (user, restaurant) => {
     if (user?.role === 'ADMIN') return navigate('/admin');
-    if (restaurant) return navigate('/dashboard');
+    if (restaurant) {
+      if (!isLocalhost() && isMainDomain()) {
+        window.location.replace('https://panel.zuuqrmenu.com/dashboard');
+        return;
+      }
+      return navigate('/dashboard');
+    }
     return navigate('/pending-approval');
   };
 
@@ -100,15 +107,15 @@ const Login = () => {
 
   return (
     <div className="auth-page login-shell">
-      <SeoHead title="Giriş Yap | zuuqrmenu" description="zuuqrmenu restoran panelinize güvenli şekilde giriş yapın." canonical="https://zuuqrmenu.com/login" robots="noindex,nofollow" />
+      <SeoHead title="Giriş Yap | zuuqrmenu" description="zuuqrmenu restoran panelinize güvenli şekilde giriş yapın." canonical="https://panel.zuuqrmenu.com/login" robots="noindex,nofollow" />
       <aside className="login-shell__brand">
-        <Link to="/" className="landing-brand"><img src="/logo_darkmode.svg" alt="zuuqrmenu" className="landing-brand__logo" /></Link>
+        <a href={getMainSiteUrl('/')} className="landing-brand"><img src="/logo_darkmode.svg" alt="zuuqrmenu" className="landing-brand__logo" /></a>
         <h1>Dijital menünüz, işletmenizin ritmine ayak uydursun.</h1>
         <p>Menünüzü yönetin, QR kodunuzu hazırlayın ve müşterilerinizle daha hızlı buluşun.</p>
       </aside>
       <div className="login-shell__form">
         <div className="login-card">
-          <Link to="/" className="landing-brand"><img src="/logo.svg" alt="zuuqrmenu" className="landing-brand__logo" /></Link>
+          <a href={getMainSiteUrl('/')} className="landing-brand"><img src="/logo.svg" alt="zuuqrmenu" className="landing-brand__logo" /></a>
           <h2>Hoş geldiniz</h2>
           <p>Restoran panelinize giriş yapın.</p>
 

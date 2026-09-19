@@ -18,8 +18,24 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5001;
 
+const allowedOrigins = [
+  'https://zuuqrmenu.com',
+  'https://www.zuuqrmenu.com',
+  'https://panel.zuuqrmenu.com',
+  'http://localhost:5173',
+  'http://localhost:5174',
+  process.env.CLIENT_URL,
+].filter(Boolean);
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5174',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps, curl, or server-to-server)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin) || /^https:\/\/(www\.|panel\.)?zuuqrmenu\.com$/.test(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error(`Origin ${origin} not allowed by CORS`));
+  },
   credentials: true,
 }));
 app.use(express.json());

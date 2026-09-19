@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import SeoHead from '../components/SeoHead';
 import { trackEvent } from '../utils/analytics';
+import { getPanelUrl } from '../utils/domainHelpers';
 
 const steps = [
   ['01', 'Restoranınızı oluşturun'],
@@ -22,7 +23,7 @@ const LandingHeader = () => {
         <nav className={`landing-nav ${open ? 'is-open' : ''}`} aria-label="Landing navigation">
           <a href="#features" onClick={close}>Özellikler</a>
           <a href="#how-it-works" onClick={close}>Nasıl Çalışır?</a>
-          <Link to="/login" onClick={close}>Giriş Yap</Link>
+          <a href={getPanelUrl('/login')} onClick={close}>Giriş Yap</a>
           <Link
             to="/register"
             className="landing-button landing-button--small"

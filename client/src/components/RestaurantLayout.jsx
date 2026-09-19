@@ -40,7 +40,7 @@ const RestaurantLayout = ({ children }) => {
 
   return (
     <div className="dashboard-shell min-h-screen bg-slate-50 text-slate-900">
-      <SeoHead title="Restoran Paneli | zuuqrmenu" description="zuuqrmenu restoran yönetim paneli." canonical="https://zuuqrmenu.com/dashboard" robots="noindex,nofollow,noarchive" />
+      <SeoHead title="Restoran Paneli | zuuqrmenu" description="zuuqrmenu restoran yönetim paneli." canonical="https://panel.zuuqrmenu.com/dashboard" robots="noindex,nofollow,noarchive" />
 
       {/* Desktop Sidebar (Only visible on lg and above) */}
       <aside className="dashboard-sidebar fixed inset-y-0 left-0 hidden w-64 lg:flex lg:flex-col">

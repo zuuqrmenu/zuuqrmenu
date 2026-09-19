@@ -7,6 +7,7 @@ import { auth } from '../config/firebase';
 import { getFirebaseAuthError } from '../utils/firebaseAuthErrors';
 import { GoogleAuthProvider, createUserWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth';
 import { trackEvent } from '../utils/analytics';
+import { isLocalhost, isMainDomain } from '../utils/domainHelpers';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -16,11 +17,6 @@ const Register = () => {
     phone: '',
     restaurantName: '',
     businessType: 'RESTAURANT',
-    city: '',
-    address: '',
-    website: '',
-    instagram: '',
-    restaurantPhone: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -30,7 +26,13 @@ const Register = () => {
 
   const redirectApplicationUser = (user, restaurant) => {
     if (user?.role === 'ADMIN') return navigate('/admin');
-    if (restaurant) return navigate('/dashboard');
+    if (restaurant) {
+      if (!isLocalhost() && isMainDomain()) {
+        window.location.replace('https://panel.zuuqrmenu.com/dashboard');
+        return;
+      }
+      return navigate('/dashboard');
+    }
     return navigate('/pending-approval');
   };
 
