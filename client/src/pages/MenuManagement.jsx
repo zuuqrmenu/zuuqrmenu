@@ -361,14 +361,14 @@ const MenuManagement = () => {
     return result.settings;
   };
 
-  const selectMenuTheme = async (value) => {
+  const selectMenuTheme = async (value, themeObj = null) => {
     const nextThemeId = value || null;
     setActionId('menu-theme');
     setError('');
     try {
-      const selectedObj = nextThemeId
+      const selectedObj = themeObj || (nextThemeId
         ? menuThemes.find((t) => String(t._id || t.id) === String(nextThemeId))
-        : null;
+        : null);
       const payload = nextThemeId
         ? {
             activeMenuThemeId: nextThemeId,
@@ -391,11 +391,23 @@ const MenuManagement = () => {
       }
       setNotice(nextThemeId ? 'Menü teması seçildi.' : 'Varsayılan menü görünümüne dönüldü.');
       setThemeSelectionOpen(false);
+      return result.settings;
     } catch (err) {
       setError(err.response?.data?.error || 'Menü teması seçilemedi.');
     } finally {
       setActionId(null);
     }
+  };
+
+  const handleOpenCustomization = () => {
+    if (menuThemes.length >= 3) {
+      setNotice('En fazla 4 tema kaydedebilirsiniz (3 özel tema + 1 varsayılan). Düzenlemek istediğiniz temayı seçebilirsiniz.');
+      setThemeSelectionOpen(true);
+      return;
+    }
+    setEditingTheme(null);
+    setEditingThemeIndex(null);
+    setCustomizationOpen(true);
   };
 
   return (
@@ -421,7 +433,7 @@ const MenuManagement = () => {
         {notice && <div className={`settings-status settings-status--success ${noticeVisible ? 'is-visible' : 'is-hiding'}`} role="status">{notice}<button onClick={() => setNotice('')} className="ml-3" aria-label="Bildirimi kapat">×</button></div>}
         {error && <div className="flex items-center justify-between rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"><span>{error}</span><button onClick={() => setError('')} aria-label="Hatayı kapat">×</button></div>}
         {overview && <section className="menu-publish-card"><div className="menu-publish-card__header"><div><p className="menu-publish-card__eyebrow">Yayın Durumu</p><h3>{statusCopy[0]}</h3><p>{statusCopy[1]}</p>{overview.restaurant?.publishedAt && <small>Son yayın: {new Intl.DateTimeFormat('tr-TR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(overview.restaurant.publishedAt))}</small>}</div><div className="menu-status-switcher" role="group" aria-label="Menü görünürlüğü">{[['DRAFT', 'Taslak'], ['PUBLISHED', 'Yayında'], ['HIDDEN', 'Gizli']].map(([value, label]) => <button type="button" key={value} className={`${menuStatus === value ? 'is-active ' : ''}menu-status-switcher__${value.toLowerCase()}`} disabled={actionId === 'menu-status'} onClick={() => menuStatus !== value && setStatusDialog({ status: value })}>{label}</button>)}</div></div></section>}
-        <section className="menu-customization-entry"><div className="menu-customization-entry__header"><div><p className="menu-publish-card__eyebrow">Tasarım</p><h3>Menü Özelleştirme</h3><p>Temanızı, tipografinizi ve ürün görünümünü beğeninize göre tasarlayın.</p></div></div><div className="menu-customization-entry__actions"><button type="button" className="menu-customization-entry__edit" onClick={() => setThemeSelectionOpen(true)} aria-label="Kayıtlı menü tasarımını seç" title="Kayıtlı menü tasarımını seç"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m4 16.5-.8 4.3 4.3-.8L19.2 8.3a2.4 2.4 0 0 0-3.4-3.4L4 16.5Z" /><path d="m14.5 6.5 3 3" /></svg></button><button type="button" onClick={() => { setEditingTheme(null); setEditingThemeIndex(null); setCustomizationOpen(true); }} className="menu-customization-entry__button"><span>✦</span> Özelleştir</button></div></section>
+        <section className="menu-customization-entry"><div className="menu-customization-entry__header"><div><p className="menu-publish-card__eyebrow">Tasarım</p><h3>Menü Özelleştirme</h3><p>Temanızı, tipografinizi ve ürün görünümünü beğeninize göre tasarlayın.</p></div></div><div className="menu-customization-entry__actions"><button type="button" className="menu-customization-entry__edit" onClick={() => setThemeSelectionOpen(true)} aria-label="Kayıtlı menü tasarımını seç" title="Kayıtlı menü tasarımını seç"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m4 16.5-.8 4.3 4.3-.8L19.2 8.3a2.4 2.4 0 0 0-3.4-3.4L4 16.5Z" /><path d="m14.5 6.5 3 3" /></svg></button><button type="button" onClick={handleOpenCustomization} className="menu-customization-entry__button"><span>✦</span> Özelleştir</button></div></section>
         {loading ? (
           <DashboardSkeleton variant="menu" />
         ) : (
@@ -471,25 +483,30 @@ const MenuManagement = () => {
             setEditingThemeIndex(null);
           }}
           onSaved={async (themes, savedPayload, savedIndex) => {
+            const isEditing = typeof savedIndex === 'number' && savedIndex >= 0;
             const settings = await saveMenuThemes(themes);
             const savedList = settings?.menuThemes || themes;
             if (settings?.menuThemes) setMenuThemes(settings.menuThemes);
 
-            const isEditing = typeof savedIndex === 'number' && savedIndex >= 0;
-            let targetThemeId = null;
+            // Find the saved theme from the returned list
+            let targetTheme = null;
             if (isEditing && savedList[savedIndex]) {
-              targetThemeId = savedList[savedIndex]._id || savedList[savedIndex].id;
-            } else if (!isEditing && savedList.length > 0) {
-              const newest = savedList[savedList.length - 1];
-              targetThemeId = newest?._id || newest?.id;
+              targetTheme = savedList[savedIndex];
+            } else if (savedPayload?.name) {
+              targetTheme = savedList.slice().reverse().find((t) => t.name === savedPayload.name) || savedList[savedList.length - 1];
+            } else if (savedList.length > 0) {
+              targetTheme = savedList[savedList.length - 1];
             }
 
-            if (!isEditing && targetThemeId) {
-              await selectMenuTheme(targetThemeId);
+            const targetThemeId = targetTheme?._id || targetTheme?.id;
+
+            // Direct selection: Immediately set as active menu
+            if (targetThemeId) {
+              await selectMenuTheme(targetThemeId, targetTheme || savedPayload);
             }
 
             setNotice('');
-            setTimeout(() => setNotice(isEditing ? 'Tema başarıyla güncellendi.' : 'Tema başarıyla kaydedildi ve uygulandı.'), 50);
+            setTimeout(() => setNotice(isEditing ? 'Tema güncellendi ve menü olarak uygulandı.' : 'Tema kaydedildi ve yeni menü olarak seçildi.'), 50);
             setHighlightViewMenu(true);
             setTimeout(() => setHighlightViewMenu(false), 9000);
             return settings;

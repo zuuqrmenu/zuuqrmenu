@@ -192,7 +192,7 @@ body {
 .menu-status-switcher button { transition: background-color .25s ease, color .25s ease, box-shadow .25s ease, opacity .25s ease; }
 .menu-status-switcher button.is-active { color: #fff; box-shadow: 0 2px 5px rgb(15 23 42 / 14%); }
 .menu-status-switcher button.is-active.menu-status-switcher__draft { background: #64748b; }
-.menu-status-switcher button.is-active.menu-status-switcher__published { background: #15803d; }
+.menu-status-switcher button.is-active.menu-status-switcher__published { background: #485900; color: #ffffff; }
 .menu-status-switcher button.is-active.menu-status-switcher__hidden { background: #33244b; }
 .menu-status-switcher button:disabled { cursor: wait; opacity: .6; }
 .menu-publish-card__primary, .menu-publish-card__danger { border: 0; border-radius: .7rem; padding: .65rem .8rem; color: #fff; font-size: .75rem; font-weight: 700; cursor: pointer; }
@@ -2965,7 +2965,7 @@ body[data-dashboard-theme='dark'] .dashboard-shell .menu-status-switcher button 
 body[data-dashboard-theme='dark'] .dashboard-shell .menu-status-switcher button:hover { color: var(--dashboard-text); }
 body[data-dashboard-theme='dark'] .dashboard-shell .menu-status-switcher button.is-active { background: var(--brand-primary); color: #050505; }
 body[data-dashboard-theme='dark'] .dashboard-shell .menu-status-switcher button.is-active.menu-status-switcher__draft { background: #64748b; color: #fff; }
-body[data-dashboard-theme='dark'] .dashboard-shell .menu-status-switcher button.is-active.menu-status-switcher__published { background: #23834d; color: #fff; }
+body[data-dashboard-theme='dark'] .dashboard-shell .menu-status-switcher button.is-active.menu-status-switcher__published { background: var(--brand-primary, #deff36); color: #0a0f0d; font-weight: 800; box-shadow: 0 0 14px rgba(222, 255, 54, 0.3); }
 body[data-dashboard-theme='dark'] .dashboard-shell .menu-status-switcher button.is-active.menu-status-switcher__hidden { background: #33244b; color: #fff; }
 body[data-dashboard-theme='dark'] .dashboard-shell .dashboard-skeleton--menu,
 body[data-dashboard-theme='dark'] .dashboard-shell .dashboard-skeleton--list,
