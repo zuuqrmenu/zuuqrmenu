@@ -152,7 +152,7 @@ const defaults = {
   font: 'Inter',
   primaryColor: '#1F2937',
   secondaryColor: '#FFFFFF',
-  layout: { showImages: true, showDescriptions: true, showPrices: true, emphasizeFeatured: true, style: 'STANDARD', showStories: false },
+  layout: { showImages: true, showDescriptions: true, showPrices: true, emphasizeFeatured: true, style: 'STANDARD', showStories: true },
 };
 
 export const buildDefaultMenuTemplate = (overrides = {}) => ({

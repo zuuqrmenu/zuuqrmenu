@@ -1,8 +1,25 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 
 const FeaturedStories = ({ products, onSelect }) => {
-  const featured = (products || []).filter((product) => product?.isFeatured);
   const [viewed, setViewed] = useState(new Set());
+
+  const featured = useMemo(() => {
+    const list = products || [];
+    // 1. Öne çıkan ve fotoğrafı olan ürünler
+    const featuredWithImages = list.filter((p) => p?.isFeatured && p?.image);
+    if (featuredWithImages.length >= 2) return featuredWithImages;
+
+    // 2. Öne çıkan tüm ürünler
+    const allFeatured = list.filter((p) => p?.isFeatured);
+    if (allFeatured.length >= 2) return allFeatured;
+
+    // 3. Fotoğraflı ürünler
+    const withImages = list.filter((p) => p?.image);
+    if (withImages.length > 0) return withImages.slice(0, 12);
+
+    // 4. Tüm ürünler (en fazla 12 adet)
+    return list.slice(0, 12);
+  }, [products]);
 
   if (!featured.length) return null;
 

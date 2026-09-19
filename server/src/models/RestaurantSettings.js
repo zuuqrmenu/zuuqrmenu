@@ -14,7 +14,7 @@ const menuThemeSchema = new mongoose.Schema({
     showPrices: { type: Boolean, default: true },
     emphasizeFeatured: { type: Boolean, default: true },
     style: { type: String, enum: ['STANDARD', 'COMPACT', 'EDITORIAL'], default: 'STANDARD' },
-    showStories: { type: Boolean, default: false },
+    showStories: { type: Boolean, default: true },
   },
 }, { _id: true, timestamps: true });
 
@@ -65,12 +65,12 @@ const restaurantSettingsSchema = new mongoose.Schema({
   menuThemes: {
     type: [menuThemeSchema],
     default: [],
-    validate: { validator: (themes) => themes.length <= 5, message: 'En fazla 5 menü teması kaydedebilirsiniz.' },
+    validate: { validator: (themes) => themes.length <= 3, message: 'En fazla 3 özel tema kaydedebilirsiniz.' },
   },
   savedMenus: {
     type: [menuThemeSchema],
     default: [],
-    validate: { validator: (themes) => themes.length <= 5, message: 'En fazla 5 menü kaydı oluşturabilirsiniz.' },
+    validate: { validator: (themes) => themes.length <= 3, message: 'En fazla 3 özel tema kaydedebilirsiniz.' },
   },
   seoEnabled: {
     type: Boolean,

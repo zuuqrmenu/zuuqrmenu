@@ -472,9 +472,24 @@ const MenuManagement = () => {
           }}
           onSaved={async (themes, savedPayload, savedIndex) => {
             const settings = await saveMenuThemes(themes);
+            const savedList = settings?.menuThemes || themes;
             if (settings?.menuThemes) setMenuThemes(settings.menuThemes);
+
+            const isEditing = typeof savedIndex === 'number' && savedIndex >= 0;
+            let targetThemeId = null;
+            if (isEditing && savedList[savedIndex]) {
+              targetThemeId = savedList[savedIndex]._id || savedList[savedIndex].id;
+            } else if (!isEditing && savedList.length > 0) {
+              const newest = savedList[savedList.length - 1];
+              targetThemeId = newest?._id || newest?.id;
+            }
+
+            if (!isEditing && targetThemeId) {
+              await selectMenuTheme(targetThemeId);
+            }
+
             setNotice('');
-            setTimeout(() => setNotice(typeof savedIndex === 'number' && savedIndex >= 0 ? 'Tema başarıyla güncellendi.' : 'Tema başarıyla kaydedildi.'), 50);
+            setTimeout(() => setNotice(isEditing ? 'Tema başarıyla güncellendi.' : 'Tema başarıyla kaydedildi ve uygulandı.'), 50);
             setHighlightViewMenu(true);
             setTimeout(() => setHighlightViewMenu(false), 9000);
             return settings;

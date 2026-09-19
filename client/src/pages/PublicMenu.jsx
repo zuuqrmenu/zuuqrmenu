@@ -187,8 +187,8 @@ const PublicMenu = () => {
 
   const theme = getPublicMenuTheme(data.restaurant.theme || 'DEFAULT');
   const menuTheme = data.restaurant.menuTheme;
-  const menuMode = menuTheme?.mode || 'LIGHT';
-  const menuLayout = menuTheme?.layout || { showImages: true, showDescriptions: true, showPrices: true, emphasizeFeatured: true, style: 'STANDARD' };
+  const defaultLayout = { showImages: true, showDescriptions: true, showPrices: true, emphasizeFeatured: true, style: 'STANDARD', showStories: true };
+  const menuLayout = { ...defaultLayout, ...(menuTheme?.layout || {}), showStories: menuTheme?.layout?.showStories !== false };
   const selectedTheme = getPublicMenuTheme(menuTheme?.theme || data.restaurant.theme || 'DEFAULT', menuMode);
   const canonicalUrl = `${publicSiteOrigin}/${encodeURIComponent(username)}/menu`;
   const seoTitle = `${data.restaurant.name} Menü | zuuqrmenu`;
