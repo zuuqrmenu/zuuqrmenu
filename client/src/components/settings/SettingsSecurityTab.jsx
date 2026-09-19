@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { authService } from '../../services/authService';
 import { useAuth } from '../../context/AuthContext';
 
@@ -12,7 +13,7 @@ const SettingsSecurityTab = ({ email, onEmailChanged, onNotice }) => {
   const { checkAuth } = useAuth();
   const [modal, setModal] = useState(null);
   const [step, setStep] = useState(1);
-  const [form, setForm] = useState({ currentEmail: email, currentPassword: '', newEmail: '', newPassword: '', confirmPassword: '' });
+  const [form, setForm] = useState({ currentEmail: '', currentPassword: '', newEmail: '', newPassword: '', confirmPassword: '' });
   const [saving, setSaving] = useState(false);
   const [modalError, setModalError] = useState('');
   const [isClosing, setIsClosing] = useState(false);
@@ -21,7 +22,7 @@ const SettingsSecurityTab = ({ email, onEmailChanged, onNotice }) => {
     setIsClosing(false);
     setModal(type);
     setStep(1);
-    setForm({ currentEmail: email, currentPassword: '', newEmail: '', newPassword: '', confirmPassword: '' });
+    setForm({ currentEmail: '', currentPassword: '', newEmail: '', newPassword: '', confirmPassword: '' });
     setModalError('');
   };
 
@@ -31,6 +32,7 @@ const SettingsSecurityTab = ({ email, onEmailChanged, onNotice }) => {
     setTimeout(() => {
       setModal(null);
       setStep(1);
+      setForm({ currentEmail: '', currentPassword: '', newEmail: '', newPassword: '', confirmPassword: '' });
       setModalError('');
       setIsClosing(false);
       if (typeof callback === 'function') callback();
@@ -39,11 +41,17 @@ const SettingsSecurityTab = ({ email, onEmailChanged, onNotice }) => {
 
   useEffect(() => {
     if (!modal) return undefined;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') closeModal();
     };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, [modal, isClosing]);
 
   const update = (event) => setForm((current) => ({ ...current, [event.target.name]: event.target.value }));
@@ -175,7 +183,7 @@ const SettingsSecurityTab = ({ email, onEmailChanged, onNotice }) => {
         </div>
       </div>
 
-      {modal && (
+      {typeof document !== 'undefined' && modal ? createPortal(
         <div
           className={`settings-modal-backdrop ${isClosing ? 'is-closing' : ''}`}
           role="presentation"
@@ -209,18 +217,37 @@ const SettingsSecurityTab = ({ email, onEmailChanged, onNotice }) => {
             </div>
 
             {step === 1 ? (
-              <form onSubmit={verify} className="settings-modal__form">
+              <form onSubmit={verify} className="settings-modal__form" autoComplete="off">
                 <p className="settings-modal__form-desc">
                   İşleme devam etmeden önce lütfen mevcut hesap bilgilerinizi doğrulayın.
                 </p>
                 <div className="settings-modal__field-group">
                   <label className="settings-field-label">
                     <span>Mevcut E-posta</span>
-                    <input name="currentEmail" type="email" value={form.currentEmail} onChange={update} required className="field-input" />
+                    <input
+                      name="currentEmail"
+                      type="email"
+                      value={form.currentEmail}
+                      onChange={update}
+                      required
+                      className="field-input"
+                      autoComplete="off"
+                      placeholder="Mevcut e-posta adresinizi girin"
+                      autoFocus
+                    />
                   </label>
                   <label className="settings-field-label">
                     <span>Mevcut Şifre</span>
-                    <input name="currentPassword" type="password" value={form.currentPassword} onChange={update} required className="field-input" autoFocus />
+                    <input
+                      name="currentPassword"
+                      type="password"
+                      value={form.currentPassword}
+                      onChange={update}
+                      required
+                      className="field-input"
+                      autoComplete="new-password"
+                      placeholder="Mevcut şifrenizi girin"
+                    />
                   </label>
                 </div>
                 {modalError && <div className="settings-modal__error">{modalError}</div>}
@@ -232,14 +259,24 @@ const SettingsSecurityTab = ({ email, onEmailChanged, onNotice }) => {
                 </div>
               </form>
             ) : modal === 'email' ? (
-              <form onSubmit={updateEmail} className="settings-modal__form">
+              <form onSubmit={updateEmail} className="settings-modal__form" autoComplete="off">
                 <p className="settings-modal__form-desc">
                   Doğrulama başarılı. Yeni e-posta adresinizi girin.
                 </p>
                 <div className="settings-modal__field-group">
                   <label className="settings-field-label">
                     <span>Yeni E-posta Adresi</span>
-                    <input name="newEmail" type="email" value={form.newEmail} onChange={update} required className="field-input" autoFocus />
+                    <input
+                      name="newEmail"
+                      type="email"
+                      value={form.newEmail}
+                      onChange={update}
+                      required
+                      className="field-input"
+                      autoComplete="off"
+                      placeholder="yeni@eposta.com"
+                      autoFocus
+                    />
                   </label>
                 </div>
                 {modalError && <div className="settings-modal__error">{modalError}</div>}
@@ -251,19 +288,38 @@ const SettingsSecurityTab = ({ email, onEmailChanged, onNotice }) => {
                 </div>
               </form>
             ) : (
-              <form onSubmit={updatePassword} className="settings-modal__form">
+              <form onSubmit={updatePassword} className="settings-modal__form" autoComplete="off">
                 <p className="settings-modal__form-desc">
                   Doğrulama başarılı. Yeni güçlü şifrenizi belirleyin.
                 </p>
                 <div className="settings-modal__field-group">
                   <label className="settings-field-label">
                     <span>Yeni Şifre</span>
-                    <input name="newPassword" type="password" value={form.newPassword} onChange={update} required className="field-input" autoFocus />
+                    <input
+                      name="newPassword"
+                      type="password"
+                      value={form.newPassword}
+                      onChange={update}
+                      required
+                      className="field-input"
+                      autoComplete="new-password"
+                      placeholder="Yeni şifreniz"
+                      autoFocus
+                    />
                     <small className="settings-field-hint">En az 8 karakter, harf ve rakam içermelidir.</small>
                   </label>
                   <label className="settings-field-label">
                     <span>Yeni Şifre (Tekrar)</span>
-                    <input name="confirmPassword" type="password" value={form.confirmPassword} onChange={update} required className="field-input" />
+                    <input
+                      name="confirmPassword"
+                      type="password"
+                      value={form.confirmPassword}
+                      onChange={update}
+                      required
+                      className="field-input"
+                      autoComplete="new-password"
+                      placeholder="Yeni şifrenizi tekrar girin"
+                    />
                   </label>
                 </div>
                 {modalError && <div className="settings-modal__error">{modalError}</div>}
@@ -276,8 +332,9 @@ const SettingsSecurityTab = ({ email, onEmailChanged, onNotice }) => {
               </form>
             )}
           </section>
-        </div>
-      )}
+        </div>,
+        document.body
+      ) : null}
     </div>
   );
 };

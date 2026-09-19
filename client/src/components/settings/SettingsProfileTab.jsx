@@ -55,15 +55,26 @@ const SettingsProfileTab = ({ account, setAccount, onNotice, onError }) => {
           </label>
 
           <label className="settings-field-label">
-            <span>Kullanıcı Adı (Menü Bağlantısı)</span>
-            <input
-              name="username"
-              value={account.username || ''}
-              onChange={updateAccount}
-              placeholder="restoraniniz"
-              className="field-input settings-readonly-field"
-              readOnly={Boolean(account.username)}
-            />
+            <span className="settings-field-label__row">
+              <span>Kullanıcı Adı (Menü Bağlantısı)</span>
+              <span className="settings-readonly-badge">Değiştirilemez</span>
+            </span>
+            <div className="settings-readonly-input-wrap">
+              <input
+                name="username"
+                value={account.username || ''}
+                readOnly
+                disabled
+                placeholder="restoraniniz"
+                className="field-input settings-readonly-field"
+              />
+              <span className="settings-readonly-lock-icon" title="Değiştirilemez" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+              </span>
+            </div>
             <small className="settings-field-hint">
               Menü linkiniz: <strong>{publicMenuUrl}</strong>
             </small>
