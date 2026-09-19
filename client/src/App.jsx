@@ -20,15 +20,42 @@ const MenuShowcase = lazy(() => import('./pages/MenuShowcase'));
 // Initialise GA4 once when the module is first loaded
 initGA();
 
-const RouteLoading = () => (
-  <div className="route-loading">
-    <div className="route-loading__content">
-      <img src="/logo_darkmode.svg" alt="zuuqrmenu" className="route-loading__logo" />
-      <span className="route-loading__spinner" aria-label="Yükleniyor" />
-      <p>Menünüz hazırlanıyor...</p>
+const resolveCurrentTheme = () => {
+  if (typeof window === 'undefined') return 'dark';
+  const path = window.location.pathname;
+  const isDashboard = path.startsWith('/dashboard') || path.startsWith('/admin');
+  if (!isDashboard) {
+    return 'dark';
+  }
+  const bodyTheme = document.body.getAttribute('data-dashboard-theme');
+  if (bodyTheme === 'dark' || bodyTheme === 'light') return bodyTheme;
+  const storedTheme = localStorage.getItem('zuulab.dashboard.theme') || 'system';
+  if (storedTheme === 'dark' || storedTheme === 'light') return storedTheme;
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+};
+
+const RouteLoading = () => {
+  const theme = resolveCurrentTheme();
+  const isDark = theme === 'dark';
+
+  return (
+    <div className={`route-loading ${isDark ? 'route-loading--dark' : 'route-loading--light'}`} data-theme={theme}>
+      <div className="route-loading__ambient" aria-hidden="true" />
+      <div className="route-loading__content">
+        <div className="route-loading__brand">
+          <img
+            src={isDark ? '/logo_darkmode.svg' : '/logo.svg'}
+            alt="zuuqrmenu"
+            className="route-loading__logo"
+          />
+        </div>
+        <div className="route-loading__track" aria-label="Yükleniyor" role="progressbar">
+          <div className="route-loading__beam" />
+        </div>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const HostRouterGuard = () => {
   const location = useLocation();
