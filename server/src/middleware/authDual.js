@@ -4,7 +4,7 @@ import User from '../models/User.js';
 
 const unauthorizedMessage = 'Kimlik doğrulaması gerekli.';
 const conflictMessage = 'Kimlik doğrulama bilgileri birbiriyle eşleşmiyor.';
-const unlinkedMessage = 'Bu Firebase hesabı ZuuLab QR hesabıyla eşleştirilmemiş.';
+const unlinkedMessage = 'Bu Firebase hesabı zuuqrmenu hesabıyla eşleştirilmemiş.';
 
 const getBearerToken = (req) => {
   const authorization = req.get('authorization') || '';

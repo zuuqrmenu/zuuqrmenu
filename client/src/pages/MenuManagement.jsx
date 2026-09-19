@@ -560,49 +560,51 @@ const MenuManagement = () => {
           )}
         </section>
         {notice && <div className={`settings-status settings-status--success ${noticeVisible ? 'is-visible' : 'is-hiding'}`} role="status">{notice}<button onClick={() => setNotice('')} className="ml-3" aria-label="Bildirimi kapat">×</button></div>}
-        {overview ? (
-          <section className="menu-publish-card">
-            <div className="menu-publish-card__header">
-              <div>
-                <p className="menu-publish-card__eyebrow">Yayın Durumu</p>
-                <h3>{statusCopy[0]}</h3>
-                <p>{statusCopy[1]}</p>
-                {overview.restaurant?.publishedAt && (
-                  <small>Son yayın: {new Intl.DateTimeFormat('tr-TR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(overview.restaurant.publishedAt))}</small>
-                )}
+        <div className="menu-management-header-grid">
+          {overview ? (
+            <section className="menu-publish-card">
+              <div className="menu-publish-card__header">
+                <div>
+                  <p className="menu-publish-card__eyebrow">Yayın Durumu</p>
+                  <h3>{statusCopy[0]}</h3>
+                  <p>{statusCopy[1]}</p>
+                  {overview.restaurant?.publishedAt && (
+                    <small>Son yayın: {new Intl.DateTimeFormat('tr-TR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(overview.restaurant.publishedAt))}</small>
+                  )}
+                </div>
+                <div className="menu-status-switcher" role="group" aria-label="Menü görünürlüğü">
+                  {[['DRAFT', 'Taslak'], ['PUBLISHED', 'Yayında'], ['HIDDEN', 'Gizli']].map(([value, label]) => (
+                    <button
+                      type="button"
+                      key={value}
+                      className={`${menuStatus === value ? 'is-active ' : ''}menu-status-switcher__${value.toLowerCase()}`}
+                      disabled={actionId === 'menu-status'}
+                      onClick={() => menuStatus !== value && setStatusDialog({ status: value })}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="menu-status-switcher" role="group" aria-label="Menü görünürlüğü">
-                {[['DRAFT', 'Taslak'], ['PUBLISHED', 'Yayında'], ['HIDDEN', 'Gizli']].map(([value, label]) => (
-                  <button
-                    type="button"
-                    key={value}
-                    className={`${menuStatus === value ? 'is-active ' : ''}menu-status-switcher__${value.toLowerCase()}`}
-                    disabled={actionId === 'menu-status'}
-                    onClick={() => menuStatus !== value && setStatusDialog({ status: value })}
-                  >
-                    {label}
-                  </button>
-                ))}
+            </section>
+          ) : (
+            <section className="menu-publish-card menu-publish-card--skeleton">
+              <div className="menu-publish-card__header">
+                <div>
+                  <span className="dashboard-skeleton__line dashboard-skeleton__eyebrow" style={{ width: '80px', display: 'block' }} />
+                  <span className="dashboard-skeleton__line dashboard-skeleton__heading" style={{ width: '160px', height: '1.4rem', marginTop: '6px', display: 'block' }} />
+                  <span className="dashboard-skeleton__line dashboard-skeleton__short" style={{ width: '220px', marginTop: '6px', display: 'block' }} />
+                </div>
+                <div className="menu-status-switcher" style={{ opacity: 0.6, pointerEvents: 'none' }}>
+                  <button type="button" className="is-active">Taslak</button>
+                  <button type="button">Yayında</button>
+                  <button type="button">Gizli</button>
+                </div>
               </div>
-            </div>
-          </section>
-        ) : (
-          <section className="menu-publish-card menu-publish-card--skeleton">
-            <div className="menu-publish-card__header">
-              <div>
-                <span className="dashboard-skeleton__line dashboard-skeleton__eyebrow" style={{ width: '80px', display: 'block' }} />
-                <span className="dashboard-skeleton__line dashboard-skeleton__heading" style={{ width: '160px', height: '1.4rem', marginTop: '6px', display: 'block' }} />
-                <span className="dashboard-skeleton__line dashboard-skeleton__short" style={{ width: '220px', marginTop: '6px', display: 'block' }} />
-              </div>
-              <div className="menu-status-switcher" style={{ opacity: 0.6, pointerEvents: 'none' }}>
-                <button type="button" className="is-active">Taslak</button>
-                <button type="button">Yayında</button>
-                <button type="button">Gizli</button>
-              </div>
-            </div>
-          </section>
-        )}
-        <section className="menu-customization-entry"><div className="menu-customization-entry__header"><div><p className="menu-publish-card__eyebrow">Tasarım</p><h3>Menü Özelleştirme</h3><p>Temanızı, tipografinizi ve ürün görünümünü beğeninize göre tasarlayın.</p></div></div><div className="menu-customization-entry__actions"><button type="button" className="menu-customization-entry__edit" onClick={() => setThemeSelectionOpen(true)} aria-label="Kayıtlı menü tasarımını seç" title="Kayıtlı menü tasarımını seç"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m4 16.5-.8 4.3 4.3-.8L19.2 8.3a2.4 2.4 0 0 0-3.4-3.4L4 16.5Z" /><path d="m14.5 6.5 3 3" /></svg></button><button type="button" onClick={handleOpenCustomization} className="menu-customization-entry__button"><span>✦</span> Özelleştir</button></div></section>
+            </section>
+          )}
+          <section className="menu-customization-entry"><div className="menu-customization-entry__header"><div><p className="menu-publish-card__eyebrow">Tasarım</p><h3>Menü Özelleştirme</h3><p>Temanızı, tipografinizi ve ürün görünümünü beğeninize göre tasarlayın.</p></div></div><div className="menu-customization-entry__actions"><button type="button" className="menu-customization-entry__edit" onClick={() => setThemeSelectionOpen(true)} aria-label="Kayıtlı menü tasarımını seç" title="Kayıtlı menü tasarımını seç"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m4 16.5-.8 4.3 4.3-.8L19.2 8.3a2.4 2.4 0 0 0-3.4-3.4L4 16.5Z" /><path d="m14.5 6.5 3 3" /></svg></button><button type="button" onClick={handleOpenCustomization} className="menu-customization-entry__button"><span>✦</span> Özelleştir</button></div></section>
+        </div>
         {loading ? (
           <DashboardSkeleton variant="menu" />
         ) : (

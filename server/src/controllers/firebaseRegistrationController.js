@@ -53,10 +53,10 @@ export const registerFirebase = async (req, res, next) => {
     if (invalidField) return res.status(400).json({ error: invalidField });
 
     const existingUid = await User.findOne({ firebaseUid: firebaseUser.uid }).select('_id');
-    if (existingUid) return res.status(409).json({ error: 'Bu Firebase hesabı zaten bir ZuuLab QR hesabına bağlı.' });
+    if (existingUid) return res.status(409).json({ error: 'Bu Firebase hesabı zaten bir zuuqrmenu hesabına bağlı.' });
 
     const existingEmail = await User.findOne({ email }).select('_id');
-    if (existingEmail) return res.status(409).json({ error: 'Bu e-posta adresiyle zaten bir ZuuLab QR hesabı bulunuyor.' });
+    if (existingEmail) return res.status(409).json({ error: 'Bu e-posta adresiyle zaten bir zuuqrmenu hesabı bulunuyor.' });
 
     createdUser = await User.create({
       email,
@@ -101,8 +101,8 @@ export const registerFirebase = async (req, res, next) => {
     ]);
 
     if (error?.code === 11000) {
-      if (error.keyPattern?.firebaseUid) return res.status(409).json({ error: 'Bu Firebase hesabı zaten bir ZuuLab QR hesabına bağlı.' });
-      if (error.keyPattern?.email) return res.status(409).json({ error: 'Bu e-posta adresiyle zaten bir ZuuLab QR hesabı bulunuyor.' });
+      if (error.keyPattern?.firebaseUid) return res.status(409).json({ error: 'Bu Firebase hesabı zaten bir zuuqrmenu hesabına bağlı.' });
+      if (error.keyPattern?.email) return res.status(409).json({ error: 'Bu e-posta adresiyle zaten bir zuuqrmenu hesabı bulunuyor.' });
       if (error.keyPattern?.slug) return res.status(409).json({ error: 'Bu restoran adıyla kayıt oluşturulamadı. Lütfen farklı bir restoran adı deneyin.' });
     }
     return next(error);

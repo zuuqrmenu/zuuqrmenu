@@ -38,12 +38,30 @@ export const ProductIcon = ({ name }) => {
   return <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">{paths[name]}</svg>;
 };
 
-const OverflowActionMenu = ({ label, items, disabled = false }) => {
+const OverflowActionMenu = ({ label, items, disabled = false, placement = 'auto', onOpenChange }) => {
   const [open, setOpen] = useState(false);
+  const [openUpwards, setOpenUpwards] = useState(false);
   const menuRef = useRef(null);
 
+  const calculateDirection = () => {
+    if (!menuRef.current) return;
+    const rect = menuRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+
+    if (placement === 'up') {
+      setOpenUpwards(spaceAbove > 140 || spaceAbove >= spaceBelow);
+    } else if (placement === 'down') {
+      setOpenUpwards(false);
+    } else {
+      setOpenUpwards(spaceBelow < 220 && spaceAbove > spaceBelow);
+    }
+  };
+
   useEffect(() => {
+    onOpenChange?.(open);
     if (!open) return undefined;
+    calculateDirection();
     const closeOnPointerDown = (event) => {
       if (!menuRef.current?.contains(event.target)) setOpen(false);
     };
@@ -56,15 +74,19 @@ const OverflowActionMenu = ({ label, items, disabled = false }) => {
     document.addEventListener('pointerdown', closeOnPointerDown);
     document.addEventListener('keydown', closeOnEscape);
     document.addEventListener('menu-structure-overflow-open', closeOtherMenus);
+    window.addEventListener('resize', calculateDirection);
+    window.addEventListener('scroll', calculateDirection, true);
     return () => {
       document.removeEventListener('pointerdown', closeOnPointerDown);
       document.removeEventListener('keydown', closeOnEscape);
       document.removeEventListener('menu-structure-overflow-open', closeOtherMenus);
+      window.removeEventListener('resize', calculateDirection);
+      window.removeEventListener('scroll', calculateDirection, true);
     };
-  }, [open]);
+  }, [open, placement, onOpenChange]);
 
   return (
-    <div ref={menuRef} className={`menu-structure-overflow ${open ? 'is-open' : ''}`}>
+    <div ref={menuRef} className={`menu-structure-overflow ${open ? 'is-open' : ''} ${openUpwards ? 'opens-up' : ''}`}>
       <button
         type="button"
         className="menu-structure-overflow__trigger"
@@ -76,7 +98,10 @@ const OverflowActionMenu = ({ label, items, disabled = false }) => {
         onClick={(event) => {
           event.stopPropagation();
           setOpen((current) => {
-            if (!current) document.dispatchEvent(new CustomEvent('menu-structure-overflow-open', { detail: menuRef.current }));
+            if (!current) {
+              calculateDirection();
+              document.dispatchEvent(new CustomEvent('menu-structure-overflow-open', { detail: menuRef.current }));
+            }
             return !current;
           });
         }}
@@ -104,14 +129,31 @@ const OverflowActionMenu = ({ label, items, disabled = false }) => {
 
 const SortableProduct = ({ product, disabled, onEdit, onToggleAvailability, onToggleFeatured, onDelete }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: `product:${getId(product)}` });
-  const style = { transform: CSS.Transform.toString(transform), transition };
+  const [menuOpen, setMenuOpen] = useState(false);
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: menuOpen ? 60 : undefined,
+    position: menuOpen ? 'relative' : undefined,
+  };
 
   return (
-    <article ref={setNodeRef} style={style} className={`menu-structure-product ${isDragging ? 'is-dragging' : ''}`}>
+    <article ref={setNodeRef} style={style} className={`menu-structure-product ${isDragging ? 'is-dragging' : ''} ${menuOpen ? 'has-open-menu' : ''}`}>
       <button type="button" className="menu-structure-product__handle" {...attributes} {...listeners} aria-label={`${product.name} ürününü taşı`}><DragHandle label="Ürünü taşı" /></button>
       {product.image ? <img className="menu-structure-product__image" src={product.image} alt={`${product.name} görseli`} /> : <span className="menu-structure-product__image menu-structure-product__image--empty" aria-hidden="true">✦</span>}
       <div className="menu-structure-product__content"><div className="menu-structure-product__title-row"><h4>{product.name}</h4><span className={product.isAvailable ? 'is-available' : 'is-unavailable'}>{product.isAvailable ? 'Mevcut' : 'Tükendi'}</span>{product.isFeatured && <span className="is-featured">Öne Çıkan</span>}</div><p>₺{Number(product.price).toFixed(2)}</p>{product.shortDescription && <small>{product.shortDescription}</small>}</div>
-      <OverflowActionMenu label={`${product.name} işlemleri`} disabled={disabled} items={[{ label: 'Düzenle', icon: 'edit', onSelect: () => onEdit(product) }, { label: product.isAvailable ? 'Pasifleştir' : 'Aktifleştir', icon: product.isAvailable ? 'pause' : 'play', tone: product.isAvailable ? 'neutral' : 'success', onSelect: () => onToggleAvailability(product) }, { label: product.isFeatured ? 'Öne Çıkarmayı Kaldır' : 'Öne Çıkar', icon: 'star', tone: product.isFeatured ? 'featured' : 'gold', onSelect: () => onToggleFeatured(product) }, { label: 'Sil', icon: 'trash', tone: 'danger', onSelect: () => onDelete(product) }]} />
+      <OverflowActionMenu
+        label={`${product.name} işlemleri`}
+        disabled={disabled}
+        placement="up"
+        onOpenChange={setMenuOpen}
+        items={[
+          { label: 'Düzenle', icon: 'edit', onSelect: () => onEdit(product) },
+          { label: product.isAvailable ? 'Pasifleştir' : 'Aktifleştir', icon: product.isAvailable ? 'pause' : 'play', tone: product.isAvailable ? 'neutral' : 'success', onSelect: () => onToggleAvailability(product) },
+          { label: product.isFeatured ? 'Öne Çıkarmayı Kaldır' : 'Öne Çıkar', icon: 'star', tone: product.isFeatured ? 'featured' : 'gold', onSelect: () => onToggleFeatured(product) },
+          { label: 'Sil', icon: 'trash', tone: 'danger', onSelect: () => onDelete(product) },
+        ]}
+      />
     </article>
   );
 };
@@ -119,11 +161,12 @@ const SortableProduct = ({ product, disabled, onEdit, onToggleAvailability, onTo
 const SortableCategory = ({ column, actionId, onEdit, onToggle, onDelete, onAddProduct }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: `category:${getId(column.category)}` });
   const { setNodeRef: setDropRef, isOver } = useDroppable({ id: `category-drop:${getId(column.category)}` });
+  const [menuOpen, setMenuOpen] = useState(false);
   const setRefs = (node) => { setNodeRef(node); setDropRef(node); };
 
   return (
-    <section ref={setRefs} style={{ transform: CSS.Transform.toString(transform), transition }} className={`menu-structure-category ${isDragging ? 'is-dragging' : ''} ${isOver ? 'is-drop-target' : ''}`}>
-      <header className="menu-structure-category__header"><div className="menu-structure-category__identity"><button type="button" className="menu-structure-category__handle" {...attributes} {...listeners} aria-label={`${column.category.name} kategorisini taşı`}><DragHandle label="Kategoriyi taşı" /></button><div><h3>{column.category.name}</h3>{column.category.description && <p>{column.category.description}</p>}<small>{column.products.length} ürün</small></div></div><OverflowActionMenu label={`${column.category.name} işlemleri`} disabled={!!actionId} items={[{ label: 'Düzenle', icon: 'edit', onSelect: () => onEdit(column.category) }, { label: column.category.isActive ? 'Pasifleştir' : 'Aktifleştir', icon: column.category.isActive ? 'pause' : 'play', tone: column.category.isActive ? 'neutral' : 'success', onSelect: () => onToggle(column.category) }, { label: 'Sil', icon: 'trash', tone: 'danger', onSelect: () => onDelete(column.category) }]} />
+    <section ref={setRefs} style={{ transform: CSS.Transform.toString(transform), transition, zIndex: menuOpen ? 50 : undefined, position: menuOpen ? 'relative' : undefined }} className={`menu-structure-category ${isDragging ? 'is-dragging' : ''} ${isOver ? 'is-drop-target' : ''} ${menuOpen ? 'has-open-menu' : ''}`}>
+      <header className="menu-structure-category__header"><div className="menu-structure-category__identity"><button type="button" className="menu-structure-category__handle" {...attributes} {...listeners} aria-label={`${column.category.name} kategorisini taşı`}><DragHandle label="Kategoriyi taşı" /></button><div><h3>{column.category.name}</h3>{column.category.description && <p>{column.category.description}</p>}<small>{column.products.length} ürün</small></div></div><OverflowActionMenu label={`${column.category.name} işlemleri`} disabled={!!actionId} onOpenChange={setMenuOpen} items={[{ label: 'Düzenle', icon: 'edit', onSelect: () => onEdit(column.category) }, { label: column.category.isActive ? 'Pasifleştir' : 'Aktifleştir', icon: column.category.isActive ? 'pause' : 'play', tone: column.category.isActive ? 'neutral' : 'success', onSelect: () => onToggle(column.category) }, { label: 'Sil', icon: 'trash', tone: 'danger', onSelect: () => onDelete(column.category) }]} />
       </header>
       <div ref={setDropRef} className={`menu-structure-category__products ${isOver ? 'is-drop-target' : ''}`}><SortableContext items={column.products.map((product) => `product:${getId(product)}`)} strategy={verticalListSortingStrategy}>{column.products.map((product) => <SortableProduct key={getId(product)} product={product} disabled={!!actionId} onEdit={onAddProduct.edit} onToggleAvailability={onAddProduct.toggleAvailability} onToggleFeatured={onAddProduct.toggleFeatured} onDelete={onAddProduct.delete} />)}</SortableContext>{column.products.length === 0 && <p className="menu-structure-empty">Bu kategoride henüz ürün yok.</p>}</div>
     </section>

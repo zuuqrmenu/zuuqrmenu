@@ -125,11 +125,11 @@ export const firebaseSession = async (req, res, next) => {
     if (!firebaseUid) return res.status(401).json({ error: 'Geçersiz veya süresi dolmuş Firebase oturumu.' });
     const user = await User.findOne({ firebaseUid }).select('-password');
     if (!user || user.role !== 'RESTAURANT_USER' || !user.isActive) {
-      return res.status(409).json({ error: 'Bu Firebase hesabı henüz bir ZuuLab QR hesabıyla eşleştirilmemiş.' });
+      return res.status(409).json({ error: 'Bu Firebase hesabı henüz bir zuuqrmenu hesabıyla eşleştirilmemiş.' });
     }
 
     const restaurant = user.restaurantId ? await Restaurant.findById(user.restaurantId) : null;
-    if (!restaurant) return res.status(409).json({ error: 'Bu Firebase hesabı henüz bir ZuuLab QR hesabıyla eşleştirilmemiş.' });
+    if (!restaurant) return res.status(409).json({ error: 'Bu Firebase hesabı henüz bir zuuqrmenu hesabıyla eşleştirilmemiş.' });
 
     if (restaurant.status !== 'ACTIVE') {
       return res.status(403).json({ error: restaurant.status === 'PENDING'
