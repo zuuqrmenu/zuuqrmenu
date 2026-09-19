@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import SeoHead from '../components/SeoHead';
 import { trackEvent } from '../utils/analytics';
 import { getPanelUrl } from '../utils/domainHelpers';
+import { useAuth } from '../context/AuthContext';
 
 const steps = [
   ['01', 'Restoranınızı oluşturun'],
@@ -13,6 +14,7 @@ const steps = [
 const LandingHeader = () => {
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
+  const { isAuthenticated, isRestaurantUser } = useAuth();
 
   return (
     <header className="landing-header">
@@ -23,7 +25,11 @@ const LandingHeader = () => {
         <nav className={`landing-nav ${open ? 'is-open' : ''}`} aria-label="Landing navigation">
           <a href="#features" onClick={close}>Özellikler</a>
           <a href="#how-it-works" onClick={close}>Nasıl Çalışır?</a>
-          <a href={getPanelUrl('/login')} onClick={close}>Giriş Yap</a>
+          {isAuthenticated ? (
+            <a href={getPanelUrl(isRestaurantUser ? '/dashboard' : '/admin')} onClick={close}>Yönetim Paneli</a>
+          ) : (
+            <a href={getPanelUrl('/login')} onClick={close}>Giriş Yap</a>
+          )}
           <Link
             to="/register"
             className="landing-button landing-button--small"

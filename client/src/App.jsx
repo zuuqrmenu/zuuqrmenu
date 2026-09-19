@@ -158,17 +158,8 @@ const HomeRoute = () => {
     return <Navigate to="/login" replace />;
   }
 
-  if (!isAuthenticated) return <LandingPage />;
-  if (isAdmin) return <Navigate to="/admin" replace />;
-  if (isRestaurantUser) {
-    if (!isRestaurantAccessible) return <Navigate to="/pending-approval" replace />;
-    if (!isLocalhost()) {
-      window.location.replace('https://panel.zuuqrmenu.com/dashboard');
-      return <RouteLoading />;
-    }
-    return <Navigate to="/dashboard" replace />;
-  }
-  return <Navigate to="/login" replace />;
+  // On main site (www.zuuqrmenu.com), ALWAYS show the Landing Page
+  return <LandingPage />;
 };
 
 function App() {
