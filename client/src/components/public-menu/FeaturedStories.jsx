@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import BlurImage from '../common/BlurImage';
 
 const FeaturedStories = ({ products, onSelect }) => {
   const [viewed, setViewed] = useState(new Set());
@@ -47,7 +48,7 @@ const FeaturedStories = ({ products, onSelect }) => {
               <span className="featured-story__ring bistro-story__ring" aria-hidden="true">
                 <span className="featured-story__thumb bistro-story__thumb">
                   {product.image ? (
-                    <img src={product.image} alt={`${product.name} görseli`} loading="lazy" />
+                    <BlurImage src={product.image} alt={`${product.name} görseli`} loading="lazy" />
                   ) : (
                     <span aria-hidden="true">{product.name.charAt(0)}</span>
                   )}

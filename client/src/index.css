@@ -7129,6 +7129,37 @@ body[data-dashboard-theme='dark'] .date-range-popover svg {
   .tsc-card__body { padding: 1.25rem; }
 }
 
+/* ============================================================
+   PROGRESSIVE BLUR IMAGE LOADING (MENÜ GÖRSELLERİ İÇİN BLUR ETKİSİ)
+   ============================================================ */
+.blur-image {
+  transition: filter 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.5s ease-out;
+  will-change: filter, transform, opacity;
+}
 
+.blur-image--loading {
+  filter: blur(14px);
+  transform: scale(1.06);
+  opacity: 0.85;
+}
 
+.blur-image--loaded {
+  filter: blur(0px);
+  transform: scale(1);
+  opacity: 1;
+}
 
+/* Ensure image containers clip the slight scale transition during blur */
+.public-product__visual,
+.category-bento-card__media,
+.public-modal__image-wrap,
+.story-thumb,
+.menu-hero-cover__backdrop,
+.public-header--grid__logo-wrap,
+.drawer-store-image,
+.category-story-card,
+.modal-rec-card__visual {
+  overflow: hidden !important;
+}

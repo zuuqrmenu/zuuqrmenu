@@ -1,3 +1,5 @@
+import BlurImage from '../common/BlurImage';
+
 const ProductCard = ({ product, onSelect, layout = {}, themeKey }) => {
   const isGrid = themeKey === 'GRID';
   const isFeaturedEmphasized = Boolean(product.isFeatured && layout.emphasizeFeatured !== false);
@@ -31,7 +33,7 @@ const ProductCard = ({ product, onSelect, layout = {}, themeKey }) => {
         </span>
         {hasImage && (
           <span className="public-product__visual">
-            <img src={product.image} alt={`${product.name} görseli`} loading="lazy" />
+            <BlurImage src={product.image} alt={`${product.name} görseli`} loading="lazy" />
           </span>
         )}
       </button>
@@ -44,7 +46,11 @@ const ProductCard = ({ product, onSelect, layout = {}, themeKey }) => {
       className={`public-product ${isFeaturedEmphasized ? 'is-featured' : ''} ${!product.isAvailable ? 'is-unavailable' : ''}`}
       onClick={() => onSelect(product)}
     >
-      {layout.showImages !== false && <span className="public-product__visual">{product.image ? <img src={product.image} alt={`${product.name} görseli`} loading="lazy" /> : '✦'}</span>}
+      {layout.showImages !== false && (
+        <span className="public-product__visual">
+          {product.image ? <BlurImage src={product.image} alt={`${product.name} görseli`} loading="lazy" /> : '✦'}
+        </span>
+      )}
       <span className="public-product__body">
         <span className="public-product__topline">
           <span className="public-product__name">{product.name}</span>

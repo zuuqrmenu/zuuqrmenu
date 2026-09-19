@@ -19,8 +19,8 @@ const loadUserContext = (user) => ({
   restaurantId: user.restaurantId,
 });
 
-const loadJwtIdentity = async (req) => {
-  const token = req.cookies?.token;
+const loadJwtIdentity = async (req, bearerToken) => {
+  const token = req.cookies?.token || bearerToken;
   if (!token) return null;
 
   try {
@@ -74,24 +74,26 @@ const loadFirebaseIdentity = async (bearerToken) => {
 
 export const authDual = async (req, res, next) => {
   const bearerToken = getBearerToken(req);
-  const jwtIdentity = await loadJwtIdentity(req);
 
-  if (!jwtIdentity && !bearerToken) {
+  // 1. First attempt JWT verification (from cookie or Bearer header)
+  const jwtIdentity = await loadJwtIdentity(req, bearerToken);
+  if (jwtIdentity) {
+    req.user = jwtIdentity.context;
+    req.authMethod = 'jwt';
+    return next();
+  }
+
+  // 2. If no valid JWT, attempt Firebase verification using the bearer token
+  if (!bearerToken) {
     return res.status(401).json({ error: unauthorizedMessage });
   }
 
   try {
     const firebaseIdentity = await loadFirebaseIdentity(bearerToken);
-    const identity = jwtIdentity || firebaseIdentity;
+    if (!firebaseIdentity) return res.status(401).json({ error: unauthorizedMessage });
 
-    if (jwtIdentity && firebaseIdentity && String(jwtIdentity.user._id) !== String(firebaseIdentity.user._id)) {
-      return res.status(401).json({ error: conflictMessage });
-    }
-
-    if (!identity) return res.status(401).json({ error: unauthorizedMessage });
-
-    req.user = identity.context;
-    req.authMethod = firebaseIdentity ? (jwtIdentity ? 'jwt+firebase' : 'firebase') : 'jwt';
+    req.user = firebaseIdentity.context;
+    req.authMethod = 'firebase';
     return next();
   } catch (error) {
     const statusCode = error.statusCode || 401;

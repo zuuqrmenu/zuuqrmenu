@@ -15,6 +15,7 @@ import { publicMenuService } from '../services/publicMenuService';
 import { getPublicMenuTheme, publicMenuFonts } from '../utils/publicMenuTheme';
 import { trackEvent } from '../utils/analytics';
 import useBodyScrollLock from '../hooks/useBodyScrollLock';
+import BlurImage from '../components/common/BlurImage';
 
 const langOptions = [
   { code: 'tr', label: 'Türkçe', short: 'TR' },
@@ -307,7 +308,7 @@ const PublicMenu = () => {
                   aria-label="Kategorilere dön"
                 >
                   {data.restaurant.logo ? (
-                    <img
+                    <BlurImage
                       src={data.restaurant.logo}
                       alt={data.restaurant.name}
                       className="public-header--grid__logo-img"
@@ -543,7 +544,7 @@ const PublicMenu = () => {
               <>
                 <button type="button" className="drawer-close" onClick={() => setDrawer('')} aria-label="Kapat">×</button>
                 <div className="drawer-store-image">
-                  {data.restaurant.storeImage ? <img src={data.restaurant.storeImage} alt={`${data.restaurant.name} mağaza görseli`} /> : <span aria-hidden="true">{data.restaurant.name.charAt(0)}</span>}
+                  {data.restaurant.storeImage ? <BlurImage src={data.restaurant.storeImage} alt={`${data.restaurant.name} mağaza görseli`} /> : <span aria-hidden="true">{data.restaurant.name.charAt(0)}</span>}
                 </div>
                 <h2>{data.restaurant.name}</h2>
                 <p className="drawer-label">Kategoriler</p>

@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import BlurImage from '../common/BlurImage';
 
 const MenuHeroCover = ({
   restaurant,
@@ -25,7 +26,7 @@ const MenuHeroCover = ({
   return (
     <div className="menu-hero-cover" aria-label="Restoran karşılama alanı">
       <div className="menu-hero-cover__backdrop">
-        <img src={coverImg} alt={`${restaurant?.name || 'Menü'} kapağı`} className="menu-hero-cover__img" />
+        <BlurImage src={coverImg} alt={`${restaurant?.name || 'Menü'} kapağı`} className="menu-hero-cover__img" />
         <div className="menu-hero-cover__overlay" />
       </div>
 
@@ -50,7 +51,7 @@ const MenuHeroCover = ({
           style={onGoHome ? { cursor: 'pointer' } : undefined}
         >
           {restaurant?.logo ? (
-            <img src={restaurant.logo} alt={restaurant.name} className="menu-hero-cover__logo" />
+            <BlurImage src={restaurant.logo} alt={restaurant.name} className="menu-hero-cover__logo" />
           ) : (
             <span className="menu-hero-cover__name">{restaurant?.name || 'Restoran'}</span>
           )}

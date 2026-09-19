@@ -15,13 +15,32 @@ const api = axios.create({
 // Request interceptor
 api.interceptors.request.use(
   async (config) => {
+    config.headers = config.headers || {};
     const path = config.url || '';
-    const isAuthEndpoint = path.startsWith('/auth/') && !['/auth/link-firebase', '/auth/firebase-session', '/auth/register-firebase'].includes(path);
     const isPublicEndpoint = path.startsWith('/public/');
-    if (!isAuthEndpoint && !isPublicEndpoint && auth.currentUser) {
+    const isAnonymousAuth = path === '/auth/login' || path === '/auth/register-firebase';
+
+    // 1. Check local JWT auth token and its 1-day (24h) expiry
+    const authToken = localStorage.getItem('zuulab_auth_token');
+    const expiresAt = localStorage.getItem('zuulab_auth_expires_at');
+
+    if (authToken && expiresAt) {
+      if (Date.now() > Number(expiresAt)) {
+        // Token has expired after 1 day
+        localStorage.removeItem('zuulab_auth_token');
+        localStorage.removeItem('zuulab_auth_expires_at');
+        localStorage.removeItem('zuulab_auth_user');
+        localStorage.removeItem('zuulab_auth_restaurant');
+      } else if (!isPublicEndpoint && !isAnonymousAuth) {
+        config.headers.Authorization = `Bearer ${authToken}`;
+        return config;
+      }
+    }
+
+    // 2. Fallback to Firebase ID token if available (e.g. initial login / session setup)
+    if (!isPublicEndpoint && !isAnonymousAuth && auth.currentUser) {
       const token = await getFirebaseIdToken();
       if (token) {
-        config.headers = config.headers || {};
         config.headers.Authorization = `Bearer ${token}`;
       }
     }

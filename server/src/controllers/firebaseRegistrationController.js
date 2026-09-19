@@ -84,11 +84,12 @@ export const registerFirebase = async (req, res, next) => {
 
     createdUser.restaurantId = createdRestaurant._id;
     await createdUser.save();
-    setAuthCookie(res, createdUser);
+    const token = setAuthCookie(res, createdUser);
     return res.status(201).json({
       success: true,
       message: 'Hesabınız oluşturuldu. Yönetici onayı bekleniyor.',
       status: 'PENDING',
+      token,
       user: { id: createdUser._id, email: createdUser.email, name: createdUser.name, role: createdUser.role, restaurantId: createdUser.restaurantId },
       restaurant: { id: createdRestaurant._id, name: createdRestaurant.name, slug: createdRestaurant.slug, status: createdRestaurant.status },
     });

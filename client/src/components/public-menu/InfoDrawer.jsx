@@ -1,4 +1,5 @@
 import { trackEvent } from '../../utils/analytics';
+import BlurImage from '../common/BlurImage';
 
 const platformLabels = {
   instagram: 'Instagram',
@@ -171,7 +172,7 @@ const InfoDrawer = ({ restaurant, language, onLanguage, onReview, onClose, theme
     <div className="public-drawer-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <aside className="public-drawer public-drawer--right">
         <button type="button" className="drawer-close" onClick={onClose} aria-label="Kapat">×</button>
-        <div className="drawer-store-image">{restaurant.logo ? <img src={restaurant.logo} alt={`${restaurant.name} logosu`} /> : restaurant.storeImage ? <img src={restaurant.storeImage} alt={`${restaurant.name} mağaza görseli`} /> : <span aria-hidden="true">{restaurant.name.charAt(0)}</span>}</div>
+        <div className="drawer-store-image">{restaurant.logo ? <BlurImage src={restaurant.logo} alt={`${restaurant.name} logosu`} /> : restaurant.storeImage ? <BlurImage src={restaurant.storeImage} alt={`${restaurant.name} mağaza görseli`} /> : <span aria-hidden="true">{restaurant.name.charAt(0)}</span>}</div>
         <h2>{restaurant.name}</h2>
         <p className="drawer-label">Dil</p>
         <div className="language-options">{[['tr','Türkçe'],['en','English'],['ar','العربية']].map(([value,label]) => <button type="button" key={value} className={language === value ? 'is-selected' : ''} onClick={() => onLanguage(value)}>{label}</button>)}</div>

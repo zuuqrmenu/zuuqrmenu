@@ -4,8 +4,15 @@ import Restaurant from '../models/Restaurant.js';
 
 export const auth = async (req, res, next) => {
   try {
-    // Get token from httpOnly cookie
-    const token = req.cookies.token;
+    // Get token from httpOnly cookie or Authorization Bearer header
+    let token = req.cookies?.token;
+    if (!token) {
+      const authHeader = req.get('authorization') || '';
+      const match = authHeader.match(/^Bearer\s+(.+)$/i);
+      if (match) {
+        token = match[1];
+      }
+    }
 
     if (!token) {
       return res.status(401).json({ error: 'No token provided' });

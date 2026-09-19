@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import ProductCard from './ProductCard';
+import BlurImage from '../common/BlurImage';
 
 const CategorySection = ({ category, onProductSelect, layout, themeKey }) => {
   const isGridTheme = themeKey === 'GRID';
@@ -34,7 +35,7 @@ const CategorySection = ({ category, onProductSelect, layout, themeKey }) => {
                 onClick={() => onProductSelect(prod)}
                 aria-label={`${prod.name} detayını aç`}
               >
-                <img
+                <BlurImage
                   src={prod.image}
                   alt={prod.name}
                   loading="lazy"

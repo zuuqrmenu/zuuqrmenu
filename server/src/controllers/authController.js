@@ -43,6 +43,7 @@ export const setAuthCookie = (res, user) => {
     ...getAuthCookieOptions(),
     maxAge: 24 * 60 * 60 * 1000,
   });
+  return token;
 };
 
 export const login = async (req, res) => {
@@ -90,11 +91,12 @@ export const login = async (req, res) => {
     await user.save();
 
     // Generate token
-    setAuthCookie(res, user);
+    const token = setAuthCookie(res, user);
 
     // Get restaurant if exists
     res.json({
       message: 'Login successful',
+      token,
       user: {
         id: user._id,
         email: user.email,
@@ -135,9 +137,10 @@ export const firebaseSession = async (req, res, next) => {
         : 'Hesabınız şu anda restoran paneline erişemiyor.' });
     }
 
-    setAuthCookie(res, user);
+    const token = setAuthCookie(res, user);
     res.json({
       message: 'Firebase uygulama oturumu oluşturuldu.',
+      token,
       user: { id: user._id, email: user.email, name: user.name, username: user.username || '', role: user.role, restaurantId: user.restaurantId },
       restaurant: { id: restaurant._id, name: restaurant.name, slug: restaurant.slug, status: restaurant.status, menuStatus: restaurant.menuStatus },
     });

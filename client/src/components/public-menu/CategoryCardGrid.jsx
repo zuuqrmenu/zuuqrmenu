@@ -1,3 +1,5 @@
+import BlurImage from '../common/BlurImage';
+
 const fallbackCategoryImages = [
   'https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?auto=format&fit=crop&w=800&q=80', // Kahvaltı
   'https://images.unsplash.com/photo-1576107232684-1279f3908594?auto=format&fit=crop&w=800&q=80', // Atıştırmalık
@@ -50,7 +52,7 @@ const CategoryCardGrid = ({ categories, onSelectCategory, onOpenReview }) => {
               aria-label={`${category.name} kategorisi`}
             >
               <div className="category-bento-card__media">
-                <img
+                <BlurImage
                   src={bgImage}
                   alt={category.name}
                   loading="lazy"

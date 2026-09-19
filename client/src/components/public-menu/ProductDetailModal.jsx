@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import BlurImage from '../common/BlurImage';
 
 const dietaryLabels = {
   VEGAN: 'Vegan', VEGETARIAN: 'Vejetaryen', GLUTEN_FREE: 'Glutensiz',
@@ -277,7 +278,7 @@ const ProductDetailModal = ({ product, onClose, allProducts = [], onSelectProduc
               )}
 
               {product.image && (
-                <img
+                <BlurImage
                   className="public-modal__image"
                   src={product.image}
                   alt={`${product.name} görseli`}
@@ -376,7 +377,7 @@ const ProductDetailModal = ({ product, onClose, allProducts = [], onSelectProduc
                           </div>
                           {hasImage && (
                             <div className="modal-rec-card__visual">
-                              <img src={rec.image} alt={rec.name} loading="lazy" />
+                              <BlurImage src={rec.image} alt={rec.name} loading="lazy" />
                             </div>
                           )}
                         </button>

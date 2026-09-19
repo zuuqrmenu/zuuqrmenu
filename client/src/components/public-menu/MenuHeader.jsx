@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import BlurImage from '../common/BlurImage';
 
 const MenuHeader = ({
   restaurant,
@@ -61,7 +62,7 @@ const MenuHeader = ({
             aria-label="Menü anasayfasına dön"
           >
             {restaurant.logo ? (
-              <img src={restaurant.logo} alt={restaurant.name} className="public-header__logo-img" />
+              <BlurImage src={restaurant.logo} alt={restaurant.name} className="public-header__logo-img" />
             ) : (
               <h1 className="public-header__title">{restaurant.name}</h1>
             )}
