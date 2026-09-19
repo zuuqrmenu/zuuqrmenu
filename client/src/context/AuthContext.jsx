@@ -73,16 +73,50 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
-      const data = await authService.getMe();
-      setUser(data.user);
-      setRestaurant(data.restaurant);
-      if (data.user) {
-        localStorage.setItem('zuulab_auth_user', JSON.stringify(data.user));
+      // 1. Try getMe() - api.js attaches token or Firebase token
+      try {
+        const data = await authService.getMe();
+        if (data?.token) {
+          saveSessionToStorage(data);
+        } else if (data?.user) {
+          localStorage.setItem('zuulab_auth_user', JSON.stringify(data.user));
+          if (data.restaurant) localStorage.setItem('zuulab_auth_restaurant', JSON.stringify(data.restaurant));
+        }
+        setUser(data.user);
+        setRestaurant(data.restaurant);
+        setError(null);
+        setLoading(false);
+        return;
+      } catch (getMeError) {
+        // If getMe failed, do not give up immediately: wait for Firebase to ensure we don't prematurely log out
       }
-      if (data.restaurant) {
-        localStorage.setItem('zuulab_auth_restaurant', JSON.stringify(data.restaurant));
+
+      // 2. Wait for Firebase auth state to be ready
+      if (auth.authStateReady) {
+        try {
+          await auth.authStateReady();
+        } catch {}
       }
-      setError(null);
+
+      // 3. If Firebase user is authenticated, create/restore session
+      if (auth.currentUser) {
+        try {
+          const session = await authService.firebaseSession();
+          saveSessionToStorage(session);
+          setUser(session.user);
+          setRestaurant(session.restaurant);
+          setError(null);
+          setLoading(false);
+          return;
+        } catch (sessionErr) {
+          console.warn('Firebase session restore failed:', sessionErr);
+        }
+      }
+
+      // 4. Definitely logged out
+      clearSessionFromStorage();
+      setUser(null);
+      setRestaurant(null);
     } catch (err) {
       clearSessionFromStorage();
       setUser(null);

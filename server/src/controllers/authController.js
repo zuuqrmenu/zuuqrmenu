@@ -167,7 +167,10 @@ export const me = async (req, res) => {
       return res.status(403).json({ error: 'Hesabınız şu anda restoran paneline erişemiyor.' });
     }
 
+    const token = setAuthCookie(res, user);
+
     res.json({
+      token,
       user: {
         id: user._id,
         email: user.email,
