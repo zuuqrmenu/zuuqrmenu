@@ -248,6 +248,65 @@ const RestaurantDashboard = () => {
     return result;
   };
 
+const OverviewStatusDialog = ({ currentStatus, onClose, onSelect }) => {
+  const [isClosing, setIsClosing] = useState(false);
+  const handleClose = (callback) => {
+    if (isClosing) return;
+    setIsClosing(true);
+    setTimeout(() => {
+      if (typeof callback === 'function') callback();
+      else onClose();
+    }, 200);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') handleClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isClosing]);
+
+  return (
+    <div
+      className={`overview-status-dialog-backdrop ${isClosing ? 'is-closing' : ''}`}
+      role="presentation"
+      onMouseDown={(event) => event.target === event.currentTarget && handleClose()}
+    >
+      <div className={`overview-status-dialog ${isClosing ? 'is-closing' : ''}`} role="dialog" aria-modal="true" aria-labelledby="overview-status-dialog-title">
+        <div className="overview-status-dialog__heading">
+          <div>
+            <p className="overview-eyebrow">Menü Durumu</p>
+            <h2 id="overview-status-dialog-title">Menü Erişimini Yönetin</h2>
+          </div>
+          <button type="button" onClick={() => handleClose()} aria-label="Kapat">×</button>
+        </div>
+        <p>Menünüzün QR kod ve public web bağlantısında misafirlere nasıl görüneceğini seçin.</p>
+        <div className="overview-status-options">
+          {[
+            ['DRAFT', 'Taslak', 'Menü hazırlanıyor ekranı gösterilir, müşterilere kapalıdır.'],
+            ['PUBLISHED', 'Yayında', 'Misafirler QR kod ile menünüzü anında görüntüler.'],
+            ['HIDDEN', 'Gizli', 'Menü geçici olarak erişime kapatılır.'],
+          ].map(([value, label, description]) => (
+            <button
+              type="button"
+              key={value}
+              onClick={() => handleClose(() => onSelect(value))}
+              className={currentStatus === value ? 'is-active' : ''}
+            >
+              <span>
+                <b>{label}</b>
+                <small>{description}</small>
+              </span>
+              <i>{currentStatus === value ? '✓' : '›'}</i>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
   const updateMenuStatus = async (nextStatus) => {
     try {
       const result = await menuService.updateStatus(nextStatus);
@@ -545,42 +604,11 @@ const RestaurantDashboard = () => {
       </div>
 
       {statusDialog && (
-        <div
-          className="overview-status-dialog-backdrop"
-          role="presentation"
-          onMouseDown={(event) => event.target === event.currentTarget && setStatusDialog(false)}
-        >
-          <div className="overview-status-dialog" role="dialog" aria-modal="true" aria-labelledby="overview-status-dialog-title">
-            <div className="overview-status-dialog__heading">
-              <div>
-                <p className="overview-eyebrow">Menü Durumu</p>
-                <h2 id="overview-status-dialog-title">Menü Erişimini Yönetin</h2>
-              </div>
-              <button type="button" onClick={() => setStatusDialog(false)} aria-label="Kapat">×</button>
-            </div>
-            <p>Menünüzün QR kod ve public web bağlantısında misafirlere nasıl görüneceğini seçin.</p>
-            <div className="overview-status-options">
-              {[
-                ['DRAFT', 'Taslak', 'Menü hazırlanıyor ekranı gösterilir, müşterilere kapalıdır.'],
-                ['PUBLISHED', 'Yayında', 'Misafirler QR kod ile menünüzü anında görüntüler.'],
-                ['HIDDEN', 'Gizli', 'Menü geçici olarak erişime kapatılır.'],
-              ].map(([value, label, description]) => (
-                <button
-                  type="button"
-                  key={value}
-                  onClick={() => updateMenuStatus(value)}
-                  className={currentStatus === value ? 'is-active' : ''}
-                >
-                  <span>
-                    <b>{label}</b>
-                    <small>{description}</small>
-                  </span>
-                  <i>{currentStatus === value ? '✓' : '›'}</i>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
+        <OverviewStatusDialog
+          currentStatus={currentStatus}
+          onClose={() => setStatusDialog(false)}
+          onSelect={(status) => updateMenuStatus(status)}
+        />
       )}
 
       {onboardingOpen && (

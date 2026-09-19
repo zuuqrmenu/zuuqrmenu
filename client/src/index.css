@@ -861,6 +861,69 @@ body[data-dashboard-theme='dark'] .menu-compact-delete-btn:hover:not(:disabled) 
 .preview-menu-shell[data-theme='BISTRO'] .featured-badge { background: rgba(184, 92, 59, .12); color: var(--menu-primary, #b85c3b); }
 @media (max-width: 900px) { .menu-compact-layout { grid-template-columns: 1fr; } .menu-compact-preview-shell { min-height: 25rem; } .menu-compact-modal { height: auto; max-height: 90vh; } }
 @media (max-width: 640px) { .menu-compact-backdrop { padding: .6rem; } .menu-compact-header { align-items: stretch; flex-direction: column; } .menu-compact-panel { padding: .85rem; } .menu-theme-grid, .menu-font-grid { grid-template-columns: 1fr; } .menu-mode-row { flex-direction: column; align-items: flex-start; } .menu-compact-preview { padding: 1rem; } .preview-menu-shell { width: min(100%, 20rem); } }
+/* ============================================================
+   UNIVERSAL DASHBOARD MODAL FADE IN & FADE OUT ANIMATIONS
+   ============================================================ */
+@keyframes dashboardModalBackdropIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes dashboardModalBackdropOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes dashboardModalPanelIn {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes dashboardModalPanelOut {
+  from { opacity: 1; transform: scale(1) translateY(0); }
+  to { opacity: 0; transform: scale(0.96) translateY(6px); }
+}
+
+/* Modal Backdrops Fade Animation */
+.category-modal-backdrop,
+.product-modal-backdrop,
+.publish-dialog-backdrop,
+.overview-status-dialog-backdrop,
+.settings-modal-backdrop,
+.menu-onboarding-backdrop,
+.analytics-detail-modal-backdrop {
+  animation: dashboardModalBackdropIn 0.22s ease-out forwards;
+}
+
+.category-modal-backdrop.is-closing,
+.product-modal-backdrop.is-closing,
+.publish-dialog-backdrop.is-closing,
+.overview-status-dialog-backdrop.is-closing,
+.settings-modal-backdrop.is-closing,
+.menu-onboarding-backdrop.is-closing,
+.analytics-detail-modal-backdrop.is-closing {
+  animation: dashboardModalBackdropOut 0.18s ease-in forwards !important;
+  pointer-events: none !important;
+}
+
+/* Modal Panels Scale & Fade Animation */
+.category-modal-panel,
+.product-modal-panel,
+.publish-dialog,
+.overview-status-dialog,
+.settings-modal,
+.menu-onboarding-modal,
+.analytics-detail-modal {
+  animation: dashboardModalPanelIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.category-modal-panel.is-closing,
+.product-modal-panel.is-closing,
+.publish-dialog.is-closing,
+.overview-status-dialog.is-closing,
+.settings-modal.is-closing,
+.menu-onboarding-modal.is-closing,
+.analytics-detail-modal.is-closing {
+  animation: dashboardModalPanelOut 0.18s ease-in forwards !important;
+}
+
 .publish-dialog-backdrop { position: fixed; z-index: 60; inset: 0; display: grid; place-items: center; background: rgb(15 23 42 / 38%); padding: 1rem; }
 .publish-dialog { width: min(100%, 25rem); border-radius: 1rem; background: #fff; padding: 1.25rem; box-shadow: 0 20px 50px rgb(15 23 42 / 20%); }
 .publish-dialog h2 { margin: 0; color: #0f172a; font-size: 1.05rem; }.publish-dialog p { margin: .65rem 0 1.2rem; color: #64748b; font-size: .85rem; line-height: 1.55; }.publish-dialog__actions { display: flex; justify-content: flex-end; gap: .55rem; }.publish-dialog__cancel, .publish-dialog__confirm { border: 0; border-radius: .65rem; padding: .6rem .8rem; font-size: .75rem; font-weight: 700; cursor: pointer; }.publish-dialog__cancel { background: #f1f5f9; color: #475569; }.publish-dialog__confirm { background: #0f172a; color: #fff; }.publish-dialog__confirm--danger { background: #be123c; }

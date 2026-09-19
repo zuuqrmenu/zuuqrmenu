@@ -130,6 +130,62 @@ const SortableCategory = ({ column, actionId, onEdit, onToggle, onDelete, onAddP
   );
 };
 
+const DeleteConfirmDialog = ({ confirmation, onClose, onConfirm }) => {
+  const [isClosing, setIsClosing] = useState(false);
+  const handleClose = (callback) => {
+    if (isClosing) return;
+    setIsClosing(true);
+    setTimeout(() => {
+      if (typeof callback === 'function') callback();
+      else onClose();
+    }, 200);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') handleClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isClosing]);
+
+  return (
+    <div
+      className={`publish-dialog-backdrop ${isClosing ? 'is-closing' : ''}`}
+      role="presentation"
+      onMouseDown={(event) => event.target === event.currentTarget && handleClose()}
+    >
+      <div
+        className={`publish-dialog ${isClosing ? 'is-closing' : ''}`}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="delete-confirmation-title"
+      >
+        <h2 id="delete-confirmation-title">
+          {confirmation.type === 'product' ? 'Ürün silinecek' : 'Kategori silinecek'}
+        </h2>
+        <p>
+          {confirmation.type === 'product'
+            ? 'Bu ürünü silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.'
+            : 'Bu kategoriyi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.'}
+        </p>
+        <div className="publish-dialog__actions">
+          <button type="button" className="publish-dialog__cancel" onClick={() => handleClose()}>
+            Vazgeç
+          </button>
+          <button
+            type="button"
+            className="publish-dialog__confirm publish-dialog__confirm--danger"
+            onClick={() => handleClose(onConfirm)}
+          >
+            Sil
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const MenuStructureEditor = ({ categories, products, actionId, onEditCategory, onToggleCategory, onDeleteCategory, onAddCategory, onMessage, onRefresh }) => {
   const [columns, setColumns] = useState(() => buildColumns(categories, products));
   const [activeId, setActiveId] = useState(null);
@@ -296,7 +352,8 @@ const MenuStructureEditor = ({ categories, products, actionId, onEditCategory, o
     productActions.open(columns[0].category);
   };
 
-  return <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd} onDragCancel={() => setActiveId(null)}><section className="menu-structure-section"><header className="menu-structure-section__header"><div><p className="menu-publish-card__eyebrow">Menü</p><h3>Menü İçeriği</h3><p>{categories.length} kategori menünüzde yer alıyor.</p></div><div className="menu-structure-section__actions"><button type="button" className="menu-structure-add-category" onClick={onAddCategory}>+ Kategori Ekle</button><button type="button" className={`menu-structure-add-product ${!hasCategories ? 'is-disabled' : ''}`} aria-disabled={!hasCategories} onMouseEnter={() => !hasCategories && onMessage('Önce kategori eklemelisiniz.', true)} onClick={openHeaderProductModal}>+ Ürün Ekle</button></div></header><div className="menu-structure-board"><SortableContext items={columns.map((column) => `category:${getId(column.category)}`)} strategy={verticalListSortingStrategy}>{columns.map((column) => <SortableCategory key={getId(column.category)} column={column} actionId={actionId} onEdit={onEditCategory} onToggle={onToggleCategory} onDelete={requestCategoryDelete} onAddProduct={productActions} />)}</SortableContext>{columns.length === 0 && (
+  return (
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd} onDragCancel={() => setActiveId(null)}><section className="menu-structure-section"><header className="menu-structure-section__header"><div><p className="menu-publish-card__eyebrow">Menü</p><h3>Menü İçeriği</h3><p>{categories.length} kategori menünüzde yer alıyor.</p></div><div className="menu-structure-section__actions"><button type="button" className="menu-structure-add-category" onClick={onAddCategory}>+ Kategori Ekle</button><button type="button" className={`menu-structure-add-product ${!hasCategories ? 'is-disabled' : ''}`} aria-disabled={!hasCategories} onMouseEnter={() => !hasCategories && onMessage('Önce kategori eklemelisiniz.', true)} onClick={openHeaderProductModal}>+ Ürün Ekle</button></div></header><div className="menu-structure-board"><SortableContext items={columns.map((column) => `category:${getId(column.category)}`)} strategy={verticalListSortingStrategy}>{columns.map((column) => <SortableCategory key={getId(column.category)} column={column} actionId={actionId} onEdit={onEditCategory} onToggle={onToggleCategory} onDelete={requestCategoryDelete} onAddProduct={productActions} />)}</SortableContext>{columns.length === 0 && (
   <div className="menu-structure-empty menu-structure-empty--board">
     <div className="menu-structure-empty__icon">
       <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -311,7 +368,24 @@ const MenuStructureEditor = ({ categories, products, actionId, onEditCategory, o
       + İlk Kategoriyi Ekle
     </button>
   </div>
-)}</div></section><DragOverlay>{activeProduct ? <div className="menu-structure-drag-preview">{activeProduct.name}</div> : activeCategory ? <div className="menu-structure-drag-preview">{activeCategory.name}</div> : null}</DragOverlay>{(editingProduct || productModalCategory) && <ProductModal product={editingProduct} categoryId={getId(productModalCategory || editingProduct?.categoryId)} categories={categories} onClose={() => { setEditingProduct(null); setProductModalCategory(null); }} onSaved={(message) => { setEditingProduct(null); setProductModalCategory(null); handleProductMessage(message); }} />}{deleteConfirmation && <div className="publish-dialog-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setDeleteConfirmation(null)}><div className="publish-dialog" role="dialog" aria-modal="true" aria-labelledby="delete-confirmation-title"><h2 id="delete-confirmation-title">{deleteConfirmation.type === 'product' ? 'Ürün silinecek' : 'Kategori silinecek'}</h2><p>{deleteConfirmation.type === 'product' ? 'Bu ürünü silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.' : 'Bu kategoriyi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.'}</p><div className="publish-dialog__actions"><button type="button" className="publish-dialog__cancel" onClick={() => setDeleteConfirmation(null)}>Vazgeç</button><button type="button" className="publish-dialog__confirm publish-dialog__confirm--danger" onClick={confirmDelete}>Sil</button></div></div></div>}</DndContext>;
+)}</div></section><DragOverlay>{activeProduct ? <div className="menu-structure-drag-preview">{activeProduct.name}</div> : activeCategory ? <div className="menu-structure-drag-preview">{activeCategory.name}</div> : null}</DragOverlay>        {(editingProduct || productModalCategory) && (
+          <ProductModal
+            product={editingProduct}
+            categoryId={getId(productModalCategory || editingProduct?.categoryId)}
+            categories={categories}
+            onClose={() => { setEditingProduct(null); setProductModalCategory(null); }}
+            onSaved={(message) => { setEditingProduct(null); setProductModalCategory(null); handleProductMessage(message); }}
+          />
+        )}
+        {deleteConfirmation && (
+          <DeleteConfirmDialog
+            confirmation={deleteConfirmation}
+            onClose={() => setDeleteConfirmation(null)}
+            onConfirm={confirmDelete}
+          />
+        )}
+      </DndContext>
+    );
 };
 
 export default MenuStructureEditor;

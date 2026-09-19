@@ -784,41 +784,79 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, onDelete = nu
           )}
         </div>
 
-        {deleteConfirmOpen && (
-          <div
-            className="publish-dialog-backdrop"
-            role="presentation"
-            onMouseDown={(event) => event.target === event.currentTarget && !deleting && setDeleteConfirmOpen(false)}
+        <ThemeDeleteConfirmDialog
+          open={deleteConfirmOpen}
+          themeName={draft.name}
+          deleting={deleting}
+          onCancel={() => setDeleteConfirmOpen(false)}
+          onConfirm={handleDeleteTheme}
+        />
+      </div>
+    </div>
+  );
+};
+
+const ThemeDeleteConfirmDialog = ({ open, themeName, deleting, onCancel, onConfirm }) => {
+  const [isClosing, setIsClosing] = useState(false);
+
+  useEffect(() => {
+    if (!open) {
+      setIsClosing(false);
+      return;
+    }
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape' && !deleting) {
+        handleClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open, deleting]);
+
+  if (!open) return null;
+
+  const handleClose = () => {
+    if (deleting || isClosing) return;
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsClosing(false);
+      onCancel();
+    }, 200);
+  };
+
+  return (
+    <div
+      className={`publish-dialog-backdrop ${isClosing ? 'is-closing' : ''}`}
+      role="presentation"
+      onMouseDown={(event) => event.target === event.currentTarget && handleClose()}
+    >
+      <div className={`publish-dialog ${isClosing ? 'is-closing' : ''}`} role="dialog" aria-modal="true" aria-labelledby="theme-delete-confirm-title">
+        <h2 id="theme-delete-confirm-title">Temayı Sil</h2>
+        <p>
+          <strong>{themeName || 'Bu temayı'}</strong> silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+        </p>
+        <div className="publish-dialog__actions">
+          <button
+            type="button"
+            className="publish-dialog__cancel"
+            onClick={handleClose}
+            disabled={deleting}
           >
-            <div className="publish-dialog" role="dialog" aria-modal="true" aria-labelledby="theme-delete-confirm-title">
-              <h2 id="theme-delete-confirm-title">Temayı Sil</h2>
-              <p>
-                <strong>{draft.name || 'Bu temayı'}</strong> silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
-              </p>
-              <div className="publish-dialog__actions">
-                <button
-                  type="button"
-                  className="publish-dialog__cancel"
-                  onClick={() => setDeleteConfirmOpen(false)}
-                  disabled={deleting}
-                >
-                  Vazgeç
-                </button>
-                <button
-                  type="button"
-                  className="publish-dialog__confirm publish-dialog__confirm--danger"
-                  onClick={handleDeleteTheme}
-                  disabled={deleting}
-                >
-                  {deleting ? 'Siliniyor...' : 'Temayı Sil'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+            Vazgeç
+          </button>
+          <button
+            type="button"
+            className="publish-dialog__confirm publish-dialog__confirm--danger"
+            onClick={onConfirm}
+            disabled={deleting}
+          >
+            {deleting ? 'Siliniyor...' : 'Temayı Sil'}
+          </button>
+        </div>
       </div>
     </div>
   );
 };
 
 export default MenuCustomizationCompactModal;
+

@@ -148,10 +148,20 @@ const getTimePeriodLabel = (hour) => {
 // Reusable Detail Modal
 const AnalyticsDetailModal = ({ config, onClose }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [isClosing, setIsClosing] = useState(false);
+
+  const handleClose = () => {
+    if (isClosing) return;
+    setIsClosing(true);
+    setTimeout(() => {
+      onClose();
+      setIsClosing(false);
+    }, 200);
+  };
 
   useEffect(() => {
     if (!config) return;
-    const handleKeyDown = (e) => e.key === 'Escape' && onClose();
+    const handleKeyDown = (e) => e.key === 'Escape' && handleClose();
     window.addEventListener('keydown', handleKeyDown);
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -159,7 +169,7 @@ const AnalyticsDetailModal = ({ config, onClose }) => {
       window.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = prevOverflow || '';
     };
-  }, [config, onClose]);
+  }, [config, isClosing]);
 
   if (!config) return null;
 
@@ -175,12 +185,12 @@ const AnalyticsDetailModal = ({ config, onClose }) => {
 
   return (
     <div
-      className="analytics-detail-modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn"
+      className={`analytics-detail-modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm ${isClosing ? 'is-closing' : ''}`}
       role="presentation"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+      onClick={(e) => e.target === e.currentTarget && handleClose()}
     >
       <div
-        className="analytics-detail-modal w-full max-w-2xl max-h-[85vh] rounded-2xl bg-white shadow-2xl border border-slate-100 flex flex-col overflow-hidden"
+        className={`analytics-detail-modal w-full max-w-2xl max-h-[85vh] rounded-2xl bg-white shadow-2xl border border-slate-100 flex flex-col overflow-hidden ${isClosing ? 'is-closing' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
@@ -200,7 +210,7 @@ const AnalyticsDetailModal = ({ config, onClose }) => {
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors text-lg"
             aria-label="Kapat"
           >

@@ -15,6 +15,24 @@ const CategoryModal = ({ category, nextOrder, onClose, onSaved }) => {
   const [form, setForm] = useState(category ? { name: category.name, description: category.description || '', isActive: category.isActive, displayOrder: category.displayOrder } : { ...emptyForm, displayOrder: nextOrder });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [isClosing, setIsClosing] = useState(false);
+
+  const handleClose = (callback) => {
+    if (isClosing) return;
+    setIsClosing(true);
+    setTimeout(() => {
+      if (typeof callback === 'function') callback();
+      else if (typeof onClose === 'function') onClose();
+    }, 200);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') handleClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isClosing]);
 
   const updateField = (event) => {
     const { name, value, type, checked } = event.target;
@@ -32,24 +50,55 @@ const CategoryModal = ({ category, nextOrder, onClose, onSaved }) => {
     try {
       const payload = { ...form, name: form.name.trim(), displayOrder: Number(form.displayOrder) };
       const result = category ? await menuService.updateCategory(category._id, payload) : await menuService.createCategory(payload);
-      onSaved(result.message);
+      handleClose(() => onSaved(result.message));
     } catch (err) {
       setError(err.response?.data?.error || 'Kategori kaydedilemedi.');
-    } finally {
       setSaving(false);
     }
   };
 
   return (
-    <div className="category-modal-backdrop fixed inset-0 z-20 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <div role="dialog" aria-modal="true" aria-labelledby="category-dialog-title" className="category-modal-panel w-full max-w-md rounded-2xl bg-white p-6 shadow-xl border border-slate-100">
-        <div className="flex items-start justify-between gap-4"><div><p className="text-sm font-medium text-emerald-600">Menü</p><h2 id="category-dialog-title" className="mt-1 text-xl font-semibold">{category ? 'Kategoriyi düzenle' : 'Kategori ekle'}</h2></div><button type="button" onClick={onClose} className="text-2xl leading-none text-slate-400 hover:text-slate-700" aria-label="Kapat">×</button></div>
+    <div
+      className={`category-modal-backdrop fixed inset-0 z-20 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4 ${isClosing ? 'is-closing' : ''}`}
+      role="presentation"
+      onMouseDown={(event) => event.target === event.currentTarget && handleClose()}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="category-dialog-title"
+        className={`category-modal-panel w-full max-w-md rounded-2xl bg-white p-6 shadow-xl border border-slate-100 ${isClosing ? 'is-closing' : ''}`}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-medium text-emerald-600">Menü</p>
+            <h2 id="category-dialog-title" className="mt-1 text-xl font-semibold">{category ? 'Kategoriyi düzenle' : 'Kategori ekle'}</h2>
+          </div>
+          <button type="button" onClick={() => handleClose()} className="text-2xl leading-none text-slate-400 hover:text-slate-700" aria-label="Kapat">×</button>
+        </div>
         {error && <div className="mt-5 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-          <div><label htmlFor="category-name" className="mb-1.5 block text-sm font-medium text-slate-700">Kategori adı</label><input id="category-name" name="name" value={form.name} onChange={updateField} autoFocus className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" placeholder="Örn. Ana Yemekler" /></div>
-          <div><label htmlFor="category-description" className="mb-1.5 block text-sm font-medium text-slate-700">Açıklama <span className="font-normal text-slate-400">(opsiyonel)</span></label><textarea id="category-description" name="description" value={form.description} onChange={updateField} rows="3" className="w-full resize-none rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" placeholder="Kategori hakkında kısa bilgi" /></div>
-          <div className="grid grid-cols-2 gap-4"><div><label htmlFor="category-order" className="mb-1.5 block text-sm font-medium text-slate-700">Görüntüleme sırası</label><input id="category-order" name="displayOrder" type="number" min="0" value={form.displayOrder} onChange={updateField} className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" /></div><label className="flex items-center gap-2 self-end pb-3 text-sm font-medium text-slate-700"><input name="isActive" type="checkbox" checked={form.isActive} onChange={updateField} className="h-4 w-4 accent-[#deff36]" /> Aktif</label></div>
-          <div className="flex justify-end gap-3 border-t border-slate-100 pt-5"><button type="button" onClick={onClose} className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-colors">Vazgeç</button><button type="submit" disabled={saving} className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50 transition-colors">{saving ? 'Kaydediliyor...' : category ? 'Değişiklikleri kaydet' : 'Kategori oluştur'}</button></div>
+          <div>
+            <label htmlFor="category-name" className="mb-1.5 block text-sm font-medium text-slate-700">Kategori adı</label>
+            <input id="category-name" name="name" value={form.name} onChange={updateField} autoFocus className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" placeholder="Örn. Ana Yemekler" />
+          </div>
+          <div>
+            <label htmlFor="category-description" className="mb-1.5 block text-sm font-medium text-slate-700">Açıklama <span className="font-normal text-slate-400">(opsiyonel)</span></label>
+            <textarea id="category-description" name="description" value={form.description} onChange={updateField} rows="3" className="w-full resize-none rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" placeholder="Kategori hakkında kısa bilgi" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="category-order" className="mb-1.5 block text-sm font-medium text-slate-700">Görüntüleme sırası</label>
+              <input id="category-order" name="displayOrder" type="number" min="0" value={form.displayOrder} onChange={updateField} className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" />
+            </div>
+            <label className="flex items-center gap-2 self-end pb-3 text-sm font-medium text-slate-700">
+              <input name="isActive" type="checkbox" checked={form.isActive} onChange={updateField} className="h-4 w-4 accent-[#deff36]" /> Aktif
+            </label>
+          </div>
+          <div className="flex justify-end gap-3 border-t border-slate-100 pt-5">
+            <button type="button" onClick={() => handleClose()} className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-colors">Vazgeç</button>
+            <button type="submit" disabled={saving} className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50 transition-colors">{saving ? 'Kaydediliyor...' : category ? 'Değişiklikleri kaydet' : 'Kategori oluştur'}</button>
+          </div>
         </form>
       </div>
     </div>
@@ -226,8 +275,65 @@ const SavedThemeSelectionModal = ({ themes, activeThemeId, onClose, onApply, app
   );
 };
 
+const StatusConfirmDialog = ({ statusDialog, onClose, onConfirm, actionId }) => {
+  const [isClosing, setIsClosing] = useState(false);
+  const handleClose = (callback) => {
+    if (isClosing) return;
+    setIsClosing(true);
+    setTimeout(() => {
+      if (typeof callback === 'function') callback();
+      else onClose();
+    }, 200);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') handleClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isClosing]);
+
+  return (
+    <div
+      className={`publish-dialog-backdrop ${isClosing ? 'is-closing' : ''}`}
+      role="presentation"
+      onMouseDown={(event) => event.target === event.currentTarget && handleClose()}
+    >
+      <div
+        className={`publish-dialog ${isClosing ? 'is-closing' : ''}`}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="publish-dialog-title"
+      >
+        <h2 id="publish-dialog-title">
+          {statusDialog.status === 'PUBLISHED' ? 'Menüyü yayınla' : statusDialog.status === 'DRAFT' ? 'Menüyü taslağa al' : 'Menüyü gizle'}
+        </h2>
+        <p>
+          {statusDialog.status === 'PUBLISHED'
+            ? 'Menünüz yayınlandığında müşteriler güncel menüyü görebilecek.'
+            : statusDialog.status === 'DRAFT'
+            ? 'Menünüz public linkte hazırlanıyor olarak görünecek.'
+            : 'Menünüz public linkte geçici olarak erişime kapanacak.'}
+        </p>
+        <div className="publish-dialog__actions">
+          <button type="button" onClick={() => handleClose()} className="publish-dialog__cancel">Vazgeç</button>
+          <button
+            type="button"
+            onClick={() => handleClose(onConfirm)}
+            disabled={actionId === 'menu-status'}
+            className={statusDialog.status === 'HIDDEN' ? 'publish-dialog__confirm publish-dialog__confirm--danger' : 'publish-dialog__confirm'}
+          >
+            {statusDialog.status === 'PUBLISHED' ? 'Menüyü Yayınla' : statusDialog.status === 'DRAFT' ? 'Taslağa Al' : 'Menüyü Gizle'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const MenuManagement = () => {
-  const { user } = useAuth();
+  const { user, restaurant } = useAuth();
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -237,7 +343,12 @@ const MenuManagement = () => {
   const [editingCategory, setEditingCategory] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [actionId, setActionId] = useState(null);
-  const [overview, setOverview] = useState(null);
+  const [overview, setOverview] = useState(() => (
+    restaurant ? {
+      restaurant,
+      stats: { menuStatus: restaurant.menuStatus || 'DRAFT' },
+    } : null
+  ));
   const [statusDialog, setStatusDialog] = useState(null);
   const [menuThemes, setMenuThemes] = useState([]);
   const [activeMenuThemeId, setActiveMenuThemeId] = useState(null);
@@ -246,6 +357,15 @@ const MenuManagement = () => {
   const [editingTheme, setEditingTheme] = useState(null);
   const [editingThemeIndex, setEditingThemeIndex] = useState(null);
   const [highlightViewMenu, setHighlightViewMenu] = useState(false);
+
+  useEffect(() => {
+    if (restaurant && !overview) {
+      setOverview({
+        restaurant,
+        stats: { menuStatus: restaurant.menuStatus || 'DRAFT' },
+      });
+    }
+  }, [restaurant, overview]);
 
   useEffect(() => {
     if (!notice) return undefined;
@@ -440,8 +560,48 @@ const MenuManagement = () => {
           )}
         </section>
         {notice && <div className={`settings-status settings-status--success ${noticeVisible ? 'is-visible' : 'is-hiding'}`} role="status">{notice}<button onClick={() => setNotice('')} className="ml-3" aria-label="Bildirimi kapat">×</button></div>}
-        {error && <div className="flex items-center justify-between rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"><span>{error}</span><button onClick={() => setError('')} aria-label="Hatayı kapat">×</button></div>}
-        {overview && <section className="menu-publish-card"><div className="menu-publish-card__header"><div><p className="menu-publish-card__eyebrow">Yayın Durumu</p><h3>{statusCopy[0]}</h3><p>{statusCopy[1]}</p>{overview.restaurant?.publishedAt && <small>Son yayın: {new Intl.DateTimeFormat('tr-TR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(overview.restaurant.publishedAt))}</small>}</div><div className="menu-status-switcher" role="group" aria-label="Menü görünürlüğü">{[['DRAFT', 'Taslak'], ['PUBLISHED', 'Yayında'], ['HIDDEN', 'Gizli']].map(([value, label]) => <button type="button" key={value} className={`${menuStatus === value ? 'is-active ' : ''}menu-status-switcher__${value.toLowerCase()}`} disabled={actionId === 'menu-status'} onClick={() => menuStatus !== value && setStatusDialog({ status: value })}>{label}</button>)}</div></div></section>}
+        {overview ? (
+          <section className="menu-publish-card">
+            <div className="menu-publish-card__header">
+              <div>
+                <p className="menu-publish-card__eyebrow">Yayın Durumu</p>
+                <h3>{statusCopy[0]}</h3>
+                <p>{statusCopy[1]}</p>
+                {overview.restaurant?.publishedAt && (
+                  <small>Son yayın: {new Intl.DateTimeFormat('tr-TR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(overview.restaurant.publishedAt))}</small>
+                )}
+              </div>
+              <div className="menu-status-switcher" role="group" aria-label="Menü görünürlüğü">
+                {[['DRAFT', 'Taslak'], ['PUBLISHED', 'Yayında'], ['HIDDEN', 'Gizli']].map(([value, label]) => (
+                  <button
+                    type="button"
+                    key={value}
+                    className={`${menuStatus === value ? 'is-active ' : ''}menu-status-switcher__${value.toLowerCase()}`}
+                    disabled={actionId === 'menu-status'}
+                    onClick={() => menuStatus !== value && setStatusDialog({ status: value })}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </section>
+        ) : (
+          <section className="menu-publish-card menu-publish-card--skeleton">
+            <div className="menu-publish-card__header">
+              <div>
+                <span className="dashboard-skeleton__line dashboard-skeleton__eyebrow" style={{ width: '80px', display: 'block' }} />
+                <span className="dashboard-skeleton__line dashboard-skeleton__heading" style={{ width: '160px', height: '1.4rem', marginTop: '6px', display: 'block' }} />
+                <span className="dashboard-skeleton__line dashboard-skeleton__short" style={{ width: '220px', marginTop: '6px', display: 'block' }} />
+              </div>
+              <div className="menu-status-switcher" style={{ opacity: 0.6, pointerEvents: 'none' }}>
+                <button type="button" className="is-active">Taslak</button>
+                <button type="button">Yayında</button>
+                <button type="button">Gizli</button>
+              </div>
+            </div>
+          </section>
+        )}
         <section className="menu-customization-entry"><div className="menu-customization-entry__header"><div><p className="menu-publish-card__eyebrow">Tasarım</p><h3>Menü Özelleştirme</h3><p>Temanızı, tipografinizi ve ürün görünümünü beğeninize göre tasarlayın.</p></div></div><div className="menu-customization-entry__actions"><button type="button" className="menu-customization-entry__edit" onClick={() => setThemeSelectionOpen(true)} aria-label="Kayıtlı menü tasarımını seç" title="Kayıtlı menü tasarımını seç"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m4 16.5-.8 4.3 4.3-.8L19.2 8.3a2.4 2.4 0 0 0-3.4-3.4L4 16.5Z" /><path d="m14.5 6.5 3 3" /></svg></button><button type="button" onClick={handleOpenCustomization} className="menu-customization-entry__button"><span>✦</span> Özelleştir</button></div></section>
         {loading ? (
           <DashboardSkeleton variant="menu" />
@@ -537,7 +697,14 @@ const MenuManagement = () => {
           }}
         />
       )}
-      {statusDialog && <div className="publish-dialog-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setStatusDialog(null)}><div className="publish-dialog" role="dialog" aria-modal="true" aria-labelledby="publish-dialog-title"><h2 id="publish-dialog-title">{statusDialog.status === 'PUBLISHED' ? 'Menüyü yayınla' : statusDialog.status === 'DRAFT' ? 'Menüyü taslağa al' : 'Menüyü gizle'}</h2><p>{statusDialog.status === 'PUBLISHED' ? 'Menünüz yayınlandığında müşteriler güncel menüyü görebilecek.' : statusDialog.status === 'DRAFT' ? 'Menünüz public linkte hazırlanıyor olarak görünecek.' : 'Menünüz public linkte geçici olarak erişime kapanacak.'}</p><div className="publish-dialog__actions"><button type="button" onClick={() => setStatusDialog(null)} className="publish-dialog__cancel">Vazgeç</button><button type="button" onClick={updateMenuStatus} disabled={actionId === 'menu-status'} className={statusDialog.status === 'HIDDEN' ? 'publish-dialog__confirm publish-dialog__confirm--danger' : 'publish-dialog__confirm'}>{statusDialog.status === 'PUBLISHED' ? 'Menüyü Yayınla' : statusDialog.status === 'DRAFT' ? 'Taslağa Al' : 'Menüyü Gizle'}</button></div></div></div>}
+      {statusDialog && (
+        <StatusConfirmDialog
+          statusDialog={statusDialog}
+          onClose={() => setStatusDialog(null)}
+          onConfirm={updateMenuStatus}
+          actionId={actionId}
+        />
+      )}
     </RestaurantLayout>
   );
 };
