@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { normalizeUsername } from '../utils/username';
+import { getPublicMenuAbsoluteUrl } from '../utils/domainHelpers';
 
 const MenuOnboardingModal = ({ restaurantName, onCreate }) => {
   const [username, setUsername] = useState(() => normalizeUsername(restaurantName));
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const previewUrl = `${window.location.origin}/${username || 'kullanici-adi'}/menu`;
+  const previewUrl = getPublicMenuAbsoluteUrl(username || 'kullanici-adi');
 
   const handleSubmit = async (event) => {
     event.preventDefault();

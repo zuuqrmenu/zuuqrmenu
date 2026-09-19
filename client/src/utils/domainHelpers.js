@@ -47,6 +47,20 @@ export const getMainSiteUrl = (path = '/') => {
 };
 
 /**
+ * Returns full absolute URL for a public restaurant menu.
+ * Always targets the main public site domain: https://www.zuuqrmenu.com/{username}/menu
+ * In localhost, uses localhost origin.
+ */
+export const getPublicMenuAbsoluteUrl = (username) => {
+  if (!username) return '';
+  const path = `/${encodeURIComponent(username)}/menu`;
+  if (isLocalhost()) {
+    return typeof window !== 'undefined' ? `${window.location.origin}${path}` : path;
+  }
+  return `https://www.zuuqrmenu.com${path}`;
+};
+
+/**
  * Safely redirects to panel if running in production on main domain
  */
 export const redirectToPanelIfNeeded = (targetPath = '/dashboard') => {
