@@ -1,30 +1,49 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import SeoHead from '../components/SeoHead';
 import { trackEvent } from '../utils/analytics';
 import { getPanelUrl } from '../utils/domainHelpers';
 import { useAuth } from '../context/AuthContext';
 
+/* ─── Static data ─────────────────────────────────────────── */
 const steps = [
-  ['01', 'Restoranınızı oluşturun'],
-  ['02', 'Menünüzü düzenleyin'],
-  ['03', 'QR kodunuzu masanıza koyun'],
+  { n: '01', title: 'Restoranınızı oluşturun', body: 'Dakikalar içinde kurulum. Menünüz hazır, QR kodunuz üretildi.' },
+  { n: '02', title: 'Menünüzü düzenleyin', body: 'Kategoriler, ürünler, fiyatlar — tek bir yerden, anlık.' },
+  { n: '03', title: 'QR\'ı masaya koyun', body: 'Müşterileriniz kendi cihazından menüyü anında görür.' },
 ];
 
+const features = [
+  { id: 'f1', icon: '◈', title: 'Dijital Menü', body: 'PDF\'e son. Canlı, güncellenebilir, mobil menü.' },
+  { id: 'f2', icon: '⌘', title: 'QR Print Designer', body: 'Masa kartlarınızı markanıza uygun hazırlayın.' },
+  { id: 'f3', icon: '↗', title: 'Gerçek Zamanlı Analiz', body: 'Hangi ürünler ilgi görüyor? Verilerle görün.' },
+  { id: 'f4', icon: '◎', title: 'Anlık Güncelleme', body: 'Fiyat veya içerik değişti mi? Saniyeler içinde yayınla.' },
+  { id: 'f5', icon: '✦', title: 'Çoklu Tema', body: 'Her restorana özel menü görünümü ve kişilik.' },
+  { id: 'f6', icon: '▣', title: 'Kolay Yönetim', body: 'Teknik bilgiye gerek yok. Sade, net, hızlı panel.' },
+];
+
+/* ─── Header ──────────────────────────────────────────────── */
 const LandingHeader = () => {
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const close = () => setOpen(false);
   const { isAuthenticated, isRestaurantUser } = useAuth();
 
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 40);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   return (
-    <header className="landing-header">
-      <div className="landing-header__inner">
-        <Link to="/" className="landing-brand" onClick={close}>
-          <img src="/logo_darkmode.svg" alt="zuuqrmenu" className="landing-brand__logo" />
+    <header className={`lp2-header ${scrolled ? 'lp2-header--scrolled' : ''}`}>
+      <div className="lp2-header__inner">
+        <Link to="/" className="lp2-brand" onClick={close}>
+          <img src="/logo_darkmode.svg" alt="zuuqrmenu" className="landing-brand__logo lp2-brand__logo" />
         </Link>
-        <nav className={`landing-nav ${open ? 'is-open' : ''}`} aria-label="Landing navigation">
-          <a href="#features" onClick={close}>Özellikler</a>
-          <a href="#how-it-works" onClick={close}>Nasıl Çalışır?</a>
+
+        <nav className={`lp2-nav ${open ? 'lp2-nav--open' : ''}`} aria-label="Landing navigation">
+          <a href="#ozellikler" onClick={close}>Özellikler</a>
+          <a href="#nasil-calisir" onClick={close}>Nasıl Çalışır?</a>
           {isAuthenticated ? (
             <a href={getPanelUrl(isRestaurantUser ? '/dashboard' : '/admin')} onClick={close}>Yönetim Paneli</a>
           ) : (
@@ -32,171 +51,470 @@ const LandingHeader = () => {
           )}
           <a
             href={getPanelUrl('/register')}
-            className="landing-button landing-button--small"
-            onClick={() => {
-              trackEvent('click_cta', { cta_name: 'create_restaurant', location: 'header' });
-              close();
-            }}
+            className="lp2-cta-btn lp2-cta-btn--sm"
+            onClick={() => { trackEvent('click_cta', { cta_name: 'create_restaurant', location: 'header' }); close(); }}
           >
-            Restoranını Oluştur
+            Başla <span>↗</span>
           </a>
         </nav>
-        <button type="button" className="landing-menu-button" aria-label="Menüyü aç" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
-          <span />
-          <span />
-          <span />
+
+        <button
+          type="button"
+          className={`lp2-hamburger ${open ? 'lp2-hamburger--open' : ''}`}
+          aria-label="Menüyü aç"
+          aria-expanded={open}
+          onClick={() => setOpen(v => !v)}
+        >
+          <span /><span /><span />
         </button>
       </div>
     </header>
   );
 };
 
-const DecorativeQrIcon = ({ className = '' }) => (
-  <svg className={`decorative-qr-icon ${className}`} viewBox="0 0 64 64" role="img" aria-label="QR tasarım simgesi">
-    <rect width="64" height="64" fill="var(--decorative-qr-bg, transparent)" />
-    <path d="M7 25V7h18M39 7h18v18M57 39v18H39M25 57H7V39" fill="none" stroke="var(--decorative-qr-ink, currentColor)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="6" />
-    <circle cx="37" cy="36" fill="var(--decorative-qr-ink, currentColor)" r="3" /><circle cx="47" cy="45" fill="var(--decorative-qr-ink, currentColor)" r="3" /><circle cx="35" cy="49" fill="var(--decorative-qr-ink, currentColor)" r="3" />
+/* ─── Realistic QR Icon ──────────────────────────────────── */
+const QrIcon = ({ className = '' }) => (
+  <svg
+    className={`lp2-qr-icon ${className}`}
+    viewBox="0 0 40 40"
+    xmlns="http://www.w3.org/2000/svg"
+    role="img"
+    aria-label="QR kod"
+  >
+    {/* Finder — top-left */}
+    <rect x="1" y="1" width="12" height="12" fill="currentColor" rx="1"/>
+    <rect x="3" y="3" width="8"  height="8"  fill="var(--qr-bg,#fff)"/>
+    <rect x="5" y="5" width="4"  height="4"  fill="currentColor"/>
+
+    {/* Finder — top-right */}
+    <rect x="27" y="1" width="12" height="12" fill="currentColor" rx="1"/>
+    <rect x="29" y="3" width="8"  height="8"  fill="var(--qr-bg,#fff)"/>
+    <rect x="31" y="5" width="4"  height="4"  fill="currentColor"/>
+
+    {/* Finder — bottom-left */}
+    <rect x="1" y="27" width="12" height="12" fill="currentColor" rx="1"/>
+    <rect x="3" y="29" width="8"  height="8"  fill="var(--qr-bg,#fff)"/>
+    <rect x="5" y="31" width="4"  height="4"  fill="currentColor"/>
+
+    {/* Alignment pattern — bottom-right */}
+    <rect x="27" y="27" width="12" height="12" fill="currentColor" rx="1"/>
+    <rect x="29" y="29" width="8"  height="8"  fill="var(--qr-bg,#fff)"/>
+    <rect x="31" y="31" width="4"  height="4"  fill="currentColor"/>
+
+    {/* Top-center data modules */}
+    <rect x="15" y="1"  width="2" height="2" fill="currentColor"/>
+    <rect x="19" y="1"  width="4" height="2" fill="currentColor"/>
+    <rect x="15" y="5"  width="4" height="2" fill="currentColor"/>
+    <rect x="21" y="5"  width="2" height="2" fill="currentColor"/>
+    <rect x="15" y="9"  width="2" height="2" fill="currentColor"/>
+    <rect x="19" y="9"  width="4" height="2" fill="currentColor"/>
+    <rect x="23" y="7"  width="2" height="4" fill="currentColor"/>
+
+    {/* Left-center data modules */}
+    <rect x="1"  y="15" width="4" height="2" fill="currentColor"/>
+    <rect x="7"  y="15" width="2" height="4" fill="currentColor"/>
+    <rect x="11" y="15" width="2" height="2" fill="currentColor"/>
+    <rect x="3"  y="19" width="2" height="4" fill="currentColor"/>
+    <rect x="7"  y="21" width="6" height="2" fill="currentColor"/>
+    <rect x="11" y="21" width="2" height="4" fill="currentColor"/>
+    <rect x="1"  y="23" width="2" height="2" fill="currentColor"/>
+    <rect x="5"  y="23" width="4" height="2" fill="currentColor"/>
+
+    {/* Center data modules */}
+    <rect x="15" y="15" width="4" height="4" fill="currentColor"/>
+    <rect x="21" y="15" width="2" height="2" fill="currentColor"/>
+    <rect x="25" y="15" width="2" height="4" fill="currentColor"/>
+    <rect x="15" y="21" width="2" height="4" fill="currentColor"/>
+    <rect x="19" y="21" width="6" height="2" fill="currentColor"/>
+    <rect x="21" y="23" width="2" height="4" fill="currentColor"/>
+    <rect x="17" y="25" width="4" height="2" fill="currentColor"/>
+    <rect x="25" y="21" width="2" height="2" fill="currentColor"/>
+    <rect x="19" y="17" width="2" height="2" fill="currentColor"/>
+
+    {/* Bottom-center data modules */}
+    <rect x="15" y="27" width="2" height="2" fill="currentColor"/>
+    <rect x="19" y="27" width="4" height="2" fill="currentColor"/>
+    <rect x="25" y="27" width="2" height="4" fill="currentColor"/>
+    <rect x="15" y="31" width="4" height="2" fill="currentColor"/>
+    <rect x="21" y="31" width="2" height="4" fill="currentColor"/>
+    <rect x="15" y="35" width="6" height="2" fill="currentColor"/>
+    <rect x="23" y="35" width="2" height="2" fill="currentColor"/>
   </svg>
 );
 
-const ProductPreview = ({ mode = 'dashboard' }) => (
-  <div className={`landing-product-stage landing-product-stage--${mode}`} aria-label="zuuqrmenu ürün önizlemesi">
-    <div className="landing-product-window">
-      <div className="landing-product-window__topbar"><span /><span /><span /><small>zuuqrmenu / panel</small></div>
-      <div className="landing-product-window__body">
-        <aside><img src="/logo_darkmode.svg" alt="zuuqrmenu" /><span className="is-active">Genel Bakış</span><span>Menü</span><span>QR Kod</span><span>İstatistikler</span></aside>
-        <div className="landing-dashboard-preview">
-          <div className="landing-preview-heading"><div><small>GENEL BAKIŞ</small><h3>Menünüzü yönetin</h3></div><span className="landing-preview-status">Yayında</span></div>
-          <div className="landing-preview-stats"><span><b>1.248</b><small>Menü görüntülenmesi</small></span><span><b>6</b><small>Kategori</small></span><span><b>24</b><small>Aktif ürün</small></span></div>
-          <div className="landing-preview-chart"><div><i style={{ height: '36%' }} /><i style={{ height: '54%' }} /><i style={{ height: '42%' }} /><i style={{ height: '74%' }} /><i style={{ height: '62%' }} /><i style={{ height: '90%' }} /><i style={{ height: '68%' }} /></div><small>Son 7 gün · Menü görüntülenmeleri</small></div>
+/* ─── Dashboard mock window ──────────────────────────────── */
+const DashMock = () => (
+  <div className="lp2-dash-mock" aria-label="Dashboard önizlemesi">
+    <div className="lp2-dash-mock__bar">
+      <span /><span /><span />
+      <small>zuuqrmenu · panel</small>
+    </div>
+    <div className="lp2-dash-mock__body">
+      <aside className="lp2-dash-mock__sidebar">
+        <img src="/logo_darkmode.svg" alt="" />
+        <span className="lp2-dash-mock__nav-item lp2-dash-mock__nav-item--active">Genel Bakış</span>
+        <span className="lp2-dash-mock__nav-item">Menü</span>
+        <span className="lp2-dash-mock__nav-item">QR Kod</span>
+        <span className="lp2-dash-mock__nav-item">İstatistikler</span>
+      </aside>
+      <div className="lp2-dash-mock__main">
+        <div className="lp2-dash-mock__head">
+          <div>
+            <small>GENEL BAKIŞ</small>
+            <h3>Menünüzü yönetin</h3>
+          </div>
+          <span className="lp2-dash-mock__badge">Yayında</span>
+        </div>
+        <div className="lp2-dash-mock__stats">
+          <span><b>1.248</b><small>Görüntülenme</small></span>
+          <span><b>6</b><small>Kategori</small></span>
+          <span><b>24</b><small>Ürün</small></span>
+        </div>
+        <div className="lp2-dash-mock__chart">
+          <div className="lp2-dash-mock__bars">
+            {[36, 54, 42, 74, 62, 90, 68].map((h, i) => (
+              <i key={i} style={{ height: `${h}%` }} />
+            ))}
+          </div>
+          <small>Son 7 gün · Görüntülenme</small>
         </div>
       </div>
     </div>
-    <div className="landing-product-qr"><DecorativeQrIcon /><small>Menüyü aç</small></div>
+    {/* QR badge */}
+    <div className="lp2-dash-mock__qr">
+      <QrIcon />
+      <small>Menüyü aç</small>
+    </div>
   </div>
 );
 
-const MobileMenuShowcase = () => (
-  <div className="menu-showcase-visual">
-    <div className="menu-showcase-paper" aria-hidden="true"><small>MENÜ</small><span>Günün menüsü</span><i /><i /><i /></div>
-    <div className="menu-showcase-phone">
-      <div className="menu-showcase-phone__speaker" />
-      <div className="menu-showcase-screen">
-        <header className="menu-showcase-header"><small>TEST RESTORAN</small><strong>Günün lezzetleri</strong><span>09:00 — 23:00</span></header>
-        <nav className="menu-showcase-tabs" aria-label="Demo menü kategorileri"><b>Popüler</b><span>Başlangıçlar</span><span>Pizza</span></nav>
-        <main className="menu-showcase-content"><small className="menu-showcase-eyebrow">BUGÜNÜN SEÇKİLERİ</small><h3>Paylaşmalık tabaklar</h3>
-          <article className="menu-showcase-product"><div className="menu-showcase-product__image menu-showcase-product__image--vegetable" /><span><b>Izgara sebze tabağı</b><small>Mevsim sebzeleri, otlu yoğurt</small><strong>₺280</strong></span></article>
-          <article className="menu-showcase-product"><div className="menu-showcase-product__image menu-showcase-product__image--pizza" /><span><b>Fırın pizza</b><small>Domates, mozzarella, fesleğen</small><strong>₺340</strong></span></article>
-          <article className="menu-showcase-product"><div className="menu-showcase-product__image menu-showcase-product__image--dessert" /><span><b>Limonlu cheesecake</b><small>Vanilya kreması, limon kabuğu</small><strong>₺190</strong></span></article>
-        </main>
+/* ─── Phone mock ─────────────────────────────────────────── */
+const PhoneMock = () => (
+  <div className="lp2-phone">
+    <div className="lp2-phone__notch" />
+    <div className="lp2-phone__screen">
+      <header className="lp2-phone__header">
+        <small>TEST RESTORAN</small>
+        <strong>Günün lezzetleri</strong>
+        <span>09:00 — 23:00</span>
+      </header>
+      <nav className="lp2-phone__tabs">
+        <b>Popüler</b>
+        <span>Başlangıçlar</span>
+        <span>Pizza</span>
+        <span>Tatlılar</span>
+      </nav>
+      <div className="lp2-phone__content">
+        <small className="lp2-phone__eyebrow">BUGÜNÜN SEÇKİLERİ</small>
+        <h3>Paylaşmalık tabaklar</h3>
+        {[
+          { cls: 'vegetable', name: 'Izgara sebze tabağı', desc: 'Mevsim sebzeleri, otlu yoğurt', price: '₺280' },
+          { cls: 'pizza',     name: 'Fırın pizza',         desc: 'Domates, mozzarella, fesleğen', price: '₺340' },
+          { cls: 'dessert',   name: 'Limonlu cheesecake', desc: 'Vanilya kreması, limon kabuğu', price: '₺190' },
+        ].map(p => (
+          <article className="lp2-phone__product" key={p.cls}>
+            <div className={`lp2-phone__product-img lp2-phone__product-img--${p.cls}`} />
+            <span>
+              <b>{p.name}</b>
+              <small>{p.desc}</small>
+              <strong>{p.price}</strong>
+            </span>
+          </article>
+        ))}
       </div>
     </div>
   </div>
 );
 
-const MenuExperience = () => (
-  <section id="features" className="landing-section menu-experience-section landing-reveal">
-    <div className="menu-experience-copy"><span className="landing-kicker">MENÜ DENEYİMİ</span><h2>Menünüz artık sadece bir PDF değil.</h2><p>Basılı menünün tanıdık sadeliği, mobilde yaşayan ve kolay keşfedilen bir deneyime dönüşür.</p></div>
-    <MobileMenuShowcase />
-  </section>
-);
-
-const HowItWorksSection = () => (
-  <section id="how-it-works" className="landing-section landing-section--steps landing-reveal">
-    <div className="landing-section__intro"><span className="landing-kicker">NASIL ÇALIŞIR?</span><h2>Üç adım. Daha iyi bir menü.</h2><p>Günün yoğunluğunda bile düzenli, hızlı ve markanıza ait bir deneyim.</p></div>
-    <div className="landing-steps">{steps.map(([number, title]) => <article className="landing-step" key={number}><span>{number}</span><h3>{title}</h3></article>)}</div>
-  </section>
-);
-
-const ProductShowcase = () => (
-  <section className="landing-section landing-showcase">
-    <div className="landing-showcase__copy"><span className="landing-kicker">YÖNETİM ALANI</span><h2>Menünüz sadece yayında değil. Sizin kontrolünüzde.</h2><p>Kategoriler, ürünler, yayın durumu ve analizler; gerçek dashboard deneyiminizin sade bir vitrini.</p><ul><li>Kategorilerinizi ve ürünlerinizi yönetin</li><li>Menü durumunu tek bakışta görün</li><li>Görüntülenmeleri ve popüler ürünleri takip edin</li></ul></div><ProductPreview mode="dashboard" /></section>
-);
-
-const QrShowcase = () => (
-  <section className="landing-section landing-qr-showcase">
-    <div className="landing-qr-showcase__head"><div><span className="landing-kicker">QR PRINT DESIGNER</span><h2>QR kodunuzu sadece üretmeyin, güzelce sunun.</h2></div><p>Tek bir masa kartı, restoranınızın kimliği ve menünüze açılan sade bir davet.</p></div>
-    <div className="landing-print-stage"><div className="landing-print-card landing-print-card--secondary"><small>A6 · MINIMAL</small><b>Masadaki menü</b></div><div className="landing-print-card landing-print-card--main"><small>A5 · MODERN</small><img src="/logo.svg" alt="zuuqrmenu" /><strong>Test Restoran</strong><span>Menüyü keşfet</span><DecorativeQrIcon /><b>Menüyü Gör</b></div></div>
-  </section>
-);
-
-const DashboardPreview = () => (
-  <div className="landing-dashboard-preview-card">
-    <div className="landing-dashboard-preview-card__top"><span>GENEL BAKIŞ</span><b>Bu hafta</b></div>
-    <h3>Menü performansı</h3>
-    <div className="landing-dashboard-preview-card__stats"><span><b>1.248</b><small>Menü Görüntülenmeleri</small></span><span><b>6</b><small>Kategoriler</small></span><span><b>24</b><small>Ürünler</small></span></div>
-    <div className="landing-dashboard-preview-card__chart"><i style={{ height: '36%' }} /><i style={{ height: '54%' }} /><i style={{ height: '45%' }} /><i style={{ height: '72%' }} /><i style={{ height: '62%' }} /><i style={{ height: '88%' }} /><i style={{ height: '76%' }} /></div>
-    <small className="landing-dashboard-preview-card__caption">Son 7 gün · Menü görüntülenmeleri</small>
+/* ─── Print cards ─────────────────────────────────────────── */
+const PrintStage = () => (
+  <div className="lp2-print-stage" aria-label="QR print card önizlemesi">
+    {/* secondary card behind */}
+    <div className="lp2-print-card lp2-print-card--back">
+      <small>A6 · MİNİMAL</small>
+      <b>Masadaki menü</b>
+    </div>
+    {/* main card */}
+    <div className="lp2-print-card lp2-print-card--front">
+      <small>A5 · MODERN</small>
+      <img src="/logo.svg" alt="zuuqrmenu" />
+      <strong>Test Restoran</strong>
+      <span>Menüyü keşfet</span>
+      <QrIcon className="lp2-print-card__qr" />
+      <b>Menüyü Gör</b>
+    </div>
   </div>
 );
 
-const AnalyticsShowcase = () => (
-  <section className="landing-section landing-analytics-showcase landing-reveal"><div className="landing-analytics-card"><div><span className="landing-kicker">YÖNETİM PLATFORMU</span><h2>Bir QR kodundan fazlası.</h2><p>Menünüzü yayınladıktan sonra da işiniz devam eder. Görüntülenmeleri, kategorileri ve ürünleri tek bir yönetim alanında görün.</p></div><DashboardPreview /></div></section>
+/* ─── Analytics preview card ─────────────────────────────── */
+const AnalyticsCard = () => (
+  <div className="lp2-analytics-card">
+    <div className="lp2-analytics-card__head">
+      <span>GENEL BAKIŞ</span>
+      <b>Bu hafta</b>
+    </div>
+    <h3>Menü performansı</h3>
+    <div className="lp2-analytics-card__stats">
+      <span><b>1.248</b><small>Görüntülenme</small></span>
+      <span><b>6</b><small>Kategori</small></span>
+      <span><b>24</b><small>Ürün</small></span>
+    </div>
+    <div className="lp2-analytics-card__chart">
+      {[36, 54, 45, 72, 62, 88, 76].map((h, i) => (
+        <i key={i} style={{ height: `${h}%` }} />
+      ))}
+    </div>
+    <small className="lp2-analytics-card__caption">Son 7 gün · Menü görüntülenmeleri</small>
+  </div>
 );
 
+/* ─── Main page ──────────────────────────────────────────── */
 const LandingPage = () => {
+  const heroRef = useRef(null);
+
   useEffect(() => {
-    const reveals = document.querySelectorAll('.landing-reveal');
-    const observer = new IntersectionObserver((entries) => entries.forEach((entry) => entry.target.classList.toggle('is-visible', entry.isIntersecting)), { threshold: 0.16 });
-    reveals.forEach((element) => observer.observe(element));
-    const onScroll = () => document.documentElement.style.setProperty('--landing-scroll', `${window.scrollY}px`);
+    /* Intersection reveal */
+    const reveals = document.querySelectorAll('.lp2-reveal');
+    const observer = new IntersectionObserver(
+      entries => entries.forEach(e => e.target.classList.toggle('lp2-reveal--in', e.isIntersecting)),
+      { threshold: 0.12 }
+    );
+    reveals.forEach(el => observer.observe(el));
+
+    /* Parallax scroll var */
+    const onScroll = () =>
+      document.documentElement.style.setProperty('--lp2-scroll', `${window.scrollY}px`);
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
+
     return () => { observer.disconnect(); window.removeEventListener('scroll', onScroll); };
   }, []);
 
   return (
-  <div className="landing-page">
-    <SeoHead
-      title="zuuqrmenu | Restoranlar için dijital menü platformu"
-      description="zuuqrmenu ile restoranınızın dijital menüsünü oluşturun, QR kodunuzu hazırlayın ve menü deneyiminizi yönetin."
-      canonical="https://zuuqrmenu.com/"
-      image="https://zuuqrmenu.com/logo_darkmode.svg"
-      structuredData={{
-        '@context': 'https://schema.org',
-        '@graph': [
-          { '@type': 'Organization', name: 'zuuqrmenu', url: 'https://zuuqrmenu.com/', logo: 'https://zuuqrmenu.com/logo_darkmode.svg' },
-          { '@type': 'WebSite', name: 'zuuqrmenu', url: 'https://zuuqrmenu.com/', inLanguage: 'tr-TR' },
-        ],
-      }}
-    />
-    <LandingHeader />
-    <main>
-      <section className="landing-hero landing-reveal"><div className="landing-hero__copy"><span className="landing-kicker">RESTORANLAR İÇİN DİJİTAL MENÜ</span><h1>Menünüzü dijitale taşıyın.<br /><em>Markanız gibi görünsün.</em></h1><p>zuuqrmenu ile menünüzü oluşturun, QR kodunuzu hazırlayın ve müşterilerinizin deneyimini tek bir yerden yönetin.</p><div className="landing-hero__actions">
-  <a
-    href={getPanelUrl('/register')}
-    className="landing-button"
-    onClick={() => trackEvent('click_cta', { cta_name: 'create_restaurant', location: 'hero' })}
-  >
-    Restoranını Oluştur <span>↗</span>
-  </a>
-  <Link
-    to="/menu"
-    className="landing-button landing-button--quiet"
-    onClick={() => trackEvent('click_cta', { cta_name: 'view_demo', location: 'hero' })}
-  >
-    Demo Menüyü Gör <span>→</span>
-  </Link>
-</div><div className="landing-hero__note"><span>●</span> Menü · QR · analizler tek platformda</div></div><ProductPreview /></section>
-      <section className="landing-value-strip"><span><b>01</b>Tek bir menü sistemi</span><span><b>02</b>Her ekranda iyi görünür</span><span><b>03</b>QR ile anında erişim</span><span><b>04</b>Veriyle daha iyi kararlar</span></section>
-      <MenuExperience />
-      <HowItWorksSection />
-      <ProductShowcase />
-      <QrShowcase />
-      <AnalyticsShowcase />
-      <section className="landing-final-cta landing-reveal"><span className="landing-kicker">HAZIR MISINIZ?</span><h2>Menünüzü dijitale taşıyın.</h2><p>Restoranınız için daha iyi bir menü deneyimi bugün başlayabilir.</p><div>
-        <a
-          href={getPanelUrl('/register')}
-          className="landing-button"
-          onClick={() => trackEvent('click_cta', { cta_name: 'create_restaurant', location: 'footer_cta' })}
-        >
-          Restoranını Oluştur <span>↗</span>
-        </a>
-        <a href={getPanelUrl('/login')} className="landing-button landing-button--quiet">Giriş Yap</a>
-      </div></section>
-    </main>
-    <footer className="landing-footer"><div><Link to="/" className="landing-brand"><img src="/logo_darkmode.svg" alt="zuuqrmenu" className="landing-brand__logo" /></Link><p>Restoranlar için modern dijital menü platformu.</p></div><nav><a href="#features">Özellikler</a><a href="#how-it-works">Nasıl Çalışır?</a><a href={getPanelUrl('/login')}>Giriş Yap</a><a href={getPanelUrl('/register')}>Restoranını Oluştur</a></nav><small>© 2026 zuuqrmenu</small></footer>
-  </div>
+    <div className="lp2-page">
+      <SeoHead
+        title="zuuqrmenu | Restoranlar için dijital menü platformu"
+        description="zuuqrmenu ile restoranınızın dijital menüsünü oluşturun, QR kodunuzu hazırlayın ve menü deneyiminizi yönetin."
+        canonical="https://zuuqrmenu.com/"
+        image="https://zuuqrmenu.com/logo_darkmode.svg"
+        structuredData={{
+          '@context': 'https://schema.org',
+          '@graph': [
+            { '@type': 'Organization', name: 'zuuqrmenu', url: 'https://zuuqrmenu.com/', logo: 'https://zuuqrmenu.com/logo_darkmode.svg' },
+            { '@type': 'WebSite', name: 'zuuqrmenu', url: 'https://zuuqrmenu.com/', inLanguage: 'tr-TR' },
+          ],
+        }}
+      />
+      <LandingHeader />
+
+      <main>
+
+        {/* ══ HERO — full-bleed wrapper fixes bg-cut ═══════ */}
+        <div className="lp2-hero-wrap">
+          {/* bg decorative layers */}
+          <div className="lp2-hero__dots"    aria-hidden="true" />
+          <div className="lp2-hero__glow"    aria-hidden="true" />
+          {/* watermark */}
+          <span className="lp2-hero__wm"     aria-hidden="true">MENU</span>
+          {/* floating accent squares */}
+          <span className="lp2-hero__sq lp2-hero__sq--1" aria-hidden="true" />
+          <span className="lp2-hero__sq lp2-hero__sq--2" aria-hidden="true" />
+          <span className="lp2-hero__sq lp2-hero__sq--3" aria-hidden="true" />
+
+          <section className="lp2-hero lp2-reveal" ref={heroRef}>
+            <div className="lp2-hero__copy">
+              <div className="lp2-hero__eyebrow">
+                <span className="lp2-hero__tag">RESTORANLAR İÇİN</span>
+                <span className="lp2-hero__tag lp2-hero__tag--accent">DİJİTAL MENÜ ↗</span>
+              </div>
+              <h1>
+                <span className="lp2-hero__line">Menünüz <em>dijital.</em></span>
+                <span className="lp2-hero__line">Markanız <em>önde.</em></span>
+              </h1>
+              <p>
+                zuuqrmenu ile menünüzü oluşturun, QR kodunuzu hazırlayın
+                ve müşterilerinizin deneyimini tek bir yerden yönetin.
+              </p>
+              <div className="lp2-hero__actions">
+                <a
+                  href={getPanelUrl('/register')}
+                  className="lp2-cta-btn"
+                  onClick={() => trackEvent('click_cta', { cta_name: 'create_restaurant', location: 'hero' })}
+                >
+                  Restoranını Oluştur <span>↗</span>
+                </a>
+                <Link
+                  to="/menu"
+                  className="lp2-cta-btn lp2-cta-btn--ghost"
+                  onClick={() => trackEvent('click_cta', { cta_name: 'view_demo', location: 'hero' })}
+                >
+                  Demo Menüyü Gör <span>→</span>
+                </Link>
+              </div>
+              <div className="lp2-hero__meta">
+                <div className="lp2-hero__stat"><b>Kodsuz</b><small>teknik bilgi gerekmez</small></div>
+                <div className="lp2-hero__stat-sep" />
+                <div className="lp2-hero__stat"><b>3 dakika</b><small>ortalama kurulum süresi</small></div>
+                <div className="lp2-hero__stat-sep" />
+                <div className="lp2-hero__stat"><b>Dinamik QR</b><small>baskı yenilemeden anlık güncelle</small></div>
+              </div>
+            </div>
+
+            <div className="lp2-hero__visual">
+              <DashMock />
+            </div>
+          </section>
+        </div>
+
+        {/* ══ TICKER ════════════════════════════════════════ */}
+        <div className="lp2-ticker" aria-hidden="true">
+          <div className="lp2-ticker__track">
+            {['Tek menü sistemi', 'Her ekranda iyi görünür', 'QR ile anında erişim', 'Gerçek zamanlı analiz', 'Kolay yönetim', 'Anlık güncelleme'].map((t, i) => (
+              <span key={i}><b>✦</b> {t}</span>
+            ))}
+            {/* duplicate for seamless loop */}
+            {['Tek menü sistemi', 'Her ekranda iyi görünür', 'QR ile anında erişim', 'Gerçek zamanlı analiz', 'Kolay yönetim', 'Anlık güncelleme'].map((t, i) => (
+              <span key={`d${i}`} aria-hidden="true"><b>✦</b> {t}</span>
+            ))}
+          </div>
+        </div>
+
+        {/* ══ MENU EXPERIENCE ══════════════════════════════ */}
+        <section id="ozellikler" className="lp2-section lp2-section--experience lp2-reveal">
+          <div className="lp2-section__intro lp2-reveal">
+            <span className="lp2-kicker">MENÜ DENEYİMİ</span>
+            <h2>Menünüz artık<br /><em>sadece bir PDF değil.</em></h2>
+            <p>Basılı menünün tanıdık sadeliği, mobilde yaşayan ve kolay keşfedilen bir deneyime dönüşür.</p>
+          </div>
+          <div className="lp2-phone-wrap lp2-reveal">
+            {/* decorative paper menu behind phone */}
+            <div className="lp2-paper" aria-hidden="true">
+              <small>MENÜ</small>
+              <span>Günün menüsü</span>
+              <i /><i /><i />
+            </div>
+            <PhoneMock />
+          </div>
+        </section>
+
+        {/* ══ FEATURES GRID ════════════════════════════════ */}
+        <section className="lp2-section lp2-section--features lp2-reveal">
+          <div className="lp2-section__intro lp2-reveal">
+            <span className="lp2-kicker">PLATFORM</span>
+            <h2>İhtiyacınız olan<br />her şey burada.</h2>
+          </div>
+          <div className="lp2-features">
+            {features.map(f => (
+              <article className="lp2-feature lp2-reveal" key={f.id}>
+                <span className="lp2-feature__icon">{f.icon}</span>
+                <h3>{f.title}</h3>
+                <p>{f.body}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        {/* ══ HOW IT WORKS ═════════════════════════════════ */}
+        <section id="nasil-calisir" className="lp2-section lp2-section--steps lp2-reveal">
+          <div className="lp2-section__intro lp2-reveal">
+            <span className="lp2-kicker">NASIL ÇALIŞIR?</span>
+            <h2>Üç adım.<br /><em>Daha iyi bir menü.</em></h2>
+            <p>Günün yoğunluğunda bile düzenli, hızlı ve markanıza ait bir deneyim.</p>
+          </div>
+          <ol className="lp2-steps">
+            {steps.map(s => (
+              <li className="lp2-step lp2-reveal" key={s.n}>
+                <span className="lp2-step__num">{s.n}</span>
+                <div>
+                  <h3>{s.title}</h3>
+                  <p>{s.body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        {/* ══ DASHBOARD SHOWCASE ═══════════════════════════ */}
+        <section className="lp2-section lp2-section--showcase lp2-reveal">
+          <div className="lp2-section__intro lp2-reveal">
+            <span className="lp2-kicker">YÖNETİM ALANI</span>
+            <h2>Menünüz sadece yayında<br /><em>değil. Kontrolünüzde.</em></h2>
+            <p>Kategoriler, ürünler, yayın durumu ve analizler — tek bir yerden.</p>
+            <ul className="lp2-check-list">
+              <li>Kategorilerinizi ve ürünlerinizi yönetin</li>
+              <li>Menü durumunu tek bakışta görün</li>
+              <li>Görüntülenmeleri ve popüler ürünleri takip edin</li>
+            </ul>
+          </div>
+          <div className="lp2-showcase-visual lp2-reveal">
+            <DashMock />
+          </div>
+        </section>
+
+        {/* ══ QR PRINT ═════════════════════════════════════ */}
+        <section className="lp2-section lp2-section--qr lp2-reveal">
+          <div className="lp2-section__intro lp2-reveal">
+            <span className="lp2-kicker">QR PRINT DESIGNER</span>
+            <h2>QR kodunuzu sadece<br />üretmeyin, <em>güzelce sunun.</em></h2>
+            <p>Tek bir masa kartı, restoranınızın kimliği ve menünüze açılan sade bir davet.</p>
+          </div>
+          <div className="lp2-reveal">
+            <PrintStage />
+          </div>
+        </section>
+
+        {/* ══ ANALYTICS ════════════════════════════════════ */}
+        <section className="lp2-section lp2-section--analytics lp2-reveal">
+          <div className="lp2-section__intro lp2-reveal">
+            <span className="lp2-kicker">YÖNETİM PLATFORMU</span>
+            <h2>Bir QR kodundan<br /><em>fazlası.</em></h2>
+            <p>Menünüzü yayınladıktan sonra da işiniz devam eder. Görüntülenmeleri, kategorileri ve ürünleri tek bir yönetim alanında görün.</p>
+          </div>
+          <div className="lp2-reveal">
+            <AnalyticsCard />
+          </div>
+        </section>
+
+        {/* ══ FINAL CTA ════════════════════════════════════ */}
+        <section className="lp2-final-cta lp2-reveal">
+          <div className="lp2-final-cta__inner">
+            <span className="lp2-kicker">HAZIR MISINIZ?</span>
+            <h2>Menünüzü dijitale taşıyın.</h2>
+            <p>Restoranınız için daha iyi bir menü deneyimi bugün başlayabilir.</p>
+            <div className="lp2-final-cta__actions">
+              <a
+                href={getPanelUrl('/register')}
+                className="lp2-cta-btn"
+                onClick={() => trackEvent('click_cta', { cta_name: 'create_restaurant', location: 'footer_cta' })}
+              >
+                Restoranını Oluştur <span>↗</span>
+              </a>
+              <a href={getPanelUrl('/login')} className="lp2-cta-btn lp2-cta-btn--ghost">Giriş Yap</a>
+            </div>
+          </div>
+        </section>
+
+      </main>
+
+      {/* ── FOOTER ────────────────────────────────────────── */}
+      <footer className="lp2-footer">
+        <div className="lp2-footer__inner">
+          <div className="lp2-footer__brand">
+            <Link to="/" className="lp2-brand">
+              <img src="/logo_darkmode.svg" alt="zuuqrmenu" className="landing-brand__logo lp2-brand__logo" />
+            </Link>
+            <p>Restoranlar için modern dijital menü platformu.</p>
+          </div>
+          <nav className="lp2-footer__nav" aria-label="Footer navigation">
+            <a href="#ozellikler">Özellikler</a>
+            <a href="#nasil-calisir">Nasıl Çalışır?</a>
+            <a href={getPanelUrl('/login')}>Giriş Yap</a>
+            <a href={getPanelUrl('/register')}>Restoranını Oluştur</a>
+          </nav>
+          <small className="lp2-footer__copy">© 2026 zuuqrmenu</small>
+        </div>
+      </footer>
+    </div>
   );
 };
 
