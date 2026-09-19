@@ -23,7 +23,10 @@ const getAuthCookieOptions = () => {
   return {
     httpOnly: true,
     secure: isProd,
-    sameSite: 'lax',
+    // 'none' is required in production so the browser sends the cookie on
+    // cross-site requests between subdomains (panel.zuuqrmenu.com → api.zuuqrmenu.com).
+    // 'none' must be paired with secure:true, so we keep 'lax' in local dev.
+    sameSite: isProd ? 'none' : 'lax',
     domain: isProd ? '.zuuqrmenu.com' : undefined,
     path: '/',
   };
