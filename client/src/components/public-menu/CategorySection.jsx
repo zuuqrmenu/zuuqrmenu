@@ -1,13 +1,21 @@
+import { useMemo } from 'react';
 import ProductCard from './ProductCard';
 
 const CategorySection = ({ category, onProductSelect, layout, themeKey }) => {
   const isGridTheme = themeKey === 'GRID';
   const showStories = Boolean(layout?.showStories);
   
-  // Find products that have images for the top rectangular story highlight cards
-  const highlightProducts = isGridTheme && showStories
-    ? category.products.filter((p) => p.image)
-    : [];
+  // Find products that have images for the top rectangular story highlight cards in randomized order
+  const highlightProducts = useMemo(() => {
+    if (!isGridTheme || !showStories) return [];
+    const withImages = category.products.filter((p) => p.image);
+    const shuffled = [...withImages];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  }, [category.id, category.products, isGridTheme, showStories]);
 
   return (
     <section id={`category-${category.id}`} className={`public-category ${isGridTheme ? 'public-category--grid' : ''}`}>

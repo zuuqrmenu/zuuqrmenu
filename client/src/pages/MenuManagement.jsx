@@ -88,57 +88,137 @@ const ThemeArtCard = ({ theme }) => {
   );
 };
 
-const SavedThemeSelectionModal = ({ themes, activeThemeId, onClose, onApply, applying, onNewTheme }) => {
-  const [selectedThemeId, setSelectedThemeId] = useState(activeThemeId || '');
+const SavedThemeSelectionModal = ({ themes, activeThemeId, onClose, onApply, applying, onNewTheme, onEditTheme }) => {
+  const [selectedThemeId, setSelectedThemeId] = useState(activeThemeId ? String(activeThemeId) : '');
+  const [isClosing, setIsClosing] = useState(false);
+
+  const handleClose = (callback) => {
+    if (isClosing) return;
+    setIsClosing(true);
+    setTimeout(() => {
+      if (typeof callback === 'function') {
+        callback();
+      } else if (typeof onClose === 'function') {
+        onClose();
+      }
+    }, 220);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        handleClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isClosing]);
+
+  useEffect(() => {
+    setSelectedThemeId(activeThemeId ? String(activeThemeId) : '');
+  }, [activeThemeId]);
+
   const options = [
     { id: '', name: 'Varsayılan', theme: buildDefaultMenuTemplate({ name: 'Varsayılan' }), description: 'Klasik menü' },
-    ...themes.map((theme) => ({ id: String(theme._id || theme.id), name: theme.name, theme, description: theme.theme === 'GRID' ? 'Modern tema' : 'Varsayılan tema' })),
+    ...themes.map((theme, index) => ({ id: String(theme._id || theme.id), name: theme.name, theme, description: theme.theme === 'GRID' ? 'Modern tema' : 'Varsayılan tema', index })),
   ];
 
+  const canAddNewTheme = themes.length < 3; // En fazla 3 özel tema + 1 varsayılan = 4 tema
+
   return (
-    <div className="saved-theme-selection-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <div className="saved-theme-selection-modal stsm-redesign" role="dialog" aria-modal="true" aria-labelledby="saved-theme-selection-title">
+    <div
+      className={`saved-theme-selection-backdrop ${isClosing ? 'is-closing' : ''}`}
+      role="presentation"
+      onMouseDown={(event) => event.target === event.currentTarget && handleClose()}
+    >
+      <div
+        className={`saved-theme-selection-modal stsm-redesign ${isClosing ? 'is-closing' : ''}`}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="saved-theme-selection-title"
+      >
         <header className="saved-theme-selection-modal__header">
-          <div><p className="menu-publish-card__eyebrow">Menü özelleştirme</p><h2 id="saved-theme-selection-title">Menü Tasarımını Seç</h2></div>
-          <button type="button" className="saved-theme-selection-modal__close" onClick={onClose} aria-label="Kapat">×</button>
-        </header>
-        <div className="stsm-grid">
-          {options.map((option) => (
-            <button
-              type="button"
-              key={option.id || 'default'}
-              className={`stsm-card ${selectedThemeId === option.id ? 'is-selected' : ''}`}
-              onClick={() => setSelectedThemeId(option.id)}
-            >
-              <ThemeArtCard theme={option.theme} />
-              <span className="stsm-card__meta">
-                <strong>{option.name}</strong>
-                <small>{option.description}</small>
-                {selectedThemeId === option.id && <b>✓ Seçili</b>}
-              </span>
-            </button>
-          ))}
-          {/* Add new theme button */}
+          <div>
+            <p className="menu-publish-card__eyebrow">Menü özelleştirme ({options.length}/4 tema)</p>
+            <h2 id="saved-theme-selection-title">Menü Tasarımını Seç</h2>
+          </div>
           <button
             type="button"
-            className="stsm-card stsm-card--new"
-            onClick={() => { onClose(); setTimeout(() => onNewTheme(), 80); }}
-            title="Yeni tema oluştur"
+            className="saved-theme-selection-modal__close"
+            onClick={() => handleClose()}
+            aria-label="Kapat"
           >
-            <span className="stsm-art stsm-art--new">
-              <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-            </span>
-            <span className="stsm-card__meta">
-              <strong>Yeni Tema</strong>
-              <small>Yeni özelleştirme</small>
-            </span>
+            ×
           </button>
+        </header>
+        {!canAddNewTheme && (
+          <div className="stsm-limit-notice" role="status">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <span>En fazla 4 tema kaydedebilirsiniz. Yeni bir tema kaydetmek için mevcut temalarınızdan birini silmelisiniz.</span>
+          </div>
+        )}
+        <div className="stsm-grid">
+          {options.map((option) => (
+            <div key={option.id || 'default'} className="stsm-card-wrapper">
+              <button
+                type="button"
+                className={`stsm-card ${selectedThemeId === option.id ? 'is-selected' : ''}`}
+                onClick={() => setSelectedThemeId(option.id)}
+              >
+                <ThemeArtCard theme={option.theme} />
+                <span className="stsm-card__meta">
+                  <strong>{option.name}</strong>
+                  <small>{option.description}</small>
+                  {selectedThemeId === option.id && <b>✓ Seçili</b>}
+                </span>
+              </button>
+              {option.id !== '' && (
+                <button
+                  type="button"
+                  className="stsm-card__edit-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleClose(() => onEditTheme(option.theme, option.index));
+                  }}
+                  title="Temayı Düzenle"
+                  aria-label={`${option.name} temasını düzenle`}
+                >
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          ))}
+
+          {/* Add new theme button (only shown if limit not reached) */}
+          {canAddNewTheme && (
+            <button
+              type="button"
+              className="stsm-card stsm-card--new"
+              onClick={() => handleClose(() => onNewTheme())}
+              title="Yeni tema oluştur"
+            >
+              <span className="stsm-art stsm-art--new">
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+              </span>
+              <span className="stsm-card__meta">
+                <strong>Yeni Tema</strong>
+                <small>Yeni özelleştirme</small>
+              </span>
+            </button>
+          )}
         </div>
         <footer className="saved-theme-selection-modal__footer">
-          <button type="button" className="publish-dialog__cancel" onClick={onClose}>Vazgeç</button>
+          <button type="button" className="publish-dialog__cancel" onClick={() => handleClose()}>Vazgeç</button>
           <button type="button" className="publish-dialog__confirm" onClick={() => onApply(selectedThemeId)} disabled={applying}>{applying ? 'Uygulanıyor...' : 'Seç ve Uygula'}</button>
         </footer>
       </div>
@@ -163,6 +243,8 @@ const MenuManagement = () => {
   const [activeMenuThemeId, setActiveMenuThemeId] = useState(null);
   const [themeSelectionOpen, setThemeSelectionOpen] = useState(false);
   const [customizationOpen, setCustomizationOpen] = useState(false);
+  const [editingTheme, setEditingTheme] = useState(null);
+  const [editingThemeIndex, setEditingThemeIndex] = useState(null);
   const [highlightViewMenu, setHighlightViewMenu] = useState(false);
 
   useEffect(() => {
@@ -284,9 +366,30 @@ const MenuManagement = () => {
     setActionId('menu-theme');
     setError('');
     try {
-      await restaurantSettingsService.update({ activeMenuThemeId: nextThemeId });
+      const selectedObj = nextThemeId
+        ? menuThemes.find((t) => String(t._id || t.id) === String(nextThemeId))
+        : null;
+      const payload = nextThemeId
+        ? {
+            activeMenuThemeId: nextThemeId,
+            activeMenuId: nextThemeId,
+            theme: selectedObj?.theme || 'DEFAULT',
+            primaryColor: selectedObj?.primaryColor || '#1F2937',
+            secondaryColor: selectedObj?.secondaryColor || '#FFFFFF',
+          }
+        : {
+            activeMenuThemeId: null,
+            activeMenuId: null,
+            theme: 'DEFAULT',
+            primaryColor: '#1F2937',
+            secondaryColor: '#FFFFFF',
+          };
+      const result = await restaurantSettingsService.update(payload);
       setActiveMenuThemeId(nextThemeId);
-      setNotice('Menü teması seçildi.');
+      if (result.settings?.menuThemes) {
+        setMenuThemes(result.settings.menuThemes);
+      }
+      setNotice(nextThemeId ? 'Menü teması seçildi.' : 'Varsayılan menü görünümüne dönüldü.');
       setThemeSelectionOpen(false);
     } catch (err) {
       setError(err.response?.data?.error || 'Menü teması seçilemedi.');
@@ -318,7 +421,7 @@ const MenuManagement = () => {
         {notice && <div className={`settings-status settings-status--success ${noticeVisible ? 'is-visible' : 'is-hiding'}`} role="status">{notice}<button onClick={() => setNotice('')} className="ml-3" aria-label="Bildirimi kapat">×</button></div>}
         {error && <div className="flex items-center justify-between rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"><span>{error}</span><button onClick={() => setError('')} aria-label="Hatayı kapat">×</button></div>}
         {overview && <section className="menu-publish-card"><div className="menu-publish-card__header"><div><p className="menu-publish-card__eyebrow">Yayın Durumu</p><h3>{statusCopy[0]}</h3><p>{statusCopy[1]}</p>{overview.restaurant?.publishedAt && <small>Son yayın: {new Intl.DateTimeFormat('tr-TR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(overview.restaurant.publishedAt))}</small>}</div><div className="menu-status-switcher" role="group" aria-label="Menü görünürlüğü">{[['DRAFT', 'Taslak'], ['PUBLISHED', 'Yayında'], ['HIDDEN', 'Gizli']].map(([value, label]) => <button type="button" key={value} className={`${menuStatus === value ? 'is-active ' : ''}menu-status-switcher__${value.toLowerCase()}`} disabled={actionId === 'menu-status'} onClick={() => menuStatus !== value && setStatusDialog({ status: value })}>{label}</button>)}</div></div></section>}
-        <section className="menu-customization-entry"><div className="menu-customization-entry__header"><div><p className="menu-publish-card__eyebrow">Tasarım</p><h3>Menü Özelleştirme</h3><p>Temanızı, tipografinizi ve ürün görünümünü beğeninize göre tasarlayın.</p></div></div><div className="menu-customization-entry__actions"><button type="button" className="menu-customization-entry__edit" onClick={() => setThemeSelectionOpen(true)} aria-label="Kayıtlı menü tasarımını seç" title="Kayıtlı menü tasarımını seç"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m4 16.5-.8 4.3 4.3-.8L19.2 8.3a2.4 2.4 0 0 0-3.4-3.4L4 16.5Z" /><path d="m14.5 6.5 3 3" /></svg></button><button type="button" onClick={() => setCustomizationOpen(true)} className="menu-customization-entry__button"><span>✦</span> Özelleştir</button></div></section>
+        <section className="menu-customization-entry"><div className="menu-customization-entry__header"><div><p className="menu-publish-card__eyebrow">Tasarım</p><h3>Menü Özelleştirme</h3><p>Temanızı, tipografinizi ve ürün görünümünü beğeninize göre tasarlayın.</p></div></div><div className="menu-customization-entry__actions"><button type="button" className="menu-customization-entry__edit" onClick={() => setThemeSelectionOpen(true)} aria-label="Kayıtlı menü tasarımını seç" title="Kayıtlı menü tasarımını seç"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m4 16.5-.8 4.3 4.3-.8L19.2 8.3a2.4 2.4 0 0 0-3.4-3.4L4 16.5Z" /><path d="m14.5 6.5 3 3" /></svg></button><button type="button" onClick={() => { setEditingTheme(null); setEditingThemeIndex(null); setCustomizationOpen(true); }} className="menu-customization-entry__button"><span>✦</span> Özelleştir</button></div></section>
         {loading ? (
           <DashboardSkeleton variant="menu" />
         ) : (
@@ -336,19 +439,60 @@ const MenuManagement = () => {
         )}
       </div>
       {modalOpen && <CategoryModal category={editingCategory} nextOrder={categories.length} onClose={() => { setModalOpen(false); setEditingCategory(null); }} onSaved={showNotice} />}
-      {themeSelectionOpen && <SavedThemeSelectionModal themes={menuThemes} activeThemeId={activeMenuThemeId} onClose={() => setThemeSelectionOpen(false)} onApply={selectMenuTheme} applying={actionId === 'menu-theme'} onNewTheme={() => setCustomizationOpen(true)} />}
+      {themeSelectionOpen && (
+        <SavedThemeSelectionModal
+          themes={menuThemes}
+          activeThemeId={activeMenuThemeId}
+          onClose={() => setThemeSelectionOpen(false)}
+          onApply={selectMenuTheme}
+          applying={actionId === 'menu-theme'}
+          onNewTheme={() => {
+            setEditingTheme(null);
+            setEditingThemeIndex(null);
+            setThemeSelectionOpen(false);
+            setCustomizationOpen(true);
+          }}
+          onEditTheme={(theme, index) => {
+            setEditingTheme(theme);
+            setEditingThemeIndex(index);
+            setThemeSelectionOpen(false);
+            setCustomizationOpen(true);
+          }}
+        />
+      )}
       {customizationOpen && (
         <MenuCustomizationCompactModal
           themes={menuThemes}
-          onClose={() => setCustomizationOpen(false)}
-          onSaved={async (themes) => {
+          initialMenu={editingTheme}
+          editingIndex={editingThemeIndex}
+          onClose={() => {
+            setCustomizationOpen(false);
+            setEditingTheme(null);
+            setEditingThemeIndex(null);
+          }}
+          onSaved={async (themes, savedPayload, savedIndex) => {
             const settings = await saveMenuThemes(themes);
             if (settings?.menuThemes) setMenuThemes(settings.menuThemes);
             setNotice('');
-            setTimeout(() => setNotice('Tema başarıyla kaydedildi.'), 50);
+            setTimeout(() => setNotice(typeof savedIndex === 'number' && savedIndex >= 0 ? 'Tema başarıyla güncellendi.' : 'Tema başarıyla kaydedildi.'), 50);
             setHighlightViewMenu(true);
             setTimeout(() => setHighlightViewMenu(false), 9000);
             return settings;
+          }}
+          onDelete={async (remainingThemes, deletedId) => {
+            const isDeletedActive = String(activeMenuThemeId) === String(deletedId);
+            const payload = {
+              menuThemes: remainingThemes,
+              ...(isDeletedActive
+                ? { activeMenuThemeId: null, activeMenuId: null, theme: 'DEFAULT', primaryColor: '#1F2937', secondaryColor: '#FFFFFF' }
+                : {}),
+            };
+            const result = await restaurantSettingsService.update(payload);
+            setMenuThemes(result.settings?.menuThemes || remainingThemes);
+            if (isDeletedActive) {
+              setActiveMenuThemeId(null);
+            }
+            setNotice('Tema başarıyla silindi.');
           }}
         />
       )}

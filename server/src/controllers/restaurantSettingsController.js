@@ -156,15 +156,17 @@ export const updateRestaurantSettings = async (req, res, next) => {
     if (req.body.activeMenuId !== undefined) {
       if (req.body.activeMenuId !== null && !/^[a-f\d]{24}$/i.test(String(req.body.activeMenuId))) return res.status(400).json({ error: 'Geçersiz aktif menü seçimi.' });
       updates.activeMenuId = req.body.activeMenuId;
+      updates.activeMenuThemeId = req.body.activeMenuId;
     }
 
     if (req.body.activeMenuThemeId !== undefined) {
       if (req.body.activeMenuThemeId !== null && !/^[a-f\d]{24}$/i.test(String(req.body.activeMenuThemeId))) return res.status(400).json({ error: 'Geçersiz menü teması seçimi.' });
       updates.activeMenuThemeId = req.body.activeMenuThemeId;
+      updates.activeMenuId = req.body.activeMenuThemeId;
     }
 
     if (req.body.savedMenus !== undefined) {
-      if (!Array.isArray(req.body.savedMenus) || req.body.savedMenus.length > 5) return res.status(400).json({ error: 'En fazla 5 menü kaydı oluşturabilirsiniz.' });
+      if (!Array.isArray(req.body.savedMenus) || req.body.savedMenus.length > 3) return res.status(400).json({ error: 'En fazla 3 özel tema (toplam 4) oluşturabilirsiniz.' });
       const normalizedMenus = normalizeSavedMenuEntries(req.body.savedMenus, {
         theme: req.body.theme || 'MINIMAL',
         mode: req.body.mode || 'LIGHT',
@@ -176,16 +178,12 @@ export const updateRestaurantSettings = async (req, res, next) => {
       if (normalizedMenus.some((entry) => !entry || !entry.name)) return res.status(400).json({ error: 'Menü adı zorunludur.' });
       updates.savedMenus = normalizedMenus;
       updates.menuThemes = normalizedMenus;
-      if (updates.activeMenuId && !normalizedMenus.some((entry) => String(entry._id || entry.name) === String(updates.activeMenuId))) updates.activeMenuId = normalizedMenus[0]?._id || null;
-      if (updates.activeMenuThemeId && !normalizedMenus.some((entry) => String(entry._id || entry.name) === String(updates.activeMenuThemeId))) updates.activeMenuThemeId = normalizedMenus[0]?._id || null;
-      if (!updates.activeMenuId && !updates.activeMenuThemeId) {
-        updates.activeMenuId = normalizedMenus[0]?._id || null;
-        updates.activeMenuThemeId = normalizedMenus[0]?._id || null;
-      }
+      if (updates.activeMenuId && !normalizedMenus.some((entry) => String(entry._id || entry.name) === String(updates.activeMenuId))) updates.activeMenuId = null;
+      if (updates.activeMenuThemeId && !normalizedMenus.some((entry) => String(entry._id || entry.name) === String(updates.activeMenuThemeId))) updates.activeMenuThemeId = null;
     }
 
     if (req.body.menuThemes !== undefined) {
-      if (!Array.isArray(req.body.menuThemes) || req.body.menuThemes.length > 5) return res.status(400).json({ error: 'En fazla 5 menü kaydı oluşturabilirsiniz.' });
+      if (!Array.isArray(req.body.menuThemes) || req.body.menuThemes.length > 3) return res.status(400).json({ error: 'En fazla 3 özel tema (toplam 4) oluşturabilirsiniz.' });
       const normalizedThemes = normalizeSavedMenuEntries(req.body.menuThemes, {
         theme: req.body.theme || 'MINIMAL',
         mode: req.body.mode || 'LIGHT',
@@ -197,12 +195,8 @@ export const updateRestaurantSettings = async (req, res, next) => {
       if (normalizedThemes.some((entry) => !entry || !entry.name)) return res.status(400).json({ error: 'Tema adı zorunludur.' });
       updates.savedMenus = normalizedThemes;
       updates.menuThemes = normalizedThemes;
-      if (updates.activeMenuId && !normalizedThemes.some((entry) => String(entry._id || entry.name) === String(updates.activeMenuId))) updates.activeMenuId = normalizedThemes[0]?._id || null;
-      if (updates.activeMenuThemeId && !normalizedThemes.some((entry) => String(entry._id || entry.name) === String(updates.activeMenuThemeId))) updates.activeMenuThemeId = normalizedThemes[0]?._id || null;
-      if (!updates.activeMenuId && !updates.activeMenuThemeId) {
-        updates.activeMenuId = normalizedThemes[0]?._id || null;
-        updates.activeMenuThemeId = normalizedThemes[0]?._id || null;
-      }
+      if (updates.activeMenuId && !normalizedThemes.some((entry) => String(entry._id || entry.name) === String(updates.activeMenuId))) updates.activeMenuId = null;
+      if (updates.activeMenuThemeId && !normalizedThemes.some((entry) => String(entry._id || entry.name) === String(updates.activeMenuThemeId))) updates.activeMenuThemeId = null;
     }
 
     if (req.body.socialMedia !== undefined) {

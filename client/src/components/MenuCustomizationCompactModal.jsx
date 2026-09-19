@@ -21,25 +21,55 @@ const previewDemoCategories = [
   {
     id: 'baslangiclar',
     name: 'Başlangıçlar',
+    image: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80',
     products: [
-      { id: 'p1', name: 'Çıtır Tavuk Parçaları', shortDescription: 'Kızarmış patates, özel sos ve taze yeşillik', price: 280, oldPrice: 320, image: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80', isFeatured: true, isAvailable: true },
-      { id: 'p2', name: 'Akdeniz Salatası', shortDescription: 'Zeytin, domates, feta ve limon sosu', price: 240, oldPrice: null, image: 'https://images.unsplash.com/photo-1546793665-c74683f339c1?auto=format&fit=crop&w=600&q=80', isFeatured: false, isAvailable: true },
+      { id: 'p1', name: 'Çıtır Tavuk Parçaları', shortDescription: 'Kızarmış patates, özel dip sos ve taze yeşillik', price: 280, oldPrice: 320, image: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80', isFeatured: true, isAvailable: true },
+      { id: 'p2', name: 'Akdeniz Salatası', shortDescription: 'Zeytin, domates, tulum peyniri ve fesleğenli zeytinyağı sosu', price: 240, oldPrice: null, image: 'https://images.unsplash.com/photo-1546793665-c74683f339c1?auto=format&fit=crop&w=600&q=80', isFeatured: false, isAvailable: true },
     ],
   },
   {
     id: 'ana-yemekler',
     name: 'Ana Yemekler',
+    image: 'https://images.unsplash.com/photo-1555949258-eb67b1ef0ceb?auto=format&fit=crop&w=800&q=80',
     products: [
-      { id: 'p3', name: 'Trüflü Makarna', shortDescription: 'Parmesan, mantar ve trüf yağı', price: 420, oldPrice: 450, image: 'https://images.unsplash.com/photo-1555949258-eb67b1ef0ceb?auto=format&fit=crop&w=600&q=80', isFeatured: true, isAvailable: true },
-      { id: 'p4', name: 'Izgara Sebze Tabağı', shortDescription: 'Közlenmiş sebzeler, tahin sosu', price: 310, oldPrice: null, image: 'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=600&q=80', isFeatured: false, isAvailable: true },
+      { id: 'p3', name: 'Trüflü Makarna', shortDescription: 'Parmesan, taze mantar ve trüf yağı', price: 420, oldPrice: 450, image: 'https://images.unsplash.com/photo-1555949258-eb67b1ef0ceb?auto=format&fit=crop&w=600&q=80', isFeatured: true, isAvailable: true },
+      { id: 'p4', name: 'Izgara Somon & Kuşkonmaz', shortDescription: 'Limonlu tereyağı sosu ve fırınlanmış bebek patates', price: 490, oldPrice: 530, image: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=600&q=80', isFeatured: false, isAvailable: true },
+    ],
+  },
+  {
+    id: 'burger-wrap',
+    name: 'Burger & Dürüm',
+    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80',
+    products: [
+      { id: 'p7', name: 'Trüflü Dana Burger', shortDescription: 'Karamelize soğan, trüf mayonez ve patates kızartması', price: 380, oldPrice: null, image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=600&q=80', isFeatured: true, isAvailable: true },
+      { id: 'p8', name: 'Çıtır Tavuk Dürüm', shortDescription: 'Cheddar sos, turşu ve taze yeşillikler', price: 270, oldPrice: 295, image: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?auto=format&fit=crop&w=600&q=80', isFeatured: false, isAvailable: true },
+    ],
+  },
+  {
+    id: 'pizza-firin',
+    name: 'Taş Fırın & Pizza',
+    image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80',
+    products: [
+      { id: 'p9', name: 'Odun Ateşinde Margherita', shortDescription: 'San Marzano domates, taze mozzarella ve fesleğen', price: 340, oldPrice: null, image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=600&q=80', isFeatured: true, isAvailable: true },
+      { id: 'p10', name: 'Dört Peynirli İtalyan Pizza', shortDescription: 'Mozzarella, gorgonzola, parmesan ve gouda peyniri', price: 390, oldPrice: 420, image: 'https://images.unsplash.com/photo-1573821663912-569905455b1c?auto=format&fit=crop&w=600&q=80', isFeatured: false, isAvailable: true },
     ],
   },
   {
     id: 'tatlilar',
     name: 'Tatlılar',
+    image: 'https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=800&q=80',
     products: [
-      { id: 'p5', name: 'San Sebastian Cheesecake', shortDescription: 'Karamelize kremalı klasik tatlı', price: 190, oldPrice: null, image: 'https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=600&q=80', isFeatured: false, isAvailable: true },
-      { id: 'p6', name: 'Bourbon Brownie', shortDescription: 'Ceviz, bitter çikolata ve vanilya', price: 170, oldPrice: 200, image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80', isFeatured: false, isAvailable: true },
+      { id: 'p5', name: 'San Sebastian Cheesecake', shortDescription: 'Karamelize kremalı enfes klasik tatlı', price: 190, oldPrice: null, image: 'https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=600&q=80', isFeatured: false, isAvailable: true },
+      { id: 'p6', name: 'Bourbon Brownie', shortDescription: 'Ceviz, bitter çikolata ve vanilyalı dondurma', price: 170, oldPrice: 200, image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80', isFeatured: false, isAvailable: true },
+    ],
+  },
+  {
+    id: 'icecekler',
+    name: 'İçecekler & Kahve',
+    image: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=800&q=80',
+    products: [
+      { id: 'p11', name: 'Ev Yapımı Çilekli Limonata', shortDescription: 'Taze nane yaprakları ve çilek taneleri', price: 120, oldPrice: null, image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=600&q=80', isFeatured: true, isAvailable: true },
+      { id: 'p12', name: 'Karamel Macchiato', shortDescription: 'Espresso, vanilya şurubu, süt kreması ve karamel', price: 135, oldPrice: null, image: 'https://images.unsplash.com/photo-1517256064527-09c73fc73e38?auto=format&fit=crop&w=600&q=80', isFeatured: false, isAvailable: true },
     ],
   },
 ];
@@ -127,7 +157,7 @@ const defaults = {
 
 export const buildDefaultMenuTemplate = (overrides = {}) => ({
   ...defaults,
-  name: 'Varsayılan Menü',
+  name: overrides.name !== undefined ? overrides.name : 'Varsayılan Menü',
   theme: 'DEFAULT',
   mode: 'LIGHT',
   font: 'Inter',
@@ -196,61 +226,81 @@ export const ThemePreview = ({ draft }) => {
     <div ref={previewShellRef} className="public-menu-shell preview-menu-shell" data-theme={draft.theme || 'DEFAULT'} data-mode={previewMode} data-layout={previewLayout.style || 'STANDARD'} data-show-featured={previewLayout.emphasizeFeatured !== false} style={previewStyle}>
       <div className="public-menu-page preview-public-page">
         {isGridTheme ? (
-          previewGridCategory ? (
-            <header className="public-header public-header--grid-category" data-mode={previewMode}>
-              <button
-                type="button"
-                className="header-control header-control--hamburger"
-                onClick={() => {
-                  setPreviewGridCategory(null);
-                  if (previewShellRef.current) previewShellRef.current.scrollTop = 0;
-                }}
-                aria-label="Kategorileri aç"
-              >
-                <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" strokeWidth="2.4" fill="none" strokeLinecap="round">
-                  <line x1="3.5" y1="6" x2="20.5" y2="6" />
-                  <line x1="3.5" y1="12" x2="20.5" y2="12" />
-                  <line x1="3.5" y1="18" x2="20.5" y2="18" />
-                </svg>
-              </button>
-              <div className="grid-category-nav-wrapper">
-                <CategoryNavigation
-                  categories={previewDemoCategories}
-                  activeCategory={previewGridCategory}
-                  onSelect={(id) => {
-                    setPreviewGridCategory(id);
+          <>
+            <header className={`public-header public-header--grid-category ${!previewGridCategory ? 'is-grid-home' : ''}`} data-mode={previewMode}>
+              <div className="public-header--grid__top-bar">
+                <button
+                  type="button"
+                  className="header-control header-control--hamburger"
+                  onClick={() => {
+                    setPreviewGridCategory(null);
                     if (previewShellRef.current) previewShellRef.current.scrollTop = 0;
                   }}
-                />
+                  aria-label="Kategorileri aç"
+                >
+                  <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" strokeWidth="2.4" fill="none" strokeLinecap="round">
+                    <line x1="3.5" y1="6" x2="20.5" y2="6" />
+                    <line x1="3.5" y1="12" x2="20.5" y2="12" />
+                    <line x1="3.5" y1="18" x2="20.5" y2="18" />
+                  </svg>
+                </button>
+
+                <div
+                  className="public-header--grid__identity"
+                  onClick={() => {
+                    setPreviewGridCategory(null);
+                    if (previewShellRef.current) previewShellRef.current.scrollTop = 0;
+                  }}
+                  role="button"
+                  tabIndex="0"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      setPreviewGridCategory(null);
+                      if (previewShellRef.current) previewShellRef.current.scrollTop = 0;
+                    }
+                  }}
+                  aria-label="Kategorilere dön"
+                >
+                  {previewDemoRestaurant.logo ? (
+                    <img
+                      src={previewDemoRestaurant.logo}
+                      alt={previewDemoRestaurant.name}
+                      className="public-header--grid__logo-img"
+                    />
+                  ) : (
+                    <span className="public-header--grid__title">{previewDemoRestaurant.name}</span>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  className="header-control header-control--search"
+                  onClick={() => {}}
+                  aria-label="Restoran bilgileri"
+                >
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="9" />
+                    <line x1="12" y1="8" x2="12" y2="8.01" strokeWidth="2.8" />
+                    <line x1="12" y1="12" x2="12" y2="16" />
+                  </svg>
+                </button>
               </div>
-              <button
-                type="button"
-                className="header-control header-control--search"
-                onClick={() => {}}
-                aria-label="Restoran bilgileri"
-              >
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="9" />
-                  <line x1="12" y1="8" x2="12" y2="8.01" strokeWidth="2.8" />
-                  <line x1="12" y1="12" x2="12" y2="16" />
-                </svg>
-              </button>
+
+              {previewGridCategory && (
+                <div className="grid-category-nav-wrapper">
+                  <CategoryNavigation
+                    categories={previewDemoCategories}
+                    activeCategory={previewGridCategory}
+                    onSelect={(id) => {
+                      setPreviewGridCategory(id);
+                      if (previewShellRef.current) previewShellRef.current.scrollTop = 0;
+                    }}
+                  />
+                </div>
+              )}
             </header>
-          ) : (
-            <>
-              <MenuHeroCover
-                restaurant={previewDemoRestaurant}
-                onExplore={() => {
-                  setPreviewGridCategory(previewDemoCategories[0].id);
-                  if (previewShellRef.current) previewShellRef.current.scrollTop = 0;
-                }}
-                onOpenCategories={() => {}}
-                onOpenInfo={() => {}}
-                onGoHome={() => {
-                  setPreviewGridCategory(null);
-                  if (previewShellRef.current) previewShellRef.current.scrollTop = 0;
-                }}
-              />
+
+            {!previewGridCategory && (
               <CategoryCardGrid
                 categories={previewDemoCategories}
                 onSelectCategory={(id) => {
@@ -258,8 +308,8 @@ export const ThemePreview = ({ draft }) => {
                   if (previewShellRef.current) previewShellRef.current.scrollTop = 0;
                 }}
               />
-            </>
-          )
+            )}
+          </>
         ) : (
           <>
             <MenuHeader
@@ -306,18 +356,22 @@ export const ThemePreview = ({ draft }) => {
   );
 };
 
-const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, editingIndex = null, initialMenu = null }) => {
+const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, onDelete = null, editingIndex = null, initialMenu = null }) => {
   useBodyScrollLock(true);
   const [savedThemes, setSavedThemes] = useState(Array.isArray(themes) ? themes : []);
-  const [draft, setDraft] = useState(normalize(initialMenu || themes?.[0] || buildDefaultMenuTemplate()));
+  const [draft, setDraft] = useState(() => (initialMenu ? normalize(initialMenu) : buildDefaultMenuTemplate({ name: '' })));
   const [feedback, setFeedback] = useState({ kind: 'idle', message: '', id: 0, isHiding: false });
   const [nameError, setNameError] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [error, setError] = useState('');
   const [showMobilePreview, setShowMobilePreview] = useState(false);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const feedbackTimeoutRef = useRef(null);
+
+  const isEditingExisting = Boolean(initialMenu && (initialMenu._id || initialMenu.id || typeof editingIndex === 'number'));
 
   const handleClose = () => {
     if (isClosing) return;
@@ -359,12 +413,12 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, editingIndex 
   useEffect(() => {
     const nextThemes = Array.isArray(themes) ? themes : [];
     setSavedThemes(nextThemes);
-    setDraft((current) => {
-      const id = current?._id || current?.id;
-      const nextDraft = nextThemes.find((item) => item && (String(item._id || item.id) === String(id))) || initialMenu || nextThemes[0] || buildDefaultMenuTemplate();
-      return normalize(nextDraft);
-    });
-  }, [themes, initialMenu]);
+    if (initialMenu) {
+      setDraft(normalize(initialMenu));
+    } else {
+      setDraft(buildDefaultMenuTemplate({ name: '' }));
+    }
+  }, [initialMenu]);
 
   useEffect(() => () => {
     if (feedbackTimeoutRef.current) window.clearTimeout(feedbackTimeoutRef.current);
@@ -411,29 +465,34 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, editingIndex 
         layout: { ...defaults.layout, ...(draft.layout || {}) },
       };
       const next = Array.isArray(savedThemes) ? [...savedThemes] : [];
-      const existingIndex = typeof editingIndex === 'number' ? editingIndex : next.findIndex((item) => String(item?._id || item?.id) === String(draft?._id || draft?.id));
-      if (typeof editingIndex === 'number' && editingIndex >= 0 && editingIndex < next.length) {
-        next[editingIndex] = payload;
-      } else if (existingIndex >= 0) {
-        next[existingIndex] = payload;
-      } else if (next.length >= 5) {
-        setError('En fazla 5 menü kaydedebilirsiniz.');
+      const hasEditingIndex = typeof editingIndex === 'number' && editingIndex >= 0 && editingIndex < next.length;
+      const targetId = draft?._id || draft?.id || initialMenu?._id || initialMenu?.id;
+      const existingIndex = hasEditingIndex
+        ? editingIndex
+        : (targetId ? next.findIndex((item) => String(item?._id || item?.id) === String(targetId)) : -1);
+
+      if (existingIndex >= 0) {
+        const existingItem = next[existingIndex];
+        const existingId = existingItem?._id || existingItem?.id;
+        next[existingIndex] = {
+          ...payload,
+          ...(existingId ? { _id: existingId } : {}),
+        };
+      } else if (next.length >= 3) {
+        setError('En fazla 3 özel tema (toplam 4 tema) kaydedebilirsiniz.');
         setNameError(false);
-        triggerFeedback('error', 'En fazla 5 menü kaydedebilirsiniz.');
+        triggerFeedback('error', 'En fazla 3 özel tema (toplam 4 tema) kaydedebilirsiniz.');
         return;
       } else {
-        next.push(payload);
+        const { _id, id, ...newThemePayload } = payload;
+        next.push(newThemePayload);
       }
 
-      const settings = await onSaved(next, payload, editingIndex);
+      const settings = await onSaved(next, payload, existingIndex >= 0 ? existingIndex : null);
       const result = settings?.savedMenus || settings?.menuThemes || next;
       setSavedThemes(result);
-      const selected = Array.isArray(result)
-        ? result.find((item) => String(item?._id || item?.id) === String(payload?._id || payload?.id)) || result.find((item) => item?.name === payload.name) || payload
-        : payload;
-      setDraft(normalize(selected));
       setError('');
-      triggerFeedback('success', 'Tema kaydedildi.');
+      triggerFeedback('success', existingIndex >= 0 ? 'Tema güncellendi.' : 'Tema kaydedildi.');
       handleClose();
     } catch (err) {
       const message = err?.response?.data?.error || 'Menü kaydedilemedi. Lütfen tekrar deneyin.';
@@ -442,6 +501,38 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, editingIndex 
       triggerFeedback('error', message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDeleteTheme = async () => {
+    if (typeof onDelete !== 'function') {
+      setDeleteConfirmOpen(false);
+      return;
+    }
+    setDeleting(true);
+    try {
+      const next = Array.isArray(savedThemes) ? [...savedThemes] : [];
+      const targetId = draft?._id || draft?.id || initialMenu?._id || initialMenu?.id;
+      const hasEditingIndex = typeof editingIndex === 'number' && editingIndex >= 0 && editingIndex < next.length;
+      const targetIndex = hasEditingIndex
+        ? editingIndex
+        : (targetId ? next.findIndex((item) => String(item?._id || item?.id) === String(targetId)) : -1);
+
+      if (targetIndex >= 0) {
+        const deletedItem = next[targetIndex];
+        const deletedId = deletedItem?._id || deletedItem?.id || targetId;
+        next.splice(targetIndex, 1);
+        await onDelete(next, deletedId, targetIndex);
+      }
+      setDeleteConfirmOpen(false);
+      handleClose();
+    } catch (err) {
+      const message = err?.response?.data?.error || 'Tema silinemedi. Lütfen tekrar deneyin.';
+      setError(message);
+      triggerFeedback('error', message);
+      setDeleteConfirmOpen(false);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -482,6 +573,25 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, editingIndex 
                 placeholder="Tema adı girin..."
               />
             </div>
+
+            {isEditingExisting && (
+              <button
+                type="button"
+                className="menu-compact-delete-btn"
+                onClick={() => setDeleteConfirmOpen(true)}
+                disabled={saving || deleting}
+                title="Temayı Sil"
+                aria-label="Temayı Sil"
+              >
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  <line x1="10" y1="11" x2="10" y2="17" />
+                  <line x1="14" y1="11" x2="14" y2="17" />
+                </svg>
+                <span>Sil</span>
+              </button>
+            )}
 
             <button
               type="button"
@@ -673,6 +783,39 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, editingIndex 
             </div>
           )}
         </div>
+
+        {deleteConfirmOpen && (
+          <div
+            className="publish-dialog-backdrop"
+            role="presentation"
+            onMouseDown={(event) => event.target === event.currentTarget && !deleting && setDeleteConfirmOpen(false)}
+          >
+            <div className="publish-dialog" role="dialog" aria-modal="true" aria-labelledby="theme-delete-confirm-title">
+              <h2 id="theme-delete-confirm-title">Temayı Sil</h2>
+              <p>
+                <strong>{draft.name || 'Bu temayı'}</strong> silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+              </p>
+              <div className="publish-dialog__actions">
+                <button
+                  type="button"
+                  className="publish-dialog__cancel"
+                  onClick={() => setDeleteConfirmOpen(false)}
+                  disabled={deleting}
+                >
+                  Vazgeç
+                </button>
+                <button
+                  type="button"
+                  className="publish-dialog__confirm publish-dialog__confirm--danger"
+                  onClick={handleDeleteTheme}
+                  disabled={deleting}
+                >
+                  {deleting ? 'Siliniyor...' : 'Temayı Sil'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

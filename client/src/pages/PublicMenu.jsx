@@ -255,23 +255,71 @@ const PublicMenu = () => {
       <SeoHead title={seoTitle} description={seoDescription} canonical={canonicalUrl} image={absoluteImage(data.restaurant.coverImage || data.restaurant.logo)} structuredData={structuredData} />
       <div className="public-menu-page">
         {isGridTheme ? (
-          selectedGridCategory ? (
-            <header className="public-header public-header--grid-category">
-              <button
-                type="button"
-                className="header-control header-control--hamburger"
-                onClick={() => setDrawer('categories')}
-                aria-label="Kategorileri aç"
-              >
-                <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" strokeWidth="2.4" fill="none" strokeLinecap="round">
-                  <line x1="3.5" y1="6" x2="20.5" y2="6" />
-                  <line x1="3.5" y1="12" x2="20.5" y2="12" />
-                  <line x1="3.5" y1="18" x2="20.5" y2="18" />
-                </svg>
-              </button>
+          <>
+            <header className={`public-header public-header--grid-category ${!selectedGridCategory ? 'is-grid-home' : ''}`} data-mode={menuMode}>
+              <div className="public-header--grid__top-bar">
+                <button
+                  type="button"
+                  className="header-control header-control--hamburger"
+                  onClick={() => setDrawer('categories')}
+                  aria-label="Kategorileri aç"
+                >
+                  <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" strokeWidth="2.4" fill="none" strokeLinecap="round">
+                    <line x1="3.5" y1="6" x2="20.5" y2="6" />
+                    <line x1="3.5" y1="12" x2="20.5" y2="12" />
+                    <line x1="3.5" y1="18" x2="20.5" y2="18" />
+                  </svg>
+                </button>
 
-              <div className="grid-category-nav-wrapper">
-                {data.categories.length > 0 && (
+                <div
+                  className="public-header--grid__identity"
+                  onClick={() => {
+                    setSelectedGridCategory(null);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  role="button"
+                  tabIndex="0"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      setSelectedGridCategory(null);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                  }}
+                  aria-label="Kategorilere dön"
+                >
+                  {data.restaurant.logo ? (
+                    <img
+                      src={data.restaurant.logo}
+                      alt={data.restaurant.name}
+                      className="public-header--grid__logo-img"
+                    />
+                  ) : (
+                    <span className="public-header--grid__title">{data.restaurant.name}</span>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  className="header-control header-control--info header-control--search"
+                  onClick={() => {
+                    trackEvent('view_restaurant_info', {
+                      restaurant_username: username,
+                      restaurant_name: data?.restaurant?.name,
+                    });
+                    setDrawer('info');
+                  }}
+                  aria-label="Restoran bilgileri"
+                >
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="9" />
+                    <line x1="12" y1="8" x2="12" y2="8.01" strokeWidth="2.8" />
+                    <line x1="12" y1="12" x2="12" y2="16" />
+                  </svg>
+                </button>
+              </div>
+
+              {selectedGridCategory && data.categories.length > 0 && (
+                <div className="grid-category-nav-wrapper">
                   <CategoryNavigation
                     categories={data.categories}
                     activeCategory={selectedGridCategory}
@@ -280,47 +328,11 @@ const PublicMenu = () => {
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
                   />
-                )}
-              </div>
-
-              <button
-                type="button"
-                className="header-control header-control--info header-control--search"
-                onClick={() => {
-                  trackEvent('view_restaurant_info', {
-                    restaurant_username: username,
-                    restaurant_name: data?.restaurant?.name,
-                  });
-                  setDrawer('info');
-                }}
-                aria-label="Restoran bilgileri"
-              >
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="9" />
-                  <line x1="12" y1="8" x2="12" y2="8.01" strokeWidth="2.8" />
-                  <line x1="12" y1="12" x2="12" y2="16" />
-                </svg>
-              </button>
+                </div>
+              )}
             </header>
-          ) : (
-            <>
-              <MenuHeroCover
-                restaurant={data.restaurant}
-                onOpenCategories={() => setDrawer('categories')}
-                onOpenSearch={() => setSearchOpen(true)}
-                onOpenInfo={() => {
-                  trackEvent('view_restaurant_info', {
-                    restaurant_username: username,
-                    restaurant_name: data?.restaurant?.name,
-                  });
-                  setDrawer('info');
-                }}
-                onGoHome={() => setSelectedGridCategory(null)}
-                onExplore={() => {
-                  const target = document.getElementById('menu-categories-grid');
-                  target?.scrollIntoView({ behavior: 'smooth' });
-                }}
-              />
+
+            {!selectedGridCategory && (
               <CategoryCardGrid
                 categories={data.categories}
                 onSelectCategory={(catId) => {
@@ -329,8 +341,8 @@ const PublicMenu = () => {
                 }}
                 onOpenReview={() => setReviewOpen(true)}
               />
-            </>
-          )
+            )}
+          </>
         ) : (
           <>
             <MenuHeader
