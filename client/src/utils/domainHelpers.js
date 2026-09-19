@@ -61,6 +61,29 @@ export const getPublicMenuAbsoluteUrl = (username) => {
 };
 
 /**
+ * Checks if a pathname belongs strictly to the panel application
+ */
+export const isPanelPath = (pathname = '') => {
+  return (
+    pathname.startsWith('/dashboard') ||
+    pathname.startsWith('/admin') ||
+    pathname === '/login' ||
+    pathname === '/register' ||
+    pathname === '/pending-approval'
+  );
+};
+
+/**
+ * Checks if a pathname belongs strictly to a public customer menu or showcase.
+ * Explicitly excludes panel routes like /dashboard/menu.
+ */
+export const isPublicMenuPath = (pathname = '') => {
+  if (isPanelPath(pathname)) return false;
+  if (pathname === '/menu') return true;
+  return /^\/[^/]+\/menu\/?$/.test(pathname);
+};
+
+/**
  * Safely redirects to panel if running in production on main domain
  */
 export const redirectToPanelIfNeeded = (targetPath = '/dashboard') => {
@@ -75,3 +98,4 @@ export const redirectToPanelIfNeeded = (targetPath = '/dashboard') => {
   }
   return false;
 };
+

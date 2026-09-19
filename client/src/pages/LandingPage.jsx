@@ -30,8 +30,8 @@ const LandingHeader = () => {
           ) : (
             <a href={getPanelUrl('/login')} onClick={close}>Giriş Yap</a>
           )}
-          <Link
-            to="/register"
+          <a
+            href={getPanelUrl('/register')}
             className="landing-button landing-button--small"
             onClick={() => {
               trackEvent('click_cta', { cta_name: 'create_restaurant', location: 'header' });
@@ -39,7 +39,7 @@ const LandingHeader = () => {
             }}
           >
             Restoranını Oluştur
-          </Link>
+          </a>
         </nav>
         <button type="button" className="landing-menu-button" aria-label="Menüyü aç" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
           <span />
@@ -163,13 +163,13 @@ const LandingPage = () => {
     <LandingHeader />
     <main>
       <section className="landing-hero landing-reveal"><div className="landing-hero__copy"><span className="landing-kicker">RESTORANLAR İÇİN DİJİTAL MENÜ</span><h1>Menünüzü dijitale taşıyın.<br /><em>Markanız gibi görünsün.</em></h1><p>zuuqrmenu ile menünüzü oluşturun, QR kodunuzu hazırlayın ve müşterilerinizin deneyimini tek bir yerden yönetin.</p><div className="landing-hero__actions">
-  <Link
-    to="/register"
+  <a
+    href={getPanelUrl('/register')}
     className="landing-button"
     onClick={() => trackEvent('click_cta', { cta_name: 'create_restaurant', location: 'hero' })}
   >
     Restoranını Oluştur <span>↗</span>
-  </Link>
+  </a>
   <Link
     to="/menu"
     className="landing-button landing-button--quiet"
@@ -185,17 +185,17 @@ const LandingPage = () => {
       <QrShowcase />
       <AnalyticsShowcase />
       <section className="landing-final-cta landing-reveal"><span className="landing-kicker">HAZIR MISINIZ?</span><h2>Menünüzü dijitale taşıyın.</h2><p>Restoranınız için daha iyi bir menü deneyimi bugün başlayabilir.</p><div>
-        <Link
-          to="/register"
+        <a
+          href={getPanelUrl('/register')}
           className="landing-button"
           onClick={() => trackEvent('click_cta', { cta_name: 'create_restaurant', location: 'footer_cta' })}
         >
           Restoranını Oluştur <span>↗</span>
-        </Link>
-        <Link to="/login" className="landing-button landing-button--quiet">Giriş Yap</Link>
+        </a>
+        <a href={getPanelUrl('/login')} className="landing-button landing-button--quiet">Giriş Yap</a>
       </div></section>
     </main>
-    <footer className="landing-footer"><div><Link to="/" className="landing-brand"><img src="/logo_darkmode.svg" alt="zuuqrmenu" className="landing-brand__logo" /></Link><p>Restoranlar için modern dijital menü platformu.</p></div><nav><a href="#features">Özellikler</a><a href="#how-it-works">Nasıl Çalışır?</a><Link to="/login">Giriş Yap</Link><Link to="/register">Restoranını Oluştur</Link></nav><small>© 2026 zuuqrmenu</small></footer>
+    <footer className="landing-footer"><div><Link to="/" className="landing-brand"><img src="/logo_darkmode.svg" alt="zuuqrmenu" className="landing-brand__logo" /></Link><p>Restoranlar için modern dijital menü platformu.</p></div><nav><a href="#features">Özellikler</a><a href="#how-it-works">Nasıl Çalışır?</a><a href={getPanelUrl('/login')}>Giriş Yap</a><a href={getPanelUrl('/register')}>Restoranını Oluştur</a></nav><small>© 2026 zuuqrmenu</small></footer>
   </div>
   );
 };

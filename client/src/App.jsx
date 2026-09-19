@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { initGA, trackPageView } from './utils/analytics';
 import { BrowserRouter as Router, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { isPanelSubdomain, isMainDomain, isLocalhost, redirectToPanelIfNeeded, getPanelUrl } from './utils/domainHelpers';
+import { isPanelSubdomain, isMainDomain, isLocalhost, redirectToPanelIfNeeded, getPanelUrl, isPanelPath, isPublicMenuPath } from './utils/domainHelpers';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import PendingApproval from './pages/PendingApproval';
@@ -33,17 +33,17 @@ const HostRouterGuard = () => {
   const location = useLocation();
 
   useEffect(() => {
-    // 1. If on main domain in production, redirect dashboard and login requests to panel.zuuqrmenu.com
+    // 1. If on main domain in production, redirect dashboard, admin, and auth requests to panel.zuuqrmenu.com
     if (isMainDomain() && !isLocalhost()) {
-      if (location.pathname.startsWith('/dashboard') || location.pathname === '/login') {
+      if (isPanelPath(location.pathname)) {
         window.location.replace(`https://panel.zuuqrmenu.com${location.pathname}${location.search}`);
         return;
       }
     }
 
-    // 2. If on panel.zuuqrmenu.com in production, redirect public showcase & menus to main site
+    // 2. If on panel.zuuqrmenu.com in production, redirect public showcase & public menus to main site
     if (isPanelSubdomain() && !isLocalhost()) {
-      if (location.pathname === '/menu' || location.pathname.endsWith('/menu')) {
+      if (isPublicMenuPath(location.pathname)) {
         window.location.replace(`https://www.zuuqrmenu.com${location.pathname}${location.search}`);
         return;
       }
@@ -64,6 +64,19 @@ const LoginRoute = () => {
     if (isRestaurantUser) return isRestaurantAccessible ? <Navigate to="/dashboard" replace /> : <Navigate to="/pending-approval" replace />;
   }
   return <Login />;
+};
+
+const RegisterRoute = () => {
+  const { loading, isAuthenticated, isRestaurantUser, isAdmin, isRestaurantAccessible } = useAuth();
+  if (isMainDomain() && !isLocalhost()) {
+    return <RouteLoading />;
+  }
+  if (loading) return <RouteLoading />;
+  if (isAuthenticated) {
+    if (isAdmin) return <Navigate to="/admin" replace />;
+    if (isRestaurantUser) return isRestaurantAccessible ? <Navigate to="/dashboard" replace /> : <Navigate to="/pending-approval" replace />;
+  }
+  return <Register />;
 };
 
 const DashboardThemeController = () => {
@@ -115,6 +128,9 @@ const GAPageTracker = () => {
 
 const AdminRoute = () => {
   const { loading, isAuthenticated, isAdmin } = useAuth();
+  if (isMainDomain() && !isLocalhost()) {
+    return <RouteLoading />;
+  }
   if (loading) return <RouteLoading />;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   return isAdmin ? <AdminDashboard /> : <Navigate to="/dashboard" replace />;
@@ -140,6 +156,9 @@ const RestaurantRoute = ({ menu = false, settings = false, analytics = false, qr
 
 const PendingRoute = () => {
   const { loading, isAuthenticated, isRestaurantUser, isRestaurantAccessible } = useAuth();
+  if (isMainDomain() && !isLocalhost()) {
+    return <RouteLoading />;
+  }
   if (loading) return <RouteLoading />;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   if (!isRestaurantUser) return <Navigate to="/admin" replace />;
@@ -171,7 +190,7 @@ function App() {
         <GAPageTracker />
         <Routes>
           <Route path="/login" element={<LoginRoute />} />
-          <Route path="/register" element={<Register />} />
+          <Route path="/register" element={<RegisterRoute />} />
           <Route path="/pending-approval" element={<PendingRoute />} />
           <Route path="/admin" element={<AdminRoute />} />
           <Route path="/admin/restaurants" element={<AdminRoute />} />
