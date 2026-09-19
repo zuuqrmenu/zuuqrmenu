@@ -23315,40 +23315,38 @@ body[data-dashboard-theme='dark'] .date-range-popover svg {
 @media (max-width: 960px) {
   .reg-page {
     height: auto;
+    min-height: 100vh;
     max-height: none;
     overflow: visible;
     grid-template-columns: 1fr;
+    background: #f6f8f6;
   }
 
   .reg-panel {
-    height: auto;
-    padding: 2rem 1.25rem 1.5rem;
-    min-height: auto;
-  }
-
-  .reg-panel__body {
-    margin: 1.25rem 0 0.75rem;
-  }
-
-  .reg-panel__features {
-    display: none;
-  }
-
-  .reg-panel::after {
-    display: none;
-  }
-
-  .reg-panel__note {
-    display: none;
+    display: none !important;
   }
 
   .reg-form-wrap {
     height: auto;
-    padding: 1.5rem 1rem 2.5rem;
+    min-height: 100vh;
+    padding: 2rem 1rem;
+    align-items: center;
+  }
+
+  .reg-card__mobile-logo {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.25rem;
+  }
+
+  .reg-card__mobile-logo img {
+    height: 1.85rem;
+    width: auto;
   }
 
   .reg-card {
-    padding: 1.5rem 1.15rem;
+    padding: 1.75rem 1.25rem;
+    border-radius: 1.25rem;
   }
 
   .reg-grid2,
