@@ -109,7 +109,7 @@ const Login = () => {
       <div className="login-shell__form">
         <div className="login-card">
           <Link to="/" className="landing-brand"><img src="/logo.svg" alt="zuuqrmenu" className="landing-brand__logo" /></Link>
-          <h2>Tekrar hoş geldiniz</h2>
+          <h2>Hoş geldiniz</h2>
           <p>Restoran panelinize giriş yapın.</p>
 
           {error && (

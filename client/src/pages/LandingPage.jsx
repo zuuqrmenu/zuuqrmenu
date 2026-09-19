@@ -163,13 +163,13 @@ const LandingPage = () => {
   >
     Restoranını Oluştur <span>↗</span>
   </Link>
-  <a
-    href="/demo/menu"
+  <Link
+    to="/menu"
     className="landing-button landing-button--quiet"
     onClick={() => trackEvent('click_cta', { cta_name: 'view_demo', location: 'hero' })}
   >
     Demo Menüyü Gör <span>→</span>
-  </a>
+  </Link>
 </div><div className="landing-hero__note"><span>●</span> Menü · QR · analizler tek platformda</div></div><ProductPreview /></section>
       <section className="landing-value-strip"><span><b>01</b>Tek bir menü sistemi</span><span><b>02</b>Her ekranda iyi görünür</span><span><b>03</b>QR ile anında erişim</span><span><b>04</b>Veriyle daha iyi kararlar</span></section>
       <MenuExperience />

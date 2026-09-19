@@ -13,6 +13,7 @@ import RestaurantSettings from './pages/RestaurantSettings';
 import QrManagement from './pages/QrManagement';
 import Analytics from './pages/Analytics';
 import LandingPage from './pages/LandingPage';
+import MenuShowcase from './pages/MenuShowcase';
 
 // Initialise GA4 once when the module is first loaded
 initGA();
@@ -124,6 +125,7 @@ function App() {
           <Route path="/dashboard/analytics" element={<RestaurantRoute analytics />} />
           <Route path="/dashboard/qr" element={<RestaurantRoute qr />} />
           <Route path="/:username/menu" element={<PublicMenu />} />
+          <Route path="/menu" element={<MenuShowcase />} />
           <Route path="/" element={<HomeRoute />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
