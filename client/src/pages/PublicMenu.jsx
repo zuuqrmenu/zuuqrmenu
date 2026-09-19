@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import CategoryNavigation from '../components/public-menu/CategoryNavigation';
 import CategorySection from '../components/public-menu/CategorySection';
@@ -40,6 +40,24 @@ const PublicMenu = () => {
   const [showTop, setShowTop] = useState(false);
   const categoryScrollLock = useRef(false);
   const categoryScrollTimer = useRef(null);
+
+  const resetScrollToTop = () => {
+    try {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    } catch (_) {
+      window.scrollTo(0, 0);
+    }
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  };
+
+  useLayoutEffect(() => {
+    resetScrollToTop();
+    const rafId = requestAnimationFrame(() => {
+      resetScrollToTop();
+    });
+    return () => cancelAnimationFrame(rafId);
+  }, [selectedGridCategory]);
 
   useEffect(() => {
     if (!langDropdownOpen) return undefined;
@@ -275,15 +293,15 @@ const PublicMenu = () => {
                 <div
                   className="public-header--grid__identity"
                   onClick={() => {
+                    resetScrollToTop();
                     setSelectedGridCategory(null);
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
                   role="button"
                   tabIndex="0"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
+                      resetScrollToTop();
                       setSelectedGridCategory(null);
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
                     }
                   }}
                   aria-label="Kategorilere dön"
@@ -325,8 +343,8 @@ const PublicMenu = () => {
                     categories={data.categories}
                     activeCategory={selectedGridCategory}
                     onSelect={(catId) => {
+                      resetScrollToTop();
                       setSelectedGridCategory(catId);
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
                   />
                 </div>
@@ -337,8 +355,8 @@ const PublicMenu = () => {
               <CategoryCardGrid
                 categories={data.categories}
                 onSelectCategory={(catId) => {
+                  resetScrollToTop();
                   setSelectedGridCategory(catId);
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
                 onOpenReview={() => setReviewOpen(true)}
               />
@@ -430,9 +448,9 @@ const PublicMenu = () => {
                   type="button"
                   className="drawer-all-menus-btn"
                   onClick={() => {
+                    resetScrollToTop();
                     setSelectedGridCategory(null);
                     setDrawer('');
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
                   aria-label="Menü ana sayfasına dön"
                 >
@@ -464,9 +482,9 @@ const PublicMenu = () => {
                       className={`drawer-grid-item ${selectedGridCategory === category.id ? 'is-active' : ''}`}
                       key={category.id}
                       onClick={() => {
+                        resetScrollToTop();
                         setSelectedGridCategory(category.id);
                         setDrawer('');
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
                       }}
                     >
                       {category.name}

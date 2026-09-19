@@ -960,6 +960,7 @@ body[data-dashboard-theme='dark'] .menu-compact-delete-btn:hover:not(:disabled) 
   background: var(--menu-background, #f7f5f0);
   color: var(--menu-text, #25231f);
   font-family: var(--menu-font, 'Inter', system-ui, sans-serif);
+  overflow-anchor: none;
 }
 
 .public-menu-page {
@@ -968,6 +969,7 @@ body[data-dashboard-theme='dark'] .menu-compact-delete-btn:hover:not(:disabled) 
   margin: 0 auto;
   background: var(--menu-surface, var(--menu-secondary, #fffdf8));
   box-shadow: var(--menu-shadow, 0 0 45px rgb(54 45 31 / 7%));
+  overflow-anchor: none;
 }
 
 .public-header {
