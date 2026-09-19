@@ -7,11 +7,13 @@ import MenuView from '../models/MenuView.js';
 
 const getRestaurantId = (req) => req.restaurant._id;
 
-const ensureMenu = (restaurantId) => Menu.findOneAndUpdate(
-  { restaurantId },
-  { $setOnInsert: { restaurantId, name: 'Ana Menü' } },
-  { upsert: true, new: true, setDefaultsOnInsert: true },
-);
+const ensureMenu = async (restaurantId) => {
+  let menu = await Menu.findOne({ restaurantId }).lean();
+  if (!menu) {
+    menu = await Menu.create({ restaurantId, name: 'Ana Menü' });
+  }
+  return menu;
+};
 
 const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
 
@@ -144,7 +146,14 @@ export const listCategories = async (req, res, next) => {
       { $sort: { displayOrder: 1, name: 1 } },
     ]);
 
-    res.json({ menu: { id: menu._id, name: menu.name }, categories });
+    res.json({
+      menu: { id: menu._id, name: menu.name },
+      categories,
+      restaurant: {
+        menuStatus: req.restaurant.menuStatus || 'DRAFT',
+        publishedAt: req.restaurant.publishedAt || null,
+      },
+    });
   } catch (error) {
     next(error);
   }

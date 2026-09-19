@@ -59,7 +59,7 @@ export const restaurantAuth = async (req, res, next) => {
       return res.status(403).json({ error: 'Restaurant access required' });
     }
 
-    const restaurant = await Restaurant.findById(req.user.restaurantId).select('status');
+    const restaurant = await Restaurant.findById(req.user.restaurantId).select('status menuStatus publishedAt').lean();
     if (!restaurant) {
       return res.status(403).json({ error: 'Restaurant not found' });
     }

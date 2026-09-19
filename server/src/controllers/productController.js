@@ -132,7 +132,8 @@ export const listProducts = async (req, res, next) => {
   try {
     const products = await Product.find({ restaurantId: getRestaurantId(req) })
       .populate('categoryId', 'name displayOrder restaurantId')
-      .sort({ displayOrder: 1, name: 1 });
+      .sort({ displayOrder: 1, name: 1 })
+      .lean();
     res.json({ products });
   } catch (error) {
     next(error);
@@ -145,7 +146,9 @@ export const listCategoryProducts = async (req, res, next) => {
     const category = await verifyCategoryOwnership(req.params.categoryId, restaurantId);
     if (!category) return res.status(isValidId(req.params.categoryId) ? 404 : 400).json({ error: isValidId(req.params.categoryId) ? 'Kategori bulunamadı' : 'Geçersiz kategori ID' });
 
-    const products = await Product.find({ restaurantId, categoryId: category._id }).sort({ displayOrder: 1, name: 1 });
+    const products = await Product.find({ restaurantId, categoryId: category._id })
+      .sort({ displayOrder: 1, name: 1 })
+      .lean();
     res.json({ category, products });
   } catch (error) {
     next(error);

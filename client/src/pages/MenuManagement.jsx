@@ -255,14 +255,23 @@ const MenuManagement = () => {
     return () => { window.clearTimeout(fadeTimer); window.clearTimeout(clearTimer); };
   }, [notice]);
 
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = async (silent = false) => {
+    if (!silent) setLoading(true);
     setError('');
     try {
-      const [categoryData, productData, overviewData, settingsData] = await Promise.all([menuService.getCategories(), menuService.getProducts(), menuService.getOverview(), restaurantSettingsService.get()]);
-      setCategories(categoryData.categories);
-      setProducts(productData.products);
-      setOverview(overviewData);
+      const [categoryData, productData, settingsData] = await Promise.all([
+        menuService.getCategories(),
+        menuService.getProducts(),
+        restaurantSettingsService.get(),
+      ]);
+      setCategories(categoryData.categories || []);
+      setProducts(productData.products || []);
+      if (categoryData.restaurant) {
+        setOverview({
+          restaurant: categoryData.restaurant,
+          stats: { menuStatus: categoryData.restaurant.menuStatus || 'DRAFT' },
+        });
+      }
       setMenuThemes(settingsData?.settings?.menuThemes || []);
       setActiveMenuThemeId(settingsData?.settings?.activeMenuThemeId || null);
     } catch (err) {
@@ -279,7 +288,7 @@ const MenuManagement = () => {
     setError('');
     try {
       const result = await menuService.updateStatus(nextStatus);
-      setOverview((current) => ({ ...current, restaurant: { ...current.restaurant, ...result.restaurant }, stats: { ...current.stats, menuStatus: result.restaurant.menuStatus } }));
+      setOverview((current) => ({ ...current, restaurant: { ...current?.restaurant, ...result.restaurant }, stats: { ...current?.stats, menuStatus: result.restaurant?.menuStatus || nextStatus } }));
       setNotice(result.message);
       setStatusDialog(null);
     } catch (err) {
@@ -289,7 +298,7 @@ const MenuManagement = () => {
     }
   };
 
-  const menuStatus = overview?.stats?.menuStatus || 'DRAFT';
+  const menuStatus = overview?.stats?.menuStatus || overview?.restaurant?.menuStatus || 'DRAFT';
   const statusCopy = {
     PUBLISHED: ['Menünüz Yayında', 'Menünüz müşterileriniz için erişilebilir.', 'Taslağa Al', 'DRAFT'],
     HIDDEN: ['Menünüz şu anda gizli', 'Müşteriler menünüze erişemiyor.', 'Menüyü Yayınla', 'PUBLISHED'],
@@ -302,7 +311,7 @@ const MenuManagement = () => {
     setModalOpen(false);
     setEditingCategory(null);
     setNotice(message);
-    loadData();
+    loadData(true);
   };
 
   const toggleCategory = async (category) => {
@@ -311,7 +320,7 @@ const MenuManagement = () => {
     try {
       const result = await menuService.toggleCategory(category._id);
       setNotice(result.message);
-      await loadData();
+      await loadData(true);
     } catch (err) {
       setError(err.response?.data?.error || 'Kategori durumu güncellenemedi.');
     } finally {
@@ -325,7 +334,7 @@ const MenuManagement = () => {
     try {
       const result = await menuService.deleteCategory(category._id);
       setNotice(result.message);
-      await loadData();
+      await loadData(true);
     } catch (err) {
       setError(err.response?.data?.error || 'Kategori silinemedi.');
     } finally {
@@ -347,7 +356,7 @@ const MenuManagement = () => {
         menuService.updateCategory(neighbor._id, { displayOrder: current.displayOrder }),
       ]);
       setNotice('Kategori sırası güncellendi.');
-      await loadData();
+      await loadData(true);
     } catch (err) {
       setError(err.response?.data?.error || 'Kategori sırası güncellenemedi.');
     } finally {
@@ -446,7 +455,7 @@ const MenuManagement = () => {
             onDeleteCategory={deleteCategory}
             onAddCategory={() => { setEditingCategory(null); setModalOpen(true); }}
             onMessage={(message, isError = false) => { if (isError) setError(message); else setNotice(message); }}
-            onRefresh={loadData}
+            onRefresh={() => loadData(true)}
           />
         )}
       </div>

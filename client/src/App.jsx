@@ -1,20 +1,21 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, lazy, Suspense } from 'react';
 import { initGA, trackPageView } from './utils/analytics';
 import { BrowserRouter as Router, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { isPanelSubdomain, isMainDomain, isLocalhost, redirectToPanelIfNeeded, getPanelUrl, isPanelPath, isPublicMenuPath } from './utils/domainHelpers';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import PendingApproval from './pages/PendingApproval';
-import AdminDashboard from './pages/AdminDashboard';
-import RestaurantDashboard from './pages/RestaurantDashboard';
-import MenuManagement from './pages/MenuManagement';
-import PublicMenu from './pages/PublicMenu';
-import RestaurantSettings from './pages/RestaurantSettings';
-import QrManagement from './pages/QrManagement';
-import Analytics from './pages/Analytics';
-import LandingPage from './pages/LandingPage';
-import MenuShowcase from './pages/MenuShowcase';
+
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const PendingApproval = lazy(() => import('./pages/PendingApproval'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const RestaurantDashboard = lazy(() => import('./pages/RestaurantDashboard'));
+const MenuManagement = lazy(() => import('./pages/MenuManagement'));
+const PublicMenu = lazy(() => import('./pages/PublicMenu'));
+const RestaurantSettings = lazy(() => import('./pages/RestaurantSettings'));
+const QrManagement = lazy(() => import('./pages/QrManagement'));
+const Analytics = lazy(() => import('./pages/Analytics'));
+const LandingPage = lazy(() => import('./pages/LandingPage'));
+const MenuShowcase = lazy(() => import('./pages/MenuShowcase'));
 
 // Initialise GA4 once when the module is first loaded
 initGA();
@@ -188,22 +189,24 @@ function App() {
         <HostRouterGuard />
         <DashboardThemeController />
         <GAPageTracker />
-        <Routes>
-          <Route path="/login" element={<LoginRoute />} />
-          <Route path="/register" element={<RegisterRoute />} />
-          <Route path="/pending-approval" element={<PendingRoute />} />
-          <Route path="/admin" element={<AdminRoute />} />
-          <Route path="/admin/restaurants" element={<AdminRoute />} />
-          <Route path="/dashboard" element={<RestaurantRoute />} />
-          <Route path="/dashboard/menu" element={<RestaurantRoute menu />} />
-          <Route path="/dashboard/settings" element={<RestaurantRoute settings />} />
-          <Route path="/dashboard/analytics" element={<RestaurantRoute analytics />} />
-          <Route path="/dashboard/qr" element={<RestaurantRoute qr />} />
-          <Route path="/:username/menu" element={<PublicMenu />} />
-          <Route path="/menu" element={<MenuShowcase />} />
-          <Route path="/" element={<HomeRoute />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <Suspense fallback={<RouteLoading />}>
+          <Routes>
+            <Route path="/login" element={<LoginRoute />} />
+            <Route path="/register" element={<RegisterRoute />} />
+            <Route path="/pending-approval" element={<PendingRoute />} />
+            <Route path="/admin" element={<AdminRoute />} />
+            <Route path="/admin/restaurants" element={<AdminRoute />} />
+            <Route path="/dashboard" element={<RestaurantRoute />} />
+            <Route path="/dashboard/menu" element={<RestaurantRoute menu />} />
+            <Route path="/dashboard/settings" element={<RestaurantRoute settings />} />
+            <Route path="/dashboard/analytics" element={<RestaurantRoute analytics />} />
+            <Route path="/dashboard/qr" element={<RestaurantRoute qr />} />
+            <Route path="/:username/menu" element={<PublicMenu />} />
+            <Route path="/menu" element={<MenuShowcase />} />
+            <Route path="/" element={<HomeRoute />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
       </Router>
     </AuthProvider>
   );

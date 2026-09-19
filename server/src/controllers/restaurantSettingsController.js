@@ -69,11 +69,13 @@ const normalizeSavedMenuEntries = (entries, fallback = {}) => {
   return unique.slice(0, 5);
 };
 
-const getSettings = (restaurantId) => RestaurantSettings.findOneAndUpdate(
-  { restaurantId },
-  { $setOnInsert: { restaurantId } },
-  { upsert: true, new: true, setDefaultsOnInsert: true },
-);
+const getSettings = async (restaurantId) => {
+  let settings = await RestaurantSettings.findOne({ restaurantId });
+  if (!settings) {
+    settings = await RestaurantSettings.create({ restaurantId });
+  }
+  return settings;
+};
 
 const getCloudinaryPublicId = (imageUrl) => {
   if (!imageUrl || typeof imageUrl !== 'string') return null;

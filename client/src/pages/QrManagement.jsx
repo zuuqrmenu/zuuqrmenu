@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { jsPDF } from 'jspdf';
 import QRCode from 'qrcode';
 import RestaurantLayout from '../components/RestaurantLayout';
 import { useAuth } from '../context/AuthContext';
@@ -60,7 +59,7 @@ const QrManagement = () => {
     }
   };
 
-  const download = (format) => {
+  const download = async (format) => {
     if (!publicUrl || !canvasRef.current || !svg) return;
     const filename = `${restaurant?.slug || 'restoran'}-qr`;
     if (format === 'png') {
@@ -74,6 +73,7 @@ const QrManagement = () => {
       link.href = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
       link.click();
     } else {
+      const { jsPDF } = await import('jspdf');
       const pdf = new jsPDF({ unit: 'mm', format: 'a4' });
       pdf.setFontSize(22);
       pdf.text(restaurant?.name || 'Menümüz', 105, 42, { align: 'center' });
