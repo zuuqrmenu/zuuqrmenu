@@ -20,6 +20,13 @@ api.interceptors.request.use(
     const isPublicEndpoint = path.startsWith('/public/');
     const isAnonymousAuth = path === '/auth/login' || path === '/auth/register-firebase';
 
+    // Prevent browser disk-cache and cross-origin CORS cache collisions between subdomains
+    if (config.method?.toLowerCase() === 'get' && !isPublicEndpoint) {
+      config.params = { ...config.params, _t: Date.now() };
+      config.headers['Cache-Control'] = 'no-cache';
+      config.headers['Pragma'] = 'no-cache';
+    }
+
     if (isPublicEndpoint || isAnonymousAuth) {
       return config;
     }

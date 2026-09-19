@@ -31,7 +31,11 @@ app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (like mobile apps, curl, or server-to-server)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin) || /^https:\/\/(www\.|panel\.)?zuuqrmenu\.com$/.test(origin)) {
+    if (
+      allowedOrigins.includes(origin) ||
+      /^https:\/\/(.+\.)?zuuqrmenu\.com$/.test(origin) ||
+      /\.vercel\.app$/.test(origin)
+    ) {
       // Must echo back the exact origin (not `true`) when credentials:true is used,
       // otherwise the browser will reject the response.
       return callback(null, origin);
@@ -39,7 +43,20 @@ app.use(cors({
     return callback(new Error(`Origin ${origin} not allowed by CORS`));
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  maxAge: 86400,
 }));
+
+// Disable caching on dynamic API responses to prevent browsers and CDN edges
+// from caching responses with mismatching Access-Control-Allow-Origin headers across subdomains.
+app.use((req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Surrogate-Control', 'no-store');
+  next();
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
