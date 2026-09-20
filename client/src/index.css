@@ -28,6 +28,32 @@ body {
 }
 
 /* ══════════════════════════════════════════════════════════════════════
+   PREVENT MOBILE INPUT ZOOM ON FOCUS (iOS Safari & Mobile Browsers)
+   iOS Safari automatically zooms in whenever an input, select, or textarea
+   has a font-size smaller than 16px. Setting font-size: 16px on mobile/touch
+   screens completely eliminates this unwanted auto-zoom behavior.
+   ══════════════════════════════════════════════════════════════════════ */
+html,
+body {
+  touch-action: manipulation;
+}
+
+input,
+select,
+textarea,
+button {
+  touch-action: manipulation;
+}
+
+@media screen and (max-width: 1024px), (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="color"]):not([type="image"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
    MODERN ROUTE LOADING SCREEN (Dark & Light Theme Adaptive)
    ══════════════════════════════════════════════════════════════════════ */
 .route-loading {
