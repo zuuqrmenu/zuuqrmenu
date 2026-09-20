@@ -17,6 +17,7 @@ import { trackEvent } from '../utils/analytics';
 import useBodyScrollLock from '../hooks/useBodyScrollLock';
 import BlurImage from '../components/common/BlurImage';
 import PublicMenuSkeleton from '../components/public-menu/PublicMenuSkeleton';
+import { searchProducts } from '../utils/menuSearch';
 
 const langOptions = [
   { code: 'tr', label: 'Türkçe', short: 'TR' },
@@ -200,7 +201,7 @@ const PublicMenu = () => {
       categoryId: category.id,
     }))
   ) || [];
-  const searchResults = allProducts.filter((product) => `${product.name} ${product.description} ${product.shortDescription}`.toLocaleLowerCase('tr').includes(search.toLocaleLowerCase('tr')));
+  const searchResults = useMemo(() => searchProducts(allProducts, search), [allProducts, search]);
   const selectLanguage = (value) => {
     trackEvent('select_language', {
       restaurant_username: username,
