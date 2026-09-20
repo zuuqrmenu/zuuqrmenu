@@ -16,9 +16,6 @@ const ProductCard = ({ product, onSelect, layout = {}, themeKey }) => {
           <span className="public-product__topline">
             <span className="public-product__name">{product.name}</span>
             {isFeaturedEmphasized && <span className="featured-badge">Öne Çıkan</span>}
-            <svg className="public-product__chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
           </span>
           {!product.isAvailable && <span className="public-product__meta sold-out-label">Tükendi</span>}
           {layout.showDescriptions !== false && (product.shortDescription || product.description) && (

@@ -103,6 +103,28 @@ const PublicMenu = () => {
     return () => { mounted = false; };
   }, [username]);
 
+  // Silently sync latest menu when returning to tab from Dashboard or other windows
+  useEffect(() => {
+    if (!username) return undefined;
+    const syncLatestMenu = () => {
+      if (document.visibilityState === 'visible') {
+        publicMenuService.getMenu(username, true)
+          .then((result) => {
+            if (result && result.categories) {
+              setData(result);
+            }
+          })
+          .catch(() => {});
+      }
+    };
+    document.addEventListener('visibilitychange', syncLatestMenu);
+    window.addEventListener('focus', syncLatestMenu);
+    return () => {
+      document.removeEventListener('visibilitychange', syncLatestMenu);
+      window.removeEventListener('focus', syncLatestMenu);
+    };
+  }, [username]);
+
   const categoryIds = useMemo(() => data?.categories.map((category) => `category-${category.id}`) || [], [data]);
 
   useEffect(() => {

@@ -436,6 +436,7 @@ const MenuManagement = () => {
       }
       setMenuThemes(settingsData?.settings?.menuThemes || []);
       setActiveMenuThemeId(settingsData?.settings?.activeMenuThemeId || null);
+      publicMenuService.clearCache();
     } catch (err) {
       setError(err.response?.data?.error || 'Kategoriler yüklenemedi.');
     } finally {

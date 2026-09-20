@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { auth } from '../config/firebase';
+import { signOut } from 'firebase/auth';
 import { getFirebaseIdToken } from './firebaseToken';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
@@ -41,35 +42,31 @@ api.interceptors.request.use(
     }
 
     // 1. Check local JWT auth token and its 1-day (24h) expiry
-    const authToken = localStorage.getItem('zuulab_auth_token');
     const expiresAt = localStorage.getItem('zuulab_auth_expires_at');
+    const isExpired = expiresAt && Date.now() > Number(expiresAt);
 
+    if (isExpired) {
+      // 24 hours have passed -> completely purge session and sign out Firebase
+      localStorage.removeItem('zuulab_auth_token');
+      localStorage.removeItem('zuulab_auth_expires_at');
+      localStorage.removeItem('zuulab_auth_user');
+      localStorage.removeItem('zuulab_auth_restaurant');
+      if (auth.currentUser) {
+        signOut(auth).catch(() => {});
+      }
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('zuulab-auth-expired'));
+      }
+      // Return without token so server rejects with 401
+      return config;
+    }
+
+    const authToken = localStorage.getItem('zuulab_auth_token');
     if (authToken) {
-      if (expiresAt && Date.now() > Number(expiresAt)) {
-        // Token has expired after 1 day
-        localStorage.removeItem('zuulab_auth_token');
-        localStorage.removeItem('zuulab_auth_expires_at');
-        localStorage.removeItem('zuulab_auth_user');
-        localStorage.removeItem('zuulab_auth_restaurant');
-      } else {
-        config.headers.Authorization = `Bearer ${authToken}`;
-        return config;
-      }
+      config.headers.Authorization = `Bearer ${authToken}`;
+      return config;
     }
 
-    // 2. Fallback to Firebase ID token if available (e.g. initial login / session restore)
-    if (!auth.currentUser && auth.authStateReady) {
-      try {
-        await auth.authStateReady();
-      } catch {}
-    }
-
-    if (auth.currentUser) {
-      const token = await getFirebaseIdToken();
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-    }
     return config;
   },
   (error) => {
@@ -84,8 +81,16 @@ api.interceptors.response.use(
   },
   (error) => {
     if (error.response?.status === 401) {
-      // Handle unauthorized - could redirect to login
-      console.error('Unauthorized access');
+      localStorage.removeItem('zuulab_auth_token');
+      localStorage.removeItem('zuulab_auth_expires_at');
+      localStorage.removeItem('zuulab_auth_user');
+      localStorage.removeItem('zuulab_auth_restaurant');
+      if (auth.currentUser) {
+        signOut(auth).catch(() => {});
+      }
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('zuulab-auth-expired'));
+      }
     }
     return Promise.reject(error);
   }

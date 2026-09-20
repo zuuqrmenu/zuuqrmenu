@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { restaurantSettingsService } from '../../services/restaurantSettingsService';
 import { restaurantProfileService } from '../../services/restaurantProfileService';
+import { compressImageToWebp } from '../../utils/imageOptimizer';
 
 const businessTypeOptions = [
   ['RESTAURANT', 'Restoran'],
@@ -263,17 +264,28 @@ const SettingsBrandTab = ({ settings, setSettings, profile, setProfile, onNotice
   };
 
   const upload = async (type, file) => {
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024) {
-      return onError('Yalnızca JPG, PNG veya WEBP ve 5 MB altındaki görseller kabul edilir.');
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 15 * 1024 * 1024) {
+      return onError('Yalnızca JPG, PNG veya WEBP ve 15 MB altındaki görseller kabul edilir.');
     }
     setUploading(type);
     onError('');
     try {
+      let fileToUpload = file;
+      try {
+        const { file: webpFile } = await compressImageToWebp(file, {
+          maxDimension: type === 'logo' ? 800 : 1600,
+          quality: 0.82,
+        });
+        fileToUpload = webpFile;
+      } catch (compErr) {
+        console.warn('WebP compression failed for branding, using original:', compErr);
+      }
+
       const result = type === 'logo'
-        ? await restaurantSettingsService.uploadLogo(file)
+        ? await restaurantSettingsService.uploadLogo(fileToUpload)
         : type === 'cover'
-        ? await restaurantSettingsService.uploadCover(file)
-        : await restaurantSettingsService.uploadStore(file);
+        ? await restaurantSettingsService.uploadCover(fileToUpload)
+        : await restaurantSettingsService.uploadStore(fileToUpload);
       setSettings((current) => ({ ...current, ...(result.settings || {}) }));
       onNotice(`${type === 'logo' ? 'Logo' : type === 'cover' ? 'Kapak görseli' : 'Mağaza görseli'} güncellendi.`);
     } catch (error) {

@@ -102,7 +102,8 @@ const uploadImage = (buffer, restaurantId, type) => new Promise((resolve, reject
   const stream = cloudinary.uploader.upload_stream({
     folder: `zuulab-qr/restaurants/${restaurantId}/branding/${type}`,
     resource_type: 'image',
-    transformation: [{ width: type === 'logo' ? 800 : 1600, height: type === 'logo' ? 800 : 900, crop: 'limit', quality: 'auto', fetch_format: 'auto' }],
+    format: 'webp',
+    transformation: [{ width: type === 'logo' ? 800 : 1600, height: type === 'logo' ? 800 : 900, crop: 'limit', quality: 'auto:good', fetch_format: 'auto' }],
   }, (error, result) => (error ? reject(error) : resolve(result)));
   stream.end(buffer);
 });

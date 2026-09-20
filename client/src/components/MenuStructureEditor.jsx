@@ -14,6 +14,7 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, v
 import { CSS } from '@dnd-kit/utilities';
 import { ProductModal } from './ProductManager';
 import { menuService } from '../services/menuService';
+import { publicMenuService } from '../services/publicMenuService';
 
 const getId = (item) => String(item?._id || item?.id);
 const getCategoryId = (product) => String(product?.categoryId?._id || product?.categoryId);
@@ -360,12 +361,44 @@ const MenuStructureEditor = ({ categories, products, actionId, onEditCategory, o
     await persistProductOrder(resolvedNext, previous, affected);
   };
 
-  const handleProductMessage = async (message, isError = false) => { onMessage(message, isError); if (!isError) await onRefresh(); };
+  const handleProductMessage = async (message, isError = false) => {
+    publicMenuService.clearCache();
+    onMessage(message, isError);
+    if (!isError) await onRefresh();
+  };
   const productActions = {
     open: (category) => { setEditingProduct(null); setProductModalCategory(category); },
     edit: (product) => { setEditingProduct(product); setProductModalCategory(null); },
-    toggleAvailability: async (product) => { try { const result = await menuService.toggleAvailability(getId(product)); handleProductMessage(result.message); } catch (error) { onMessage(error.response?.data?.error || 'Mevcudiyet güncellenemedi.', true); } },
-    toggleFeatured: async (product) => { try { const result = await menuService.toggleFeatured(getId(product)); handleProductMessage(result.message); } catch (error) { onMessage(error.response?.data?.error || 'Öne çıkarma güncellenemedi.', true); } },
+    toggleAvailability: async (product) => {
+      const prodId = getId(product);
+      setColumns((prev) => prev.map((col) => ({
+        ...col,
+        products: col.products.map((p) => (getId(p) === prodId ? { ...p, isAvailable: !p.isAvailable } : p)),
+      })));
+      publicMenuService.clearCache();
+      try {
+        const result = await menuService.toggleAvailability(prodId);
+        handleProductMessage(result.message);
+      } catch (error) {
+        await onRefresh();
+        onMessage(error.response?.data?.error || 'Mevcudiyet güncellenemedi.', true);
+      }
+    },
+    toggleFeatured: async (product) => {
+      const prodId = getId(product);
+      setColumns((prev) => prev.map((col) => ({
+        ...col,
+        products: col.products.map((p) => (getId(p) === prodId ? { ...p, isFeatured: !p.isFeatured } : p)),
+      })));
+      publicMenuService.clearCache();
+      try {
+        const result = await menuService.toggleFeatured(prodId);
+        handleProductMessage(result.message);
+      } catch (error) {
+        await onRefresh();
+        onMessage(error.response?.data?.error || 'Öne çıkarma güncellenemedi.', true);
+      }
+    },
     delete: (product) => setDeleteConfirmation({ type: 'product', item: product }),
   };
 
@@ -378,10 +411,17 @@ const MenuStructureEditor = ({ categories, products, actionId, onEditCategory, o
       await onDeleteCategory(item);
       return;
     }
+    const itemId = getId(item);
+    setColumns((prev) => prev.map((col) => ({
+      ...col,
+      products: col.products.filter((p) => getId(p) !== itemId),
+    })));
+    publicMenuService.clearCache();
     try {
-      const result = await menuService.deleteProduct(getId(item));
+      const result = await menuService.deleteProduct(itemId);
       await handleProductMessage(result.message);
     } catch (error) {
+      await onRefresh();
       onMessage(error.response?.data?.error || 'Ürün silinemedi.', true);
     }
   };
@@ -417,7 +457,41 @@ const MenuStructureEditor = ({ categories, products, actionId, onEditCategory, o
             categoryId={getId(productModalCategory || editingProduct?.categoryId)}
             categories={categories}
             onClose={() => { setEditingProduct(null); setProductModalCategory(null); }}
-            onSaved={(message) => { setEditingProduct(null); setProductModalCategory(null); handleProductMessage(message); }}
+            onSaved={(message, finalProduct) => {
+              setEditingProduct(null);
+              setProductModalCategory(null);
+              if (finalProduct) {
+                const finalId = getId(finalProduct);
+                const targetCatId = getId(finalProduct.categoryId?._id || finalProduct.categoryId);
+                setColumns((prev) => {
+                  let found = false;
+                  const updated = prev.map((col) => {
+                    const isTargetCol = getId(col.category) === targetCatId;
+                    const exists = col.products.some((p) => getId(p) === finalId);
+                    if (exists) {
+                      found = true;
+                      if (isTargetCol) {
+                        return {
+                          ...col,
+                          products: col.products.map((p) => (getId(p) === finalId ? { ...p, ...finalProduct } : p)),
+                        };
+                      }
+                      return {
+                        ...col,
+                        products: col.products.filter((p) => getId(p) !== finalId),
+                      };
+                    }
+                    if (isTargetCol && !exists) {
+                      return { ...col, products: [...col.products, finalProduct] };
+                    }
+                    return col;
+                  });
+                  return updated;
+                });
+              }
+              publicMenuService.clearCache();
+              handleProductMessage(message);
+            }}
           />
         )}
         {deleteConfirmation && (

@@ -6,6 +6,7 @@ import Product from '../models/Product.js';
 import MenuView from '../models/MenuView.js';
 import User from '../models/User.js';
 import { findPublicRestaurant } from '../utils/publicRestaurant.js';
+import { optimizeCloudinaryUrl } from '../utils/imageOptimizer.js';
 
 const escapeXml = (value) => String(value).replace(/[<>&'\"]/g, (character) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' }[character]));
 
@@ -95,7 +96,7 @@ export const getPublicMenu = async (req, res, next) => {
         description: product.description || '',
         price: product.price,
         oldPrice: product.oldPrice ?? null,
-        image: product.image || null,
+        image: optimizeCloudinaryUrl(product.image, { width: 1200, quality: 'auto:best' }) || null,
         ingredients: product.ingredients || [],
         allergens: product.allergens || [],
         dietaryTags: product.dietaryTags || [],
@@ -142,9 +143,9 @@ export const getPublicMenu = async (req, res, next) => {
         phone: restaurant.phone || '',
         email: restaurant.email || '',
         website: restaurant.website || '',
-        logo: settings?.logo || null,
-        coverImage: settings?.coverImage || null,
-        storeImage: settings?.storeImage || null,
+        logo: optimizeCloudinaryUrl(settings?.logo, { width: 600, quality: 'auto:best' }) || null,
+        coverImage: optimizeCloudinaryUrl(settings?.coverImage, { width: 1600, quality: 'auto:best' }) || null,
+        storeImage: optimizeCloudinaryUrl(settings?.storeImage, { width: 1200, quality: 'auto:best' }) || null,
         primaryColor: targetTheme?.primaryColor || settings?.primaryColor || '#1f2937',
         secondaryColor: targetTheme?.secondaryColor || settings?.secondaryColor || '#ffffff',
         theme: targetTheme?.theme || settings?.theme || 'DEFAULT',

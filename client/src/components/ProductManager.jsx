@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { menuService } from '../services/menuService';
+import { compressImageToWebp, formatFileSize } from '../utils/imageOptimizer';
 
 const dietaryOptions = [
   ['VEGAN', 'Vegan'], ['VEGETARIAN', 'Vejetaryen'], ['GLUTEN_FREE', 'Glutensiz'],
@@ -28,33 +29,11 @@ const toForm = (product) => ({
   displayOrder: product.displayOrder,
 });
 
-const optimizeImage = (file) => new Promise((resolve) => {
-  const image = new Image();
-  const objectUrl = URL.createObjectURL(file);
-  image.onload = () => {
-    URL.revokeObjectURL(objectUrl);
-    const maxDimension = 1600;
-    const scale = Math.min(1, maxDimension / Math.max(image.naturalWidth, image.naturalHeight));
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
-    canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
-    canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
-    canvas.toBlob((blob) => {
-      if (!blob) return resolve(file);
-      resolve(new File([blob], `${file.name.replace(/\.[^/.]+$/, '')}.webp`, { type: 'image/webp', lastModified: Date.now() }));
-    }, 'image/webp', 0.82);
-  };
-  image.onerror = () => {
-    URL.revokeObjectURL(objectUrl);
-    resolve(file);
-  };
-  image.src = objectUrl;
-});
-
 export const ProductModal = ({ product, categoryId, categories, onClose, onSaved }) => {
   const [form, setForm] = useState(product ? toForm(product) : initialForm(categoryId));
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(product?.image || '');
+  const [optimizationInfo, setOptimizationInfo] = useState(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [processing, setProcessing] = useState(false);
@@ -95,22 +74,32 @@ export const ProductModal = ({ product, categoryId, categories, onClose, onSaved
       setError('Yalnızca JPG, PNG veya WEBP görseller yükleyebilirsiniz.');
       return;
     }
-    if (file.size > 12 * 1024 * 1024) {
-      setError('Görsel boyutu 12 MB değerinden küçük olmalıdır.');
+    if (file.size > 15 * 1024 * 1024) {
+      setError('Görsel boyutu 15 MB değerinden küçük olmalıdır.');
       return;
     }
     setError('');
     setProcessing(true);
-    const optimizedFile = await optimizeImage(file);
-    setImageFile(optimizedFile);
-    setImagePreview(URL.createObjectURL(optimizedFile));
-    setProcessing(false);
+    try {
+      const result = await compressImageToWebp(file, { maxDimension: 1200, quality: 0.88 });
+      setImageFile(result.file);
+      setImagePreview(result.previewUrl);
+      setOptimizationInfo(result);
+    } catch (err) {
+      console.error('Image compression failed, using original file:', err);
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+      setOptimizationInfo(null);
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const removeImage = async () => {
     if (!product?.image) {
       setImageFile(null);
       setImagePreview('');
+      setOptimizationInfo(null);
       return;
     }
     setUploading(true);
@@ -119,6 +108,7 @@ export const ProductModal = ({ product, categoryId, categories, onClose, onSaved
       await menuService.removeProductImage(product._id);
       setImageFile(null);
       setImagePreview('');
+      setOptimizationInfo(null);
     } catch (err) {
       setError(err.response?.data?.error || 'Görsel kaldırılamadı.');
     } finally {
@@ -144,12 +134,15 @@ export const ProductModal = ({ product, categoryId, categories, onClose, onSaved
     };
     try {
       const result = product ? await menuService.updateProduct(product._id, payload) : await menuService.createProduct(payload);
+      let finalProduct = result.product;
       if (imageFile) {
         setUploading(true);
-        await menuService.uploadProductImage(result.product._id, imageFile);
+        const imgResult = await menuService.uploadProductImage(result.product._id, imageFile);
+        if (imgResult?.product) finalProduct = imgResult.product;
+        else if (imgResult?.image) finalProduct = { ...finalProduct, image: imgResult.image };
         setUploading(false);
       }
-      handleClose(() => onSaved(result.message));
+      handleClose(() => onSaved(result.message, finalProduct));
     } catch (err) {
       setError(err.response?.data?.error || 'Ürün kaydedilemedi.');
       setUploading(false);
@@ -183,13 +176,19 @@ export const ProductModal = ({ product, categoryId, categories, onClose, onSaved
               <div className="product-image-preview">{imagePreview ? <img src={imagePreview} alt="Ürün önizlemesi" /> : <span>Görsel ekle</span>}</div>
               <div>
                 <p className="text-sm font-semibold text-slate-800">Ürün Görseli</p>
-                <p className="mt-1 text-xs text-slate-500">Otomatik optimize edilir · Maks. 12 MB</p>
+                <p className="mt-1 text-xs text-slate-500">Maks. 15 MB · JPG, PNG veya WEBP</p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <label className="cursor-pointer rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-700">Görsel Seç<input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleImageChange} className="sr-only" disabled={saving || uploading || processing} /></label>
                   {imagePreview && <button type="button" onClick={removeImage} disabled={saving || uploading || processing} className="rounded-lg border border-rose-200 px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 disabled:opacity-50">Görseli Kaldır</button>}
                 </div>
-                {processing && <p className="mt-2 text-xs font-medium text-emerald-600">Görsel optimize ediliyor...</p>}
-                {uploading && <p className="mt-2 text-xs font-medium text-emerald-600">Yükleniyor...</p>}
+                {processing && <p className="mt-2 text-xs font-medium text-emerald-600 animate-pulse">Görsel hazırlanıyor...</p>}
+                {optimizationInfo && !processing && (
+                  <p className="mt-2 text-xs font-medium text-emerald-600 flex items-center gap-1.5">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                    Görsel başarıyla yüklendi
+                  </p>
+                )}
+                {uploading && <p className="mt-2 text-xs font-medium text-emerald-600">Kaydediliyor...</p>}
               </div>
             </div>
           </div>

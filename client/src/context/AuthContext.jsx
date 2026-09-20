@@ -33,11 +33,21 @@ const isSessionExpired = () => {
   return Date.now() > Number(expiresAt);
 };
 
+const handleSessionExpiration = async () => {
+  clearSessionFromStorage();
+  try {
+    if (auth.currentUser) {
+      await signOut(auth);
+    }
+  } catch (err) {
+    console.warn('Firebase sign out error on expiration:', err);
+  }
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     try {
       if (isSessionExpired()) {
-        clearSessionFromStorage();
         return null;
       }
       const cached = localStorage.getItem('zuulab_auth_user');
@@ -65,10 +75,10 @@ export const AuthProvider = ({ children }) => {
   const checkAuth = async () => {
     try {
       if (isSessionExpired()) {
-        clearSessionFromStorage();
+        await handleSessionExpiration();
         setUser(null);
         setRestaurant(null);
-        setError('Oturum süreniz doldu (1 gün). Lütfen tekrar giriş yapın.');
+        setError('Oturum süreniz doldu. Lütfen tekrar giriş yapın.');
         setLoading(false);
         return;
       }
@@ -91,42 +101,30 @@ export const AuthProvider = ({ children }) => {
           setLoading(false);
           return;
         } catch (getMeError) {
-          // Local token was invalid or expired, clear it
-          clearSessionFromStorage();
+          // Local token was invalid or expired, clear it and sign out Firebase
+          await handleSessionExpiration();
+          setUser(null);
+          setRestaurant(null);
+          setLoading(false);
+          return;
         }
       }
 
-      // 2. Wait for Firebase auth state to be ready
-      if (auth.authStateReady) {
+      // If no local token, ensure Firebase session is also signed out so state remains strictly synchronized
+      if (auth.currentUser) {
         try {
-          await auth.authStateReady();
+          await signOut(auth);
         } catch {}
       }
 
-      // 3. If Firebase user is authenticated, create/restore session
-      if (auth.currentUser) {
-        try {
-          const session = await authService.firebaseSession();
-          saveSessionToStorage(session);
-          setUser(session.user);
-          setRestaurant(session.restaurant);
-          setError(null);
-          setLoading(false);
-          return;
-        } catch (sessionErr) {
-          console.warn('Firebase session restore failed:', sessionErr);
-        }
-      }
-
-      // 4. Definitely logged out - do not call getMe() without token so old cookies cannot resurrect old sessions
       clearSessionFromStorage();
       setUser(null);
       setRestaurant(null);
     } catch (err) {
-      clearSessionFromStorage();
+      await handleSessionExpiration();
       setUser(null);
       setRestaurant(null);
-      setError(err.response?.data?.error || 'Authentication failed');
+      setError(err.response?.data?.error || 'Kimlik doğrulama başarısız');
     } finally {
       setLoading(false);
     }
@@ -135,16 +133,11 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (nextFirebaseUser) => {
       setFirebaseUser(nextFirebaseUser);
-      // If user has active Firebase auth but no local JWT session, restore from firebase-session
-      if (nextFirebaseUser && !localStorage.getItem('zuulab_auth_token') && !isSessionExpired()) {
-        try {
-          const session = await authService.firebaseSession();
-          saveSessionToStorage(session);
-          setUser(session.user || null);
-          setRestaurant(session.restaurant || null);
-        } catch {
-          // Passively ignore restore errors
-        }
+      // If Firebase user exists but session has expired, enforce immediate sign out
+      if (nextFirebaseUser && isSessionExpired()) {
+        await handleSessionExpiration();
+        setUser(null);
+        setRestaurant(null);
       }
     });
 
@@ -153,6 +146,46 @@ export const AuthProvider = ({ children }) => {
       checkAuth();
     }
     return unsubscribe;
+  }, []);
+
+  // Periodic expiration watcher + tab focus/visibility watcher + custom event listener
+  useEffect(() => {
+    const enforceExpiry = async () => {
+      if (isSessionExpired()) {
+        await handleSessionExpiration();
+        setUser(null);
+        setRestaurant(null);
+        setError('Oturum süreniz doldu. Lütfen tekrar giriş yapın.');
+      }
+    };
+
+    const handleAuthExpiredEvent = async () => {
+      await handleSessionExpiration();
+      setUser(null);
+      setRestaurant(null);
+      setError('Oturum süreniz doldu. Lütfen tekrar giriş yapın.');
+    };
+
+    // Periodically verify session every 60 seconds
+    const interval = setInterval(enforceExpiry, 60 * 1000);
+
+    // Verify when user returns to tab
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        enforceExpiry();
+      }
+    };
+
+    window.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('focus', enforceExpiry);
+    window.addEventListener('zuulab-auth-expired', handleAuthExpiredEvent);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('focus', enforceExpiry);
+      window.removeEventListener('zuulab-auth-expired', handleAuthExpiredEvent);
+    };
   }, []);
 
   const login = async (credentials) => {
