@@ -15,4 +15,14 @@ export const adminService = {
     const response = await api.patch(`/admin/restaurants/${restaurantId}/${action}`);
     return response.data;
   },
+
+  updateRestaurant: async (restaurantId, payload) => {
+    const response = await api.patch(`/admin/restaurants/${restaurantId}`, payload);
+    return response.data;
+  },
+
+  deleteRestaurant: async (restaurantId) => {
+    const response = await api.delete(`/admin/restaurants/${restaurantId}`);
+    return response.data;
+  },
 };

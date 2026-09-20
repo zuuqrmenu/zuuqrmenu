@@ -451,6 +451,7 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, onDelete = nu
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const feedbackTimeoutRef = useRef(null);
+  const initialDraftSnapshotRef = useRef('');
 
   const isEditingExisting = Boolean(initialMenu && (initialMenu._id || initialMenu.id || typeof editingIndex === 'number'));
 
@@ -494,12 +495,10 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, onDelete = nu
   useEffect(() => {
     const nextThemes = Array.isArray(themes) ? themes : [];
     setSavedThemes(nextThemes);
-    if (initialMenu) {
-      setDraft(normalize(initialMenu));
-    } else {
-      setDraft(buildDefaultMenuTemplate({ name: '' }));
-    }
-  }, [initialMenu]);
+    const initial = initialMenu ? normalize(initialMenu) : buildDefaultMenuTemplate({ name: 'Özel Menü' });
+    setDraft(initial);
+    initialDraftSnapshotRef.current = JSON.stringify(initial);
+  }, [initialMenu, themes]);
 
   useEffect(() => () => {
     if (feedbackTimeoutRef.current) window.clearTimeout(feedbackTimeoutRef.current);
@@ -525,14 +524,17 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, onDelete = nu
   const updateLayout = (field, value) => setDraft((current) => ({ ...current, layout: { ...current.layout, [field]: value } }));
 
   const save = async () => {
-    const cleanName = draft.name?.trim() || '';
-    if (!cleanName) {
-      setNameError(true);
-      triggerFeedback('error', 'Menü adı boş bırakılamaz.');
-      setError('Menü adı boş bırakılamaz.');
+    // Hiçbir değişiklik yapılmadan kaydede basılırsa direkt onaylayıp modalı kapat
+    const isUnchanged = Boolean(initialDraftSnapshotRef.current && JSON.stringify(draft) === initialDraftSnapshotRef.current);
+    if (isUnchanged) {
+      triggerFeedback('success', 'Tema kaydedildi.');
+      setTimeout(() => {
+        handleClose();
+      }, 150);
       return;
     }
 
+    const cleanName = draft.name?.trim() || 'Özel Menü';
     setNameError(false);
     setSaving(true);
     setError('');
@@ -560,21 +562,20 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, onDelete = nu
           ...(existingId ? { _id: existingId } : {}),
         };
       } else if (next.length >= 3) {
-        setError('En fazla 3 özel tema (toplam 4 tema) kaydedebilirsiniz.');
-        setNameError(false);
-        triggerFeedback('error', 'En fazla 3 özel tema (toplam 4 tema) kaydedebilirsiniz.');
-        return;
+        next[next.length - 1] = {
+          ...payload,
+          ...(next[next.length - 1]?._id ? { _id: next[next.length - 1]._id } : {}),
+        };
       } else {
         const { _id, id, ...newThemePayload } = payload;
         next.push(newThemePayload);
       }
 
-      const settings = await onSaved(next, payload, existingIndex >= 0 ? existingIndex : null);
-      const result = settings?.savedMenus || settings?.menuThemes || next;
-      setSavedThemes(result);
-      setError('');
+      await onSaved(next, payload, existingIndex >= 0 ? existingIndex : next.length - 1);
       triggerFeedback('success', existingIndex >= 0 ? 'Tema güncellendi.' : 'Tema kaydedildi.');
-      handleClose();
+      setTimeout(() => {
+        handleClose();
+      }, 150);
     } catch (err) {
       const message = err?.response?.data?.error || 'Menü kaydedilemedi. Lütfen tekrar deneyin.';
       setError(message);

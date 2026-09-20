@@ -118,15 +118,16 @@ export const getPublicMenu = async (req, res, next) => {
     const sourceMenus = Array.isArray(settings?.savedMenus) && settings.savedMenus.length ? settings.savedMenus : (Array.isArray(settings?.menuThemes) ? settings.menuThemes : []);
     const activeMenuId = settings?.activeMenuThemeId !== undefined ? settings.activeMenuThemeId : (settings?.activeMenuId || null);
     const savedTheme = activeMenuId ? (sourceMenus.find((item) => String(item._id) === String(activeMenuId)) || null) : null;
-    const menuTheme = savedTheme ? {
-      id: savedTheme._id,
-      name: savedTheme.name,
-      font: savedTheme.font,
-      layout: savedTheme.layout,
-      theme: savedTheme.theme,
-      mode: savedTheme.mode || 'LIGHT',
-      primaryColor: savedTheme.primaryColor,
-      secondaryColor: savedTheme.secondaryColor,
+    const targetTheme = savedTheme || (sourceMenus.length > 0 ? sourceMenus[0] : null);
+    const menuTheme = targetTheme ? {
+      id: targetTheme._id,
+      name: targetTheme.name,
+      font: targetTheme.font,
+      layout: targetTheme.layout,
+      theme: targetTheme.theme,
+      mode: targetTheme.mode || 'LIGHT',
+      primaryColor: targetTheme.primaryColor,
+      secondaryColor: targetTheme.secondaryColor,
     } : null;
 
     res.json({

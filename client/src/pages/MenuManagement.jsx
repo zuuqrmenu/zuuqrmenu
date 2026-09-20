@@ -8,6 +8,7 @@ import MenuCustomizationCompactModal, { ThemePreview, buildDefaultMenuTemplate }
 import { useAuth } from '../context/AuthContext';
 import { menuService } from '../services/menuService';
 import { restaurantSettingsService } from '../services/restaurantSettingsService';
+import { publicMenuService } from '../services/publicMenuService';
 
 const emptyForm = { name: '', description: '', isActive: true, displayOrder: 0 };
 
@@ -529,11 +530,23 @@ const MenuManagement = () => {
   };
 
   const handleOpenCustomization = () => {
-    if (menuThemes.length >= 3) {
-      setNotice('En fazla 4 tema kaydedebilirsiniz (3 özel tema + 1 varsayılan). Düzenlemek istediğiniz temayı seçebilirsiniz.');
-      setThemeSelectionOpen(true);
+    // If active theme exists, edit it directly
+    const activeThemeIndex = menuThemes.findIndex((t) => String(t._id || t.id) === String(activeMenuThemeId));
+    if (activeThemeIndex >= 0) {
+      setEditingTheme(menuThemes[activeThemeIndex]);
+      setEditingThemeIndex(activeThemeIndex);
+      setCustomizationOpen(true);
       return;
     }
+
+    // If there are themes, edit the first one
+    if (menuThemes.length > 0) {
+      setEditingTheme(menuThemes[0]);
+      setEditingThemeIndex(0);
+      setCustomizationOpen(true);
+      return;
+    }
+
     setEditingTheme(null);
     setEditingThemeIndex(null);
     setCustomizationOpen(true);
@@ -660,6 +673,9 @@ const MenuManagement = () => {
             const savedList = settings?.menuThemes || themes;
             if (settings?.menuThemes) setMenuThemes(settings.menuThemes);
 
+            // Invalidate cache immediately so public menu shows fresh settings
+            publicMenuService.clearCache();
+
             // Find the saved theme from the returned list
             let targetTheme = null;
             if (isEditing && savedList[savedIndex]) {
@@ -677,6 +693,7 @@ const MenuManagement = () => {
               await selectMenuTheme(targetThemeId, targetTheme || savedPayload);
             }
 
+            publicMenuService.clearCache();
             setNotice('');
             setTimeout(() => setNotice(isEditing ? 'Tema güncellendi ve menü olarak uygulandı.' : 'Tema kaydedildi ve yeni menü olarak seçildi.'), 50);
             setHighlightViewMenu(true);

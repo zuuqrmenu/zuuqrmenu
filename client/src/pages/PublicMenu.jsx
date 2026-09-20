@@ -86,7 +86,7 @@ const PublicMenu = () => {
     if (!existing) {
       setStatus('loading');
     }
-    publicMenuService.getMenu(username)
+    publicMenuService.getMenu(username, true)
       .then((result) => {
         if (!mounted) return;
         setData(result);

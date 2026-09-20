@@ -4,6 +4,14 @@ const menuCache = new Map();
 const CACHE_TTL = 60 * 1000; // 1 minute in-memory cache for instant navigation
 
 export const publicMenuService = {
+  clearCache: (username) => {
+    if (username) {
+      menuCache.delete(username.toLowerCase());
+    } else {
+      menuCache.clear();
+    }
+  },
+
   getCachedMenu: (username) => {
     if (!username) return null;
     const key = username.toLowerCase();
