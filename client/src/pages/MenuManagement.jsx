@@ -519,6 +519,7 @@ const MenuManagement = () => {
       if (result.settings?.menuThemes) {
         setMenuThemes(result.settings.menuThemes);
       }
+      publicMenuService.clearCache();
       setNotice(nextThemeId ? 'Menü teması seçildi.' : 'Varsayılan menü görünümüne dönüldü.');
       setThemeSelectionOpen(false);
       return result.settings;
@@ -530,20 +531,9 @@ const MenuManagement = () => {
   };
 
   const handleOpenCustomization = () => {
-    // If active theme exists, edit it directly
-    const activeThemeIndex = menuThemes.findIndex((t) => String(t._id || t.id) === String(activeMenuThemeId));
-    if (activeThemeIndex >= 0) {
-      setEditingTheme(menuThemes[activeThemeIndex]);
-      setEditingThemeIndex(activeThemeIndex);
-      setCustomizationOpen(true);
-      return;
-    }
-
-    // If there are themes, edit the first one
-    if (menuThemes.length > 0) {
-      setEditingTheme(menuThemes[0]);
-      setEditingThemeIndex(0);
-      setCustomizationOpen(true);
+    if (menuThemes.length >= 3) {
+      setNotice('En fazla 4 tema kaydedebilirsiniz (3 özel tema + 1 varsayılan). Düzenlemek istediğiniz temayı seçebilirsiniz.');
+      setThemeSelectionOpen(true);
       return;
     }
 

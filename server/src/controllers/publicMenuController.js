@@ -118,7 +118,7 @@ export const getPublicMenu = async (req, res, next) => {
     const sourceMenus = Array.isArray(settings?.savedMenus) && settings.savedMenus.length ? settings.savedMenus : (Array.isArray(settings?.menuThemes) ? settings.menuThemes : []);
     const activeMenuId = settings?.activeMenuThemeId !== undefined ? settings.activeMenuThemeId : (settings?.activeMenuId || null);
     const savedTheme = activeMenuId ? (sourceMenus.find((item) => String(item._id) === String(activeMenuId)) || null) : null;
-    const targetTheme = savedTheme || (sourceMenus.length > 0 ? sourceMenus[0] : null);
+    const targetTheme = savedTheme;
     const menuTheme = targetTheme ? {
       id: targetTheme._id,
       name: targetTheme.name,

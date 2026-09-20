@@ -495,7 +495,7 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, onDelete = nu
   useEffect(() => {
     const nextThemes = Array.isArray(themes) ? themes : [];
     setSavedThemes(nextThemes);
-    const initial = initialMenu ? normalize(initialMenu) : buildDefaultMenuTemplate({ name: 'Özel Menü' });
+    const initial = initialMenu ? normalize(initialMenu) : buildDefaultMenuTemplate({ name: '' });
     setDraft(initial);
     initialDraftSnapshotRef.current = JSON.stringify(initial);
   }, [initialMenu, themes]);
@@ -524,8 +524,8 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, onDelete = nu
   const updateLayout = (field, value) => setDraft((current) => ({ ...current, layout: { ...current.layout, [field]: value } }));
 
   const save = async () => {
-    // Hiçbir değişiklik yapılmadan kaydede basılırsa direkt onaylayıp modalı kapat
-    const isUnchanged = Boolean(initialDraftSnapshotRef.current && JSON.stringify(draft) === initialDraftSnapshotRef.current);
+    // Hiçbir değişiklik yapılmadan kaydede basılırsa direkt onaylayıp modalı kapat (sadece mevcut bir tema düzenleniyorsa)
+    const isUnchanged = Boolean(isEditingExisting && initialDraftSnapshotRef.current && JSON.stringify(draft) === initialDraftSnapshotRef.current);
     if (isUnchanged) {
       triggerFeedback('success', 'Tema kaydedildi.');
       setTimeout(() => {
@@ -534,7 +534,14 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, onDelete = nu
       return;
     }
 
-    const cleanName = draft.name?.trim() || 'Özel Menü';
+    const cleanName = draft.name?.trim() || '';
+    if (!cleanName) {
+      setNameError(true);
+      setError('Lütfen bir tema adı girin.');
+      triggerFeedback('error', 'Lütfen bir tema adı girin.');
+      return;
+    }
+
     setNameError(false);
     setSaving(true);
     setError('');
@@ -571,7 +578,7 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, onDelete = nu
         next.push(newThemePayload);
       }
 
-      await onSaved(next, payload, existingIndex >= 0 ? existingIndex : next.length - 1);
+      await onSaved(next, payload, existingIndex >= 0 ? existingIndex : -1);
       triggerFeedback('success', existingIndex >= 0 ? 'Tema güncellendi.' : 'Tema kaydedildi.');
       setTimeout(() => {
         handleClose();
