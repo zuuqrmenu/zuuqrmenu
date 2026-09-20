@@ -7293,7 +7293,7 @@ body[data-dashboard-theme='dark'] .menu-compact-delete-btn:hover:not(:disabled) 
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.75rem 1rem max(0.75rem, env(safe-area-inset-bottom));
+  padding: 0.75rem 1rem;
   background: linear-gradient(135deg, #092013 0%, #113620 100%);
   border-top: 1px solid rgba(74, 222, 128, 0.28);
   box-shadow: 0 -2px 14px rgba(9, 32, 19, 0.25);
