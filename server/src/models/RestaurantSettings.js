@@ -62,6 +62,11 @@ const restaurantSettingsSchema = new mongoose.Schema({
     enum: ['DEFAULT', 'GRID', 'MINIMAL', 'BISTRO', 'ELEGANT', 'WARM', 'MODERN', 'DARK', 'CLASSIC'],
     default: 'DEFAULT',
   },
+  mode: {
+    type: String,
+    enum: ['LIGHT', 'DARK'],
+    default: 'LIGHT',
+  },
   menuThemes: {
     type: [menuThemeSchema],
     default: [],

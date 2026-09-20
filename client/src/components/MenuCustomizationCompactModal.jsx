@@ -194,6 +194,7 @@ export const ThemePreview = ({ draft, restaurant: propRestaurant }) => {
   const previewStyle = {
     '--menu-primary': previewPrimary,
     '--menu-secondary': previewSecondary,
+    '--menu-background': previewTheme.background,
     '--menu-bg': previewTheme.background,
     '--menu-surface': previewTheme.surface,
     '--menu-text': previewTheme.text,
@@ -885,7 +886,7 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, onDelete = nu
   );
 };
 
-const ThemeDeleteConfirmDialog = ({ open, themeName, deleting, onCancel, onConfirm }) => {
+export const ThemeDeleteConfirmDialog = ({ open, themeName, deleting, onCancel, onConfirm }) => {
   const [isClosing, setIsClosing] = useState(false);
 
   useEffect(() => {

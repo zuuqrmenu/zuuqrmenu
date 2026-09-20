@@ -54,7 +54,7 @@ const normalizeSavedMenuEntries = (entries, fallback = {}) => {
   }).filter((entry) => entry && entry.name);
 
   if (!normalized.length) {
-    return [getDefaultSavedMenu(fallback)];
+    return [];
   }
 
   const ordered = [...normalized].sort((a, b) => (Number(a.slot) || 1) - (Number(b.slot) || 1));

@@ -115,7 +115,9 @@ export const getPublicMenu = async (req, res, next) => {
       }))
       .filter((category) => category.products.length > 0);
 
-    const sourceMenus = Array.isArray(settings?.savedMenus) && settings.savedMenus.length ? settings.savedMenus : (Array.isArray(settings?.menuThemes) ? settings.menuThemes : []);
+    const sourceMenus = Array.isArray(settings?.menuThemes) && settings.menuThemes.length
+      ? settings.menuThemes
+      : (Array.isArray(settings?.savedMenus) && settings.savedMenus.length ? settings.savedMenus : []);
     const activeMenuId = settings?.activeMenuThemeId !== undefined ? settings.activeMenuThemeId : (settings?.activeMenuId || null);
     const savedTheme = activeMenuId ? (sourceMenus.find((item) => String(item._id) === String(activeMenuId)) || null) : null;
     const targetTheme = savedTheme;
@@ -143,9 +145,10 @@ export const getPublicMenu = async (req, res, next) => {
         logo: settings?.logo || null,
         coverImage: settings?.coverImage || null,
         storeImage: settings?.storeImage || null,
-        primaryColor: settings?.primaryColor || '#1f2937',
-        secondaryColor: settings?.secondaryColor || '#ffffff',
-        theme: settings?.theme || 'MINIMAL',
+        primaryColor: targetTheme?.primaryColor || settings?.primaryColor || '#1f2937',
+        secondaryColor: targetTheme?.secondaryColor || settings?.secondaryColor || '#ffffff',
+        theme: targetTheme?.theme || settings?.theme || 'DEFAULT',
+        mode: targetTheme?.mode || settings?.mode || 'LIGHT',
         socialMedia: Array.isArray(settings?.socialMedia) ? settings.socialMedia.filter((item) => item && item.url).map((item) => ({ platform: item.platform, url: item.url.trim() })) : [],
         menuStatus: restaurant.menuStatus,
         menuViewCount: (restaurant.menuViewCount || 0) + 1,

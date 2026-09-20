@@ -2955,11 +2955,18 @@ body .rounded-xl.border.border-rose-200.bg-rose-50.px-4.py-3.text-sm.text-rose-7
   width: 100%;
 }
 
-.stsm-card__edit-btn {
+.stsm-card__actions {
   position: absolute;
   top: .5rem;
   right: .5rem;
   z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+}
+
+.stsm-card__edit-btn,
+.stsm-card__delete-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2983,7 +2990,16 @@ body .rounded-xl.border.border-rose-200.bg-rose-50.px-4.py-3.text-sm.text-rose-7
   box-shadow: 0 4px 10px rgba(15, 23, 42, .2);
 }
 
-.stsm-card__edit-btn:active {
+.stsm-card__delete-btn:hover {
+  background: #ef4444;
+  border-color: #ef4444;
+  color: #ffffff;
+  transform: scale(1.08);
+  box-shadow: 0 4px 10px rgba(239, 68, 68, .25);
+}
+
+.stsm-card__edit-btn:active,
+.stsm-card__delete-btn:active {
   transform: scale(.96);
 }
 
