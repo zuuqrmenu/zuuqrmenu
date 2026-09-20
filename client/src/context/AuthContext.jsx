@@ -73,22 +73,27 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
-      // 1. Try getMe() - api.js attaches token or Firebase token
-      try {
-        const data = await authService.getMe();
-        if (data?.token) {
-          saveSessionToStorage(data);
-        } else if (data?.user) {
-          localStorage.setItem('zuulab_auth_user', JSON.stringify(data.user));
-          if (data.restaurant) localStorage.setItem('zuulab_auth_restaurant', JSON.stringify(data.restaurant));
+      const hasLocalToken = !!localStorage.getItem('zuulab_auth_token');
+
+      // 1. Only check getMe() if we have an active local JWT session token
+      if (hasLocalToken) {
+        try {
+          const data = await authService.getMe();
+          if (data?.token) {
+            saveSessionToStorage(data);
+          } else if (data?.user) {
+            localStorage.setItem('zuulab_auth_user', JSON.stringify(data.user));
+            if (data.restaurant) localStorage.setItem('zuulab_auth_restaurant', JSON.stringify(data.restaurant));
+          }
+          setUser(data.user);
+          setRestaurant(data.restaurant);
+          setError(null);
+          setLoading(false);
+          return;
+        } catch (getMeError) {
+          // Local token was invalid or expired, clear it
+          clearSessionFromStorage();
         }
-        setUser(data.user);
-        setRestaurant(data.restaurant);
-        setError(null);
-        setLoading(false);
-        return;
-      } catch (getMeError) {
-        // If getMe failed, do not give up immediately: wait for Firebase to ensure we don't prematurely log out
       }
 
       // 2. Wait for Firebase auth state to be ready
@@ -113,7 +118,7 @@ export const AuthProvider = ({ children }) => {
         }
       }
 
-      // 4. Definitely logged out
+      // 4. Definitely logged out - do not call getMe() without token so old cookies cannot resurrect old sessions
       clearSessionFromStorage();
       setUser(null);
       setRestaurant(null);
@@ -152,6 +157,12 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (credentials) => {
     try {
+      clearSessionFromStorage();
+      if (auth.currentUser) {
+        try {
+          await signOut(auth);
+        } catch {}
+      }
       const data = await authService.login(credentials);
       saveSessionToStorage(data);
       setUser(data.user);
@@ -174,7 +185,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      clearSessionFromStorage();
+      // Send logout to backend while token is still available in localStorage so request has authorization
       await Promise.allSettled([authService.logout(), signOut(auth)]);
     } catch (err) {
       console.error('Logout error:', err);
@@ -183,6 +194,7 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
       setRestaurant(null);
       setError(null);
+      setFirebaseUser(null);
     }
   };
 

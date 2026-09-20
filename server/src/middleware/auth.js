@@ -4,14 +4,14 @@ import Restaurant from '../models/Restaurant.js';
 
 export const auth = async (req, res, next) => {
   try {
-    // Get token from httpOnly cookie or Authorization Bearer header
-    let token = req.cookies?.token;
-    if (!token) {
-      const authHeader = req.get('authorization') || '';
-      const match = authHeader.match(/^Bearer\s+(.+)$/i);
-      if (match) {
-        token = match[1];
-      }
+    // Authorization Bearer header takes precedence over cookie
+    let token;
+    const authHeader = req.get('authorization') || '';
+    const match = authHeader.match(/^Bearer\s+(.+)$/i);
+    if (match) {
+      token = match[1];
+    } else {
+      token = req.cookies?.token;
     }
 
     if (!token) {

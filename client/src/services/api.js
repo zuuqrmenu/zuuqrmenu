@@ -31,6 +31,15 @@ api.interceptors.request.use(
       return config;
     }
 
+    // Firebase session exchange endpoint must always use Firebase ID token
+    if (path === '/auth/firebase-session') {
+      const token = await getFirebaseIdToken();
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    }
+
     // 1. Check local JWT auth token and its 1-day (24h) expiry
     const authToken = localStorage.getItem('zuulab_auth_token');
     const expiresAt = localStorage.getItem('zuulab_auth_expires_at');

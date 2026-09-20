@@ -12,7 +12,7 @@ router.post('/register-firebase', firebaseAuth, registerFirebase);
 router.post('/firebase-session', firebaseAuth, firebaseSession);
 router.post('/login', login);
 router.get('/me', authDual, me);
-router.post('/logout', auth, logout);
+router.post('/logout', logout);
 router.put('/profile', auth, updateProfile);
 router.post('/menu-setup', auth, createMenuIdentity);
 router.post('/reauthenticate', auth, reauthenticate);

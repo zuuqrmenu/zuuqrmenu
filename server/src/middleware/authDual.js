@@ -19,10 +19,8 @@ const loadUserContext = (user) => ({
   restaurantId: user.restaurantId,
 });
 
-const loadJwtIdentity = async (req, bearerToken) => {
-  const token = req.cookies?.token || bearerToken;
+const loadJwtUser = async (token) => {
   if (!token) return null;
-
   try {
     const decoded = verifyToken(token);
     const user = await User.findById(decoded.userId).select('-password');
@@ -75,28 +73,48 @@ const loadFirebaseIdentity = async (bearerToken) => {
 export const authDual = async (req, res, next) => {
   const bearerToken = getBearerToken(req);
 
-  // 1. First attempt JWT verification (from cookie or Bearer header)
-  const jwtIdentity = await loadJwtIdentity(req, bearerToken);
-  if (jwtIdentity) {
-    req.user = jwtIdentity.context;
-    req.authMethod = 'jwt';
-    return next();
-  }
+  // 1. If explicit Bearer token is provided, it ALWAYS takes precedence over cookies!
+  if (bearerToken) {
+    // 1a. Try JWT verification first
+    const jwtIdentity = await loadJwtUser(bearerToken);
+    if (jwtIdentity) {
+      req.user = jwtIdentity.context;
+      req.authMethod = 'jwt';
+      return next();
+    }
 
-  // 2. If no valid JWT, attempt Firebase verification using the bearer token
-  if (!bearerToken) {
+    // 1b. Try Firebase verification next
+    try {
+      const firebaseIdentity = await loadFirebaseIdentity(bearerToken);
+      if (firebaseIdentity) {
+        req.user = firebaseIdentity.context;
+        req.authMethod = 'firebase';
+        return next();
+      }
+    } catch (error) {
+      const statusCode = error.statusCode || 401;
+      return res.status(statusCode).json({
+        error: statusCode === 503
+          ? 'Firebase authentication is not configured.'
+          : error.message === unlinkedMessage
+          ? unlinkedMessage
+          : unauthorizedMessage,
+      });
+    }
+
     return res.status(401).json({ error: unauthorizedMessage });
   }
 
-  try {
-    const firebaseIdentity = await loadFirebaseIdentity(bearerToken);
-    if (!firebaseIdentity) return res.status(401).json({ error: unauthorizedMessage });
-
-    req.user = firebaseIdentity.context;
-    req.authMethod = 'firebase';
-    return next();
-  } catch (error) {
-    const statusCode = error.statusCode || 401;
-    return res.status(statusCode).json({ error: statusCode === 503 ? 'Firebase authentication is not configured.' : error.message === unlinkedMessage ? unlinkedMessage : unauthorizedMessage });
+  // 2. Only if NO Bearer token is provided in the header, fall back to cookie
+  const cookieToken = req.cookies?.token;
+  if (cookieToken) {
+    const cookieIdentity = await loadJwtUser(cookieToken);
+    if (cookieIdentity) {
+      req.user = cookieIdentity.context;
+      req.authMethod = 'jwt';
+      return next();
+    }
   }
+
+  return res.status(401).json({ error: unauthorizedMessage });
 };

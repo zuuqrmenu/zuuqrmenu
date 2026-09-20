@@ -57,6 +57,11 @@ const Login = () => {
         return;
       }
 
+      if (auth.currentUser) {
+        try {
+          await signOut(auth);
+        } catch {}
+      }
       await signInWithEmailAndPassword(auth, formData.email, formData.password);
       const session = await authService.firebaseSession();
       trackEvent('login', { method: 'email' });
@@ -74,6 +79,11 @@ const Login = () => {
     setError('');
     setLoading(true);
     try {
+      if (auth.currentUser) {
+        try {
+          await signOut(auth);
+        } catch {}
+      }
       const credential = await signInWithPopup(auth, new GoogleAuthProvider());
       await credential.user.getIdToken();
       try {

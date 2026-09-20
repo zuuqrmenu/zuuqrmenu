@@ -196,11 +196,44 @@ export const me = async (req, res) => {
   }
 };
 
+export const clearAuthCookies = (res) => {
+  const isProd = process.env.NODE_ENV === 'production';
+  const cookieNames = ['token', 'zuulab_token'];
+
+  cookieNames.forEach((name) => {
+    // 1. Host-only cookies
+    res.clearCookie(name, {
+      path: '/',
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
+    });
+    res.clearCookie(name, {
+      path: '/',
+      httpOnly: true,
+    });
+    res.clearCookie(name, { path: '/' });
+
+    // 2. Cross-subdomain cookies (production)
+    if (isProd) {
+      res.clearCookie(name, {
+        path: '/',
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none',
+        domain: '.zuuqrmenu.com',
+      });
+      res.clearCookie(name, {
+        path: '/',
+        domain: '.zuuqrmenu.com',
+      });
+    }
+  });
+};
+
 export const logout = async (req, res) => {
   try {
-    // Clear cookie across subdomains
-    res.clearCookie('token', getAuthCookieOptions());
-    
+    clearAuthCookies(res);
     res.json({ message: 'Logout successful' });
   } catch (error) {
     console.error('Logout error:', error);
