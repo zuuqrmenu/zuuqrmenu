@@ -648,6 +648,7 @@ const MenuManagement = () => {
           themes={menuThemes}
           initialMenu={editingTheme}
           editingIndex={editingThemeIndex}
+          restaurant={overview?.restaurant || restaurant}
           onClose={() => {
             setCustomizationOpen(false);
             setEditingTheme(null);

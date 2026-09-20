@@ -7,6 +7,7 @@ import MenuHeroCover from './public-menu/MenuHeroCover';
 import CategoryCardGrid from './public-menu/CategoryCardGrid';
 import { getPublicMenuTheme, publicMenuFonts, publicMenuThemes } from '../utils/publicMenuTheme';
 import useBodyScrollLock from '../hooks/useBodyScrollLock';
+import { useAuth } from '../context/AuthContext';
 
 const previewDemoRestaurant = {
   name: 'Demo Restoran',
@@ -15,6 +16,7 @@ const previewDemoRestaurant = {
   logo: null,
   primaryColor: '#1F2937',
   secondaryColor: '#FFFFFF',
+  menuViewCount: 12480,
 };
 
 const previewDemoCategories = [
@@ -170,14 +172,24 @@ export const buildDefaultMenuTemplate = (overrides = {}) => ({
 
 const normalize = (theme) => ({ ...defaults, ...(theme || {}), mode: theme?.mode || 'LIGHT', layout: { ...defaults.layout, ...((theme && theme.layout) || {}) } });
 
-export const ThemePreview = ({ draft }) => {
+export const ThemePreview = ({ draft, restaurant: propRestaurant }) => {
+  const auth = useAuth();
+  const currentRestaurant = propRestaurant || auth?.restaurant || null;
+  const restaurant = {
+    ...previewDemoRestaurant,
+    ...(currentRestaurant || {}),
+    name: currentRestaurant?.name || previewDemoRestaurant.name,
+    coverImage: currentRestaurant?.coverImage || currentRestaurant?.storeImage || previewDemoRestaurant.coverImage,
+    logo: currentRestaurant?.logo || previewDemoRestaurant.logo,
+    menuViewCount: currentRestaurant?.menuViewCount ?? previewDemoRestaurant.menuViewCount,
+  };
   const previewShellRef = useRef(null);
   const [previewGridCategory, setPreviewGridCategory] = useState(null);
   const [previewDefaultCategory, setPreviewDefaultCategory] = useState(previewDemoCategories[0].id);
   const previewTheme = getPublicMenuTheme(draft.theme || 'DEFAULT', draft.mode || 'LIGHT');
   const previewMode = draft.mode || 'LIGHT';
   const previewLayout = draft.layout || defaults.layout;
-  const previewPrimary = draft.primaryColor || previewDemoRestaurant.primaryColor || '#1F2937';
+  const previewPrimary = draft.primaryColor || restaurant.primaryColor || '#1F2937';
   const previewSecondary = draft.secondaryColor || (draft.mode === 'DARK' ? '#f4efe8' : '#fffdf8');
   const previewStyle = {
     '--menu-primary': previewPrimary,
@@ -261,14 +273,14 @@ export const ThemePreview = ({ draft }) => {
                   }}
                   aria-label="Kategorilere dön"
                 >
-                  {previewDemoRestaurant.logo ? (
+                  {restaurant.logo ? (
                     <img
-                      src={previewDemoRestaurant.logo}
-                      alt={previewDemoRestaurant.name}
+                      src={restaurant.logo}
+                      alt={restaurant.name}
                       className="public-header--grid__logo-img"
                     />
                   ) : (
-                    <span className="public-header--grid__title">{previewDemoRestaurant.name}</span>
+                    <span className="public-header--grid__title">{restaurant.name}</span>
                   )}
                 </div>
 
@@ -313,7 +325,7 @@ export const ThemePreview = ({ draft }) => {
         ) : (
           <>
             <MenuHeader
-              restaurant={previewDemoRestaurant}
+              restaurant={restaurant}
               onOpenCategories={() => {}}
               onOpenInfo={() => {}}
             />
@@ -425,7 +437,7 @@ export const ThemePreview = ({ draft }) => {
   );
 };
 
-const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, onDelete = null, editingIndex = null, initialMenu = null }) => {
+const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, onDelete = null, editingIndex = null, initialMenu = null, restaurant = null }) => {
   useBodyScrollLock(true);
   const [savedThemes, setSavedThemes] = useState(Array.isArray(themes) ? themes : []);
   const [draft, setDraft] = useState(() => (initialMenu ? normalize(initialMenu) : buildDefaultMenuTemplate({ name: '' })));
@@ -847,7 +859,7 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, onDelete = nu
             <div className="menu-compact-preview-shell">
               <div className="menu-compact-preview__eyebrow">Canlı önizleme</div>
               <div className="menu-compact-preview">
-                <ThemePreview draft={draft} />
+                <ThemePreview draft={draft} restaurant={restaurant} />
               </div>
             </div>
           )}
