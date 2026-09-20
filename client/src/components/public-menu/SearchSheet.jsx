@@ -29,7 +29,7 @@ const SearchSheet = ({ value, onChange, results, onSelect, onClose, themeKey, mo
       onClick={(event) => event.target === event.currentTarget && handleClose()}
     >
       <div
-        className={`public-search-panel ${closing ? 'is-closing' : ''}`}
+        className={`public-search-panel ${value ? 'has-results' : ''} ${closing ? 'is-closing' : ''}`}
         data-theme={themeKey}
         data-mode={activeMode}
         role="dialog"
@@ -59,7 +59,7 @@ const SearchSheet = ({ value, onChange, results, onSelect, onClose, themeKey, mo
                 onClick={() => onChange('')}
                 aria-label="Aramayı temizle"
               >
-                ✕
+                Sil
               </button>
             )}
           </div>

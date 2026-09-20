@@ -147,6 +147,7 @@ export const getPublicMenu = async (req, res, next) => {
         theme: settings?.theme || 'MINIMAL',
         socialMedia: Array.isArray(settings?.socialMedia) ? settings.socialMedia.filter((item) => item && item.url).map((item) => ({ platform: item.platform, url: item.url.trim() })) : [],
         menuStatus: restaurant.menuStatus,
+        menuViewCount: (restaurant.menuViewCount || 0) + 1,
         menuTheme,
         activeMenuId,
         savedMenus: sourceMenus,

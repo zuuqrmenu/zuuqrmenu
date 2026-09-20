@@ -4,6 +4,16 @@ import SeoHead from '../components/SeoHead';
 import { trackEvent } from '../utils/analytics';
 import { getPanelUrl } from '../utils/domainHelpers';
 import { useAuth } from '../context/AuthContext';
+import { publicMenuService } from '../services/publicMenuService';
+
+const prefetchDemo = () => {
+  try {
+    import('./MenuShowcase');
+    import('./PublicMenu');
+    publicMenuService.prefetchMenu('demo');
+    publicMenuService.prefetchMenu('demo2');
+  } catch (_) {}
+};
 
 /* ─── Static data ─────────────────────────────────────────── */
 const steps = [
@@ -287,7 +297,19 @@ const LandingPage = () => {
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
 
-    return () => { observer.disconnect(); window.removeEventListener('scroll', onScroll); };
+    /* Idle prefetch of menu bundle & demo data for instant navigation */
+    const idleTimer = typeof window !== 'undefined' && 'requestIdleCallback' in window
+      ? window.requestIdleCallback(prefetchDemo, { timeout: 3000 })
+      : setTimeout(prefetchDemo, 2000);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('scroll', onScroll);
+      if (typeof window !== 'undefined') {
+        if ('cancelIdleCallback' in window) window.cancelIdleCallback(idleTimer);
+        else clearTimeout(idleTimer);
+      }
+    };
   }, []);
 
   return (
@@ -347,6 +369,8 @@ const LandingPage = () => {
                   to="/menu"
                   className="lp2-cta-btn lp2-cta-btn--ghost"
                   onClick={() => trackEvent('click_cta', { cta_name: 'view_demo', location: 'hero' })}
+                  onMouseEnter={prefetchDemo}
+                  onTouchStart={prefetchDemo}
                 >
                   Demo Menüyü Gör <span>→</span>
                 </Link>

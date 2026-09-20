@@ -16,6 +16,7 @@ import { getPublicMenuTheme, publicMenuFonts } from '../utils/publicMenuTheme';
 import { trackEvent } from '../utils/analytics';
 import useBodyScrollLock from '../hooks/useBodyScrollLock';
 import BlurImage from '../components/common/BlurImage';
+import PublicMenuSkeleton from '../components/public-menu/PublicMenuSkeleton';
 
 const langOptions = [
   { code: 'tr', label: 'Türkçe', short: 'TR' },
@@ -26,11 +27,18 @@ const langOptions = [
 const PublicMenu = () => {
   const { username } = useParams();
   const publicSiteOrigin = 'https://zuuqrmenu.com';
-  const [data, setData] = useState(null);
-  const [status, setStatus] = useState('loading');
+  const cachedMenu = publicMenuService.getCachedMenu(username);
+  const [data, setData] = useState(() => cachedMenu);
+  const [status, setStatus] = useState(() => {
+    if (!cachedMenu) return 'loading';
+    if (cachedMenu.status === 'PREPARING' || cachedMenu.status === 'HIDDEN') {
+      return cachedMenu.status === 'HIDDEN' ? 'hidden' : 'preparing';
+    }
+    return 'ready';
+  });
   const [selectedGridCategory, setSelectedGridCategory] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [activeCategory, setActiveCategory] = useState('');
+  const [activeCategory, setActiveCategory] = useState(() => cachedMenu?.categories?.[0]?.id || '');
   const [drawer, setDrawer] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -73,7 +81,10 @@ const PublicMenu = () => {
 
   useEffect(() => {
     let mounted = true;
-    setStatus('loading');
+    const existing = publicMenuService.getCachedMenu(username);
+    if (!existing) {
+      setStatus('loading');
+    }
     publicMenuService.getMenu(username)
       .then((result) => {
         if (!mounted) return;
@@ -82,11 +93,11 @@ const PublicMenu = () => {
           setStatus(result.status === 'HIDDEN' ? 'hidden' : 'preparing');
           return;
         }
-        setActiveCategory(result.categories[0]?.id || '');
+        setActiveCategory((prev) => prev || result.categories[0]?.id || '');
         setStatus('ready');
       })
       .catch(() => {
-        if (mounted) setStatus('unavailable');
+        if (mounted && !existing) setStatus('unavailable');
       });
     return () => { mounted = false; };
   }, [username]);
@@ -129,7 +140,7 @@ const PublicMenu = () => {
   useBodyScrollLock(Boolean(selectedProduct || drawer || reviewOpen || searchOpen));
 
   useEffect(() => {
-    const close = (event) => event.key === 'Escape' && (setSelectedProduct(null), setDrawer(''), setReviewOpen(false), setSearchOpen(false));
+    const close = (event) => event.key === 'Escape' && (setSelectedProduct(null), setDrawer(''), setReviewOpen(false), setSearchOpen(false), setSearch(''));
     document.addEventListener('keydown', close);
     return () => document.removeEventListener('keydown', close);
   }, []);
@@ -199,7 +210,7 @@ const PublicMenu = () => {
     localStorage.setItem('zuulab-language', value);
   };
 
-  if (status === 'loading') return <div className="public-state"><div className="public-loader" /><p>Menü hazırlanıyor...</p></div>;
+  if (status === 'loading') return <PublicMenuSkeleton />;
   if (status === 'preparing') return <div className="public-state public-state--preparing"><div className="public-state__icon">✦</div><h1>{data?.restaurant?.name || 'Menünüz'} hazırlanıyor</h1><p>Bu menü henüz yayına alınmadı. Çok yakında burada olacağız.</p></div>;
   if (status === 'hidden') return <div className="public-state public-state--hidden"><div className="public-state__icon">—</div><h1>Menü geçici olarak kapalı</h1><p>Bu menü sahibi tarafından geçici olarak erişime kapatıldı.</p></div>;
   if (status === 'unavailable') return <div className="public-state"><div className="public-state__icon">—</div><h1>Menü bulunamadı.</h1><p>Bu menü şu anda kullanılamıyor.</p></div>;
@@ -368,6 +379,10 @@ const PublicMenu = () => {
             <MenuHeader
               restaurant={data.restaurant}
               onOpenCategories={() => setDrawer('categories')}
+              onOpenSearch={() => {
+                setSearch('');
+                setSearchOpen(true);
+              }}
               onOpenInfo={() => {
                 trackEvent('view_restaurant_info', {
                   restaurant_username: username,
@@ -406,7 +421,76 @@ const PublicMenu = () => {
           </main>
         )}
 
-        <footer className="public-footer">zuuqrmenu <span>•</span> Dijital Menü</footer>
+        <footer className="public-footer">
+          <p className="public-footer__powered">Powered by zuuqrmenu</p>
+          <div className="eco-leaf-banner" aria-label="Çevre dostu dijital menü">
+            <div className="eco-ambient-leaves" aria-hidden="true">
+              <span className="eco-ambient-leaf eco-ambient-leaf--1">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor">
+                  <path
+                    d="M19 3C15 4 8.5 8.5 7.5 14c-.8 4.2 1.8 7.5 5.2 7.5 4.5 0 7.5-5 8-10 .3-4-.5-7.5-1.7-8.5z"
+                    fill="currentColor"
+                    fillOpacity="0.45"
+                    strokeWidth="1.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M8.5 19.5C11.5 16 14.5 10.5 19 3"
+                    stroke="currentColor"
+                    strokeWidth="1.1"
+                    strokeLinecap="round"
+                    opacity="0.8"
+                  />
+                  <path d="M11.5 15.5c-1.5-.6-2.5-1.4-3-2.2" stroke="currentColor" strokeWidth="0.8" opacity="0.6" strokeLinecap="round" />
+                  <path d="M14 12c1.8-.4 3.2-1.2 3.8-2" stroke="currentColor" strokeWidth="0.8" opacity="0.6" strokeLinecap="round" />
+                </svg>
+              </span>
+              <span className="eco-ambient-leaf eco-ambient-leaf--2">
+                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor">
+                  <path
+                    d="M20 4c-3.8 2-9 6-11 11.5-1.2 3.3.4 6 3 6 4 0 7.2-4.5 8.8-10.5.8-3 .2-6-.8-7z"
+                    fill="currentColor"
+                    fillOpacity="0.4"
+                    strokeWidth="1.1"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M10 20C12.5 16.5 15.5 11 20 4"
+                    stroke="currentColor"
+                    strokeWidth="1"
+                    strokeLinecap="round"
+                    opacity="0.75"
+                  />
+                </svg>
+              </span>
+              <span className="eco-ambient-leaf eco-ambient-leaf--3">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor">
+                  <path
+                    d="M18.5 4.5c-3.2 1.5-7 5.2-7.8 9.5-.7 3.5 1.4 6.5 4.3 6.5 3.6 0 6-3.8 6.5-8.2.4-3.2-.3-6.5-3-7.8z"
+                    fill="currentColor"
+                    fillOpacity="0.45"
+                    strokeWidth="1.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M12.5 19c2.2-3 4.8-7.5 6-14.5"
+                    stroke="currentColor"
+                    strokeWidth="1"
+                    strokeLinecap="round"
+                    opacity="0.8"
+                  />
+                  <path d="M14.5 15c-1.2-.5-2-1.2-2.5-1.8" stroke="currentColor" strokeWidth="0.8" opacity="0.6" strokeLinecap="round" />
+                </svg>
+              </span>
+            </div>
+            <span className="eco-leaf-banner__text">
+              Bu menü kağıda basılmadı. Birlikte <strong>{Number(data.restaurant?.menuViewCount || 1).toLocaleString('tr-TR')}</strong> yaprak koruduk.
+            </span>
+          </div>
+        </footer>
       </div>
       <ProductDetailModal
         product={selectedProduct}
@@ -537,27 +621,48 @@ const PublicMenu = () => {
                     </button>
                   </div>
 
-                  <p className="drawer-grid-powered">POWERED BY ZUUQRMENU</p>
+                  <p className="drawer-grid-powered">Powered by zuuqrmenu</p>
                 </div>
               </div>
             ) : (
               <>
-                <button type="button" className="drawer-close" onClick={() => setDrawer('')} aria-label="Kapat">×</button>
-                <div className="drawer-store-image">
-                  {data.restaurant.storeImage ? <BlurImage src={data.restaurant.storeImage} alt={`${data.restaurant.name} mağaza görseli`} /> : <span aria-hidden="true">{data.restaurant.name.charAt(0)}</span>}
+                <button
+                  type="button"
+                  className="drawer-close"
+                  onClick={() => setDrawer('')}
+                  aria-label="Kapat"
+                >
+                  <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2.4" fill="none" strokeLinecap="round">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+                {(() => {
+                  const catStoreImg = data.restaurant.storeImage || data.restaurant.coverImage || data.restaurant.logo;
+                  return (
+                    <div className={`drawer-store-image ${catStoreImg ? 'has-image' : 'no-image'}`}>
+                      {catStoreImg ? (
+                        <BlurImage src={catStoreImg} alt={`${data.restaurant.name} mağaza görseli`} />
+                      ) : (
+                        <span aria-hidden="true">{data.restaurant.name.charAt(0)}</span>
+                      )}
+                    </div>
+                  );
+                })()}
+                <div className="drawer-body">
+                  <h2>{data.restaurant.name}</h2>
+                  <p className="drawer-label">Kategoriler</p>
+                  {data.categories.map((category) => (
+                    <button
+                      type="button"
+                      className={`drawer-category ${activeCategory === category.id ? 'is-active' : ''}`}
+                      key={category.id}
+                      onClick={() => scrollToCategory(category.id)}
+                    >
+                      {category.name}
+                    </button>
+                  ))}
                 </div>
-                <h2>{data.restaurant.name}</h2>
-                <p className="drawer-label">Kategoriler</p>
-                {data.categories.map((category) => (
-                  <button
-                    type="button"
-                    className={`drawer-category ${activeCategory === category.id ? 'is-active' : ''}`}
-                    key={category.id}
-                    onClick={() => scrollToCategory(category.id)}
-                  >
-                    {category.name}
-                  </button>
-                ))}
               </>
             )}
           </aside>
@@ -596,6 +701,7 @@ const PublicMenu = () => {
             }
             selectProduct(product);
             setSearchOpen(false);
+            setSearch('');
           }}
           onClose={() => {
             setSearchOpen(false);
@@ -614,6 +720,7 @@ const PublicMenu = () => {
               restaurant_username: username,
               restaurant_name: data?.restaurant?.name,
             });
+            setSearch('');
             setSearchOpen(true);
           }}
           aria-label="Ürün ara"

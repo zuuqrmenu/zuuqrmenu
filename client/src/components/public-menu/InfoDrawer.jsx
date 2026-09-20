@@ -160,7 +160,7 @@ const InfoDrawer = ({ restaurant, language, onLanguage, onReview, onClose, theme
             </div>
 
             <div className="drawer-grid-footer">
-              <p className="drawer-grid-powered">POWERED BY ZUUQRMENU</p>
+              <p className="drawer-grid-powered">Powered by zuuqrmenu</p>
             </div>
           </div>
         </aside>
@@ -168,108 +168,140 @@ const InfoDrawer = ({ restaurant, language, onLanguage, onReview, onClose, theme
     );
   }
 
+  const logoImg = restaurant.logo || restaurant.storeImage || restaurant.coverImage;
+
   return (
-    <div className="public-drawer-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <aside className="public-drawer public-drawer--right">
-        <button type="button" className="drawer-close" onClick={onClose} aria-label="Kapat">×</button>
-        <div className="drawer-store-image">{restaurant.logo ? <BlurImage src={restaurant.logo} alt={`${restaurant.name} logosu`} /> : restaurant.storeImage ? <BlurImage src={restaurant.storeImage} alt={`${restaurant.name} mağaza görseli`} /> : <span aria-hidden="true">{restaurant.name.charAt(0)}</span>}</div>
-        <h2>{restaurant.name}</h2>
-        <p className="drawer-label">Dil</p>
-        <div className="language-options">{[['tr','Türkçe'],['en','English'],['ar','العربية']].map(([value,label]) => <button type="button" key={value} className={language === value ? 'is-selected' : ''} onClick={() => onLanguage(value)}>{label}</button>)}</div>
+    <div
+      className="public-drawer-backdrop"
+      data-theme={themeKey}
+      data-mode={activeMode}
+      role="presentation"
+      onMouseDown={(event) => event.target === event.currentTarget && onClose()}
+    >
+      <aside
+        className={`public-drawer public-drawer--right ${logoImg ? 'has-media' : 'no-media'}`}
+        data-theme={themeKey}
+        data-mode={activeMode}
+      >
         <button
           type="button"
-          className="review-open-button"
-          onClick={() => {
-            trackEvent('open_review', {
-              restaurant_username: restaurant.slug || restaurant.username,
-              restaurant_name: restaurant.name,
-            });
-            onClose();
-            onReview();
-          }}
+          className="drawer-close"
+          onClick={onClose}
+          aria-label="Kapat"
         >
-          ★ Bizi Değerlendirin
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2.4" fill="none" strokeLinecap="round">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
         </button>
-        {socialItems.length > 0 && (
-          <div className="drawer-socials" aria-label="Sosyal medya hesapları">
-            <div className="drawer-socials__list">
-              {socialItems.map((item) => (
+        <div className={`drawer-store-image drawer-store-image--logo ${logoImg ? 'has-image' : 'no-image'}`}>
+          {logoImg ? (
+            <div className="drawer-logo-wrap">
+              <BlurImage src={logoImg} alt={`${restaurant.name} logosu`} />
+            </div>
+          ) : (
+            <span aria-hidden="true">{restaurant.name.charAt(0)}</span>
+          )}
+        </div>
+        <div className="drawer-body">
+          <h2>{restaurant.name}</h2>
+          <p className="drawer-label">Dil</p>
+          <div className="language-options">{[['tr','Türkçe'],['en','English'],['ar','العربية']].map(([value,label]) => <button type="button" key={value} className={language === value ? 'is-selected' : ''} onClick={() => onLanguage(value)}>{label}</button>)}</div>
+          <button
+            type="button"
+            className="review-open-button"
+            onClick={() => {
+              trackEvent('open_review', {
+                restaurant_username: restaurant.slug || restaurant.username,
+                restaurant_name: restaurant.name,
+              });
+              onClose();
+              onReview();
+            }}
+          >
+            ★ Bizi Değerlendirin
+          </button>
+          {socialItems.length > 0 && (
+            <div className="drawer-socials" aria-label="Sosyal medya hesapları">
+              <div className="drawer-socials__list">
+                {socialItems.map((item) => (
+                  <a
+                    key={`${item.platform}-${item.url}`}
+                    href={item.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="drawer-social-link"
+                    aria-label={platformLabels[item.platform] || item.platform}
+                    title={platformLabels[item.platform] || item.platform}
+                    onClick={() => {
+                      trackEvent('click_social', {
+                        restaurant_username: restaurant.slug || restaurant.username,
+                        platform: item.platform,
+                      });
+                    }}
+                  >
+                    <span className="drawer-social-link__icon">{socialIcons[item.platform] || socialIcons.website}</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+          {restaurant.address && (
+            <div className="drawer-address-block">
+              <p className="drawer-label drawer-label--address"><span className="address-pin">⌖</span> Adres</p>
+              <p className="drawer-address">{restaurant.address}</p>
+            </div>
+          )}
+          {(restaurant.phone || restaurant.email || restaurant.website) && (
+            <div className="drawer-contact-block">
+              <p className="drawer-label">İletişim</p>
+              {restaurant.phone && (
                 <a
-                  key={`${item.platform}-${item.url}`}
-                  href={item.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="drawer-social-link"
-                  aria-label={platformLabels[item.platform] || item.platform}
-                  title={platformLabels[item.platform] || item.platform}
+                  href={`tel:${restaurant.phone}`}
+                  className="drawer-contact-link"
                   onClick={() => {
-                    trackEvent('click_social', {
+                    trackEvent('click_contact', {
                       restaurant_username: restaurant.slug || restaurant.username,
-                      platform: item.platform,
+                      contact_type: 'phone',
                     });
                   }}
                 >
-                  <span className="drawer-social-link__icon">{socialIcons[item.platform] || socialIcons.website}</span>
+                  {restaurant.phone}
                 </a>
-              ))}
+              )}
+              {restaurant.email && (
+                <a
+                  href={`mailto:${restaurant.email}`}
+                  className="drawer-contact-link"
+                  onClick={() => {
+                    trackEvent('click_contact', {
+                      restaurant_username: restaurant.slug || restaurant.username,
+                      contact_type: 'email',
+                    });
+                  }}
+                >
+                  {restaurant.email}
+                </a>
+              )}
+              {restaurant.website && (
+                <a
+                  href={restaurant.website}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="drawer-contact-link"
+                  onClick={() => {
+                    trackEvent('click_contact', {
+                      restaurant_username: restaurant.slug || restaurant.username,
+                      contact_type: 'website',
+                    });
+                  }}
+                >
+                  Web sitesini ziyaret et
+                </a>
+              )}
             </div>
-          </div>
-        )}
-        {restaurant.address && (
-          <div className="drawer-address-block">
-            <p className="drawer-label drawer-label--address"><span className="address-pin">⌖</span> Adres</p>
-            <p className="drawer-address">{restaurant.address}</p>
-          </div>
-        )}
-        {(restaurant.phone || restaurant.email || restaurant.website) && (
-          <div className="drawer-contact-block">
-            <p className="drawer-label">İletişim</p>
-            {restaurant.phone && (
-              <a
-                href={`tel:${restaurant.phone}`}
-                className="drawer-contact-link"
-                onClick={() => {
-                  trackEvent('click_contact', {
-                    restaurant_username: restaurant.slug || restaurant.username,
-                    contact_type: 'phone',
-                  });
-                }}
-              >
-                {restaurant.phone}
-              </a>
-            )}
-            {restaurant.email && (
-              <a
-                href={`mailto:${restaurant.email}`}
-                className="drawer-contact-link"
-                onClick={() => {
-                  trackEvent('click_contact', {
-                    restaurant_username: restaurant.slug || restaurant.username,
-                    contact_type: 'email',
-                  });
-                }}
-              >
-                {restaurant.email}
-              </a>
-            )}
-            {restaurant.website && (
-              <a
-                href={restaurant.website}
-                target="_blank"
-                rel="noreferrer"
-                className="drawer-contact-link"
-                onClick={() => {
-                  trackEvent('click_contact', {
-                    restaurant_username: restaurant.slug || restaurant.username,
-                    contact_type: 'website',
-                  });
-                }}
-              >
-                Web sitesini ziyaret et
-              </a>
-            )}
-          </div>
-        )}
+          )}
+        </div>
       </aside>
     </div>
   );

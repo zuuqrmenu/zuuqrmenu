@@ -16,6 +16,7 @@ const QrManagement = lazy(() => import('./pages/QrManagement'));
 const Analytics = lazy(() => import('./pages/Analytics'));
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const MenuShowcase = lazy(() => import('./pages/MenuShowcase'));
+import PublicMenuSkeleton from './components/public-menu/PublicMenuSkeleton';
 
 // Initialise GA4 once when the module is first loaded
 initGA();
@@ -241,7 +242,14 @@ function App() {
             <Route path="/dashboard/settings" element={<RestaurantRoute settings />} />
             <Route path="/dashboard/analytics" element={<RestaurantRoute analytics />} />
             <Route path="/dashboard/qr" element={<RestaurantRoute qr />} />
-            <Route path="/:username/menu" element={<PublicMenu />} />
+            <Route
+              path="/:username/menu"
+              element={
+                <Suspense fallback={<PublicMenuSkeleton />}>
+                  <PublicMenu />
+                </Suspense>
+              }
+            />
             <Route path="/menu" element={<MenuShowcase />} />
             <Route path="/" element={<HomeRoute />} />
             <Route path="*" element={<Navigate to="/" replace />} />

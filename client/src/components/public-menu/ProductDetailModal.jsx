@@ -127,6 +127,9 @@ const ProductDetailModal = ({ product, onClose, allProducts = [], onSelectProduc
     dragStartY.current = null;
     isDragging.current = false;
     isHandleDrag.current = false;
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = 0;
+    }
   }, [product]);
 
   if (!product) return null;
@@ -235,7 +238,7 @@ const ProductDetailModal = ({ product, onClose, allProducts = [], onSelectProduc
     >
       <div
         ref={sheetRef}
-        className={`public-modal public-sheet ${isGrid ? 'public-modal--grid' : ''}`}
+        className={`public-modal ${isGrid ? 'public-modal--grid' : ''} ${product.image ? 'has-media' : 'no-media'}`}
         data-theme={themeKey}
         data-mode={activeMode}
         role="dialog"
@@ -264,7 +267,7 @@ const ProductDetailModal = ({ product, onClose, allProducts = [], onSelectProduc
 
         <div ref={scrollRef} className="public-modal__scrollable">
           {product.image || !isGrid ? (
-            <div className="public-modal__header-media">
+            <div className={`public-modal__header-media ${product.image ? 'has-image' : 'no-image'}`}>
               {!isGrid && (
                 <div
                   className="sheet-handle-zone"
@@ -356,7 +359,12 @@ const ProductDetailModal = ({ product, onClose, allProducts = [], onSelectProduc
                           key={rec.id}
                           type="button"
                           className={`modal-rec-card ${hasImage ? 'has-image' : 'no-image'}`}
-                          onClick={() => onSelectProduct?.(rec)}
+                          onClick={() => {
+                            if (scrollRef.current) {
+                              scrollRef.current.scrollTop = 0;
+                            }
+                            onSelectProduct?.(rec);
+                          }}
                           aria-label={`${rec.name} ürününü görüntüle`}
                         >
                           <div className="modal-rec-card__body">

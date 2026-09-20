@@ -3,6 +3,17 @@ import { Link } from 'react-router-dom';
 import SeoHead from '../components/SeoHead';
 import { trackEvent } from '../utils/analytics';
 import { getPanelUrl } from '../utils/domainHelpers';
+import { publicMenuService } from '../services/publicMenuService';
+
+const prefetchDemo = (demoUrl) => {
+  try {
+    import('./PublicMenu');
+    const username = demoUrl?.replace('/menu', '').replace('/', '');
+    if (username) {
+      publicMenuService.prefetchMenu(username);
+    }
+  } catch (_) {}
+};
 
 const themes = [
   {
@@ -137,11 +148,13 @@ const ThemeCard = ({ theme, isLatest }) => {
         ))}
       </ul>
 
-      <a
-        href={theme.demoUrl}
+      <Link
+        to={theme.demoUrl}
         className="tsc-card__cta"
         style={{ '--cta-accent': theme.mockupAccent, '--cta-bg': `${theme.mockupAccent}12` }}
         onClick={() => trackEvent('click_theme_demo', { theme_id: theme.id, theme_name: theme.name })}
+        onMouseEnter={() => prefetchDemo(theme.demoUrl)}
+        onTouchStart={() => prefetchDemo(theme.demoUrl)}
         aria-label={`${theme.name} temasını önizle`}
       >
         <span>Temayı Önizle</span>
@@ -149,7 +162,7 @@ const ThemeCard = ({ theme, isLatest }) => {
           <line x1="5" y1="12" x2="19" y2="12" />
           <polyline points="12 5 19 12 12 19" />
         </svg>
-      </a>
+      </Link>
     </div>
   </article>
   );
