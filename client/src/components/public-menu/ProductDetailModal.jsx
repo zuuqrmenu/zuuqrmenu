@@ -119,6 +119,15 @@ const ProductDetailModal = ({ product, onClose, allProducts = [], onSelectProduc
       .slice(0, 6);
   }, [allProducts, product]);
 
+  const [hasMoreContent, setHasMoreContent] = useState(false);
+
+  const checkScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const remaining = el.scrollHeight - el.scrollTop - el.clientHeight;
+    setHasMoreContent(remaining > 28);
+  };
+
   useEffect(() => {
     setClosing(false);
     setDragOffset(0);
@@ -130,6 +139,19 @@ const ProductDetailModal = ({ product, onClose, allProducts = [], onSelectProduc
     if (scrollRef.current) {
       scrollRef.current.scrollTop = 0;
     }
+
+    const el = scrollRef.current;
+    if (!el) return;
+    checkScroll();
+
+    const timer = setTimeout(checkScroll, 90);
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => checkScroll()) : null;
+    ro?.observe(el);
+
+    return () => {
+      clearTimeout(timer);
+      ro?.disconnect();
+    };
   }, [product]);
 
   if (!product) return null;
@@ -265,7 +287,7 @@ const ProductDetailModal = ({ product, onClose, allProducts = [], onSelectProduc
           </svg>
         </button>
 
-        <div ref={scrollRef} className="public-modal__scrollable">
+        <div ref={scrollRef} className="public-modal__scrollable" onScroll={checkScroll}>
           {product.image || !isGrid ? (
             <div className={`public-modal__header-media ${product.image ? 'has-image' : 'no-image'}`}>
               {!isGrid && (
@@ -396,7 +418,7 @@ const ProductDetailModal = ({ product, onClose, allProducts = [], onSelectProduc
               )}
 
               <div className="modal-grid-footer">
-                <span>⚡ Powered by zuuqrmenu</span>
+                <span>Powered by zuuqrmenu</span>
               </div>
             </>
           ) : (
@@ -452,6 +474,11 @@ const ProductDetailModal = ({ product, onClose, allProducts = [], onSelectProduc
           )}
         </div>
         </div>
+
+        <div
+          className={`public-modal__scroll-fade ${hasMoreContent ? 'is-visible' : ''}`}
+          aria-hidden="true"
+        />
       </div>
     </div>
   );

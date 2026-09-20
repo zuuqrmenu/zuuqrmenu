@@ -8442,6 +8442,50 @@ body.modal-scroll-locked {
   padding: 1.35rem 1.4rem 2.5rem;
 }
 
+/* Scroll Fade Indicator for overflow content (Both Themes) */
+.public-modal__scroll-fade {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4.25rem;
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgba(255, 253, 248, 0) 0%, rgba(255, 253, 248, 0.55) 40%, rgba(255, 253, 248, 0.96) 100%);
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 55%);
+  mask-image: linear-gradient(to bottom, transparent 0%, black 55%);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.28s ease, visibility 0.28s ease;
+  z-index: 15;
+  border-bottom-left-radius: inherit;
+  border-bottom-right-radius: inherit;
+}
+
+.public-modal__scroll-fade.is-visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Dark Mode for Default Theme */
+.public-modal[data-mode='DARK'] .public-modal__scroll-fade,
+.public-menu-shell[data-mode='DARK'] .public-modal .public-modal__scroll-fade,
+.preview-menu-shell[data-mode='DARK'] .public-modal .public-modal__scroll-fade {
+  background: linear-gradient(to bottom, rgba(17, 18, 21, 0) 0%, rgba(17, 18, 21, 0.6) 40%, rgba(17, 18, 21, 0.98) 100%);
+}
+
+/* Modern (Grid) Theme Dark Mode */
+.public-modal--grid .public-modal__scroll-fade {
+  background: linear-gradient(to bottom, rgba(18, 19, 22, 0) 0%, rgba(18, 19, 22, 0.65) 40%, rgba(18, 19, 22, 0.98) 100%);
+}
+
+/* Modern (Grid) Theme Light Mode */
+.public-modal--grid[data-mode='LIGHT'] .public-modal__scroll-fade,
+.public-modal-backdrop[data-mode='LIGHT'] .public-modal--grid .public-modal__scroll-fade {
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.65) 40%, rgba(255, 255, 255, 0.98) 100%);
+}
+
 .public-modal__content--no-image,
 .public-modal.no-media .public-modal__content {
   padding-top: 2rem;
@@ -20044,12 +20088,17 @@ body[data-dashboard-theme='dark'] .date-range-popover svg {
 }
 
 .modal-grid-footer {
-  margin-top: 1.75rem;
+  margin-top: 0.5rem;
+  padding-bottom: max(0.35rem, env(safe-area-inset-bottom));
   text-align: center;
-  font-size: 0.76rem;
+  font-size: 0.74rem;
   color: rgba(255, 255, 255, 0.4);
   font-weight: 600;
   letter-spacing: 0.02em;
+}
+
+.public-modal--grid .public-modal__content {
+  padding-bottom: 0.75rem;
 }
 
 /* --------------------------------------------------------------------------
