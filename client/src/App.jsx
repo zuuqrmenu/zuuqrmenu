@@ -237,6 +237,9 @@ function App() {
             <Route path="/pending-approval" element={<PendingRoute />} />
             <Route path="/admin" element={<AdminRoute />} />
             <Route path="/admin/restaurants" element={<AdminRoute />} />
+            <Route path="/admin/services" element={<AdminRoute />} />
+            <Route path="/admin/resources" element={<AdminRoute />} />
+            <Route path="/admin/settings" element={<AdminRoute />} />
             <Route path="/dashboard" element={<RestaurantRoute />} />
             <Route path="/dashboard/menu" element={<RestaurantRoute menu />} />
             <Route path="/dashboard/settings" element={<RestaurantRoute settings />} />

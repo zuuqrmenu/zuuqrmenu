@@ -393,13 +393,30 @@ const LandingPage = () => {
         {/* ══ TICKER ════════════════════════════════════════ */}
         <div className="lp2-ticker" aria-hidden="true">
           <div className="lp2-ticker__track">
-            {['Tek menü sistemi', 'Her ekranda iyi görünür', 'QR ile anında erişim', 'Gerçek zamanlı analiz', 'Kolay yönetim', 'Anlık güncelleme'].map((t, i) => (
-              <span key={i}><b>✦</b> {t}</span>
-            ))}
-            {/* duplicate for seamless loop */}
-            {['Tek menü sistemi', 'Her ekranda iyi görünür', 'QR ile anında erişim', 'Gerçek zamanlı analiz', 'Kolay yönetim', 'Anlık güncelleme'].map((t, i) => (
-              <span key={`d${i}`} aria-hidden="true"><b>✦</b> {t}</span>
-            ))}
+            <div className="lp2-ticker__group">
+              {[...Array(4)].flatMap(() => [
+                'Tek menü sistemi',
+                'Her ekranda iyi görünür',
+                'QR ile anında erişim',
+                'Gerçek zamanlı analiz',
+                'Kolay yönetim',
+                'Anlık güncelleme'
+              ]).map((t, i) => (
+                <span key={`t1-${i}`}><b>✦</b> {t}</span>
+              ))}
+            </div>
+            <div className="lp2-ticker__group" aria-hidden="true">
+              {[...Array(4)].flatMap(() => [
+                'Tek menü sistemi',
+                'Her ekranda iyi görünür',
+                'QR ile anında erişim',
+                'Gerçek zamanlı analiz',
+                'Kolay yönetim',
+                'Anlık güncelleme'
+              ]).map((t, i) => (
+                <span key={`t2-${i}`}><b>✦</b> {t}</span>
+              ))}
+            </div>
           </div>
         </div>
 

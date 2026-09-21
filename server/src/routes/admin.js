@@ -10,6 +10,7 @@ import {
   suspendRestaurant,
   updateRestaurant,
 } from '../controllers/adminController.js';
+import { getExternalServicesUsage } from '../controllers/externalServicesController.js';
 import { adminAuth, auth } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -24,5 +25,6 @@ router.patch('/restaurants/:id/reject', rejectRestaurant);
 router.patch('/restaurants/:id/suspend', suspendRestaurant);
 router.patch('/restaurants/:id/activate', activateRestaurant);
 router.get('/stats', getStats);
+router.get('/external-services', getExternalServicesUsage);
 
 export default router;

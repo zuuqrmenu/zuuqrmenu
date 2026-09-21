@@ -25,4 +25,13 @@ export const adminService = {
     const response = await api.delete(`/admin/restaurants/${restaurantId}`);
     return response.data;
   },
+
+  getExternalServicesUsage: async ({ refresh = false, service = '' } = {}) => {
+    const params = new URLSearchParams();
+    if (refresh) params.append('refresh', 'true');
+    if (service) params.append('service', service);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const response = await api.get(`/admin/external-services${qs}`);
+    return response.data;
+  },
 };

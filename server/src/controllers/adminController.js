@@ -22,7 +22,7 @@ const getRestaurantOrError = async (id, res) => {
     return null;
   }
 
-  const restaurant = await Restaurant.findById(id).populate('ownerId', 'email name');
+  const restaurant = await Restaurant.findById(id).populate('ownerId', 'email name username');
   if (!restaurant) {
     res.status(404).json({ error: 'Restoran bulunamadı' });
     return null;
@@ -45,7 +45,7 @@ const updateRestaurantStatus = async (req, res, next, expectedStatus, nextStatus
     restaurant.status = nextStatus;
     await restaurant.save();
 
-    const updatedRestaurant = await Restaurant.findById(restaurant._id).populate('ownerId', 'email name');
+    const updatedRestaurant = await Restaurant.findById(restaurant._id).populate('ownerId', 'email name username');
     res.json({ message: 'Restoran durumu güncellendi', restaurant: updatedRestaurant });
   } catch (error) {
     next(error);
@@ -55,7 +55,7 @@ const updateRestaurantStatus = async (req, res, next, expectedStatus, nextStatus
 export const listRestaurants = async (req, res, next) => {
   try {
     const restaurants = await Restaurant.find()
-      .populate('ownerId', 'email name')
+      .populate('ownerId', 'email name username')
       .sort({ createdAt: -1 });
 
     res.json({ restaurants });
@@ -106,7 +106,7 @@ export const getStats = async (req, res, next) => {
       Restaurant.find()
         .sort({ createdAt: -1 })
         .limit(6)
-        .populate('ownerId', 'email name')
+        .populate('ownerId', 'email name username')
         .lean(),
       Restaurant.aggregate([
         { $group: { _id: '$businessType', count: { $sum: 1 } } },
@@ -169,7 +169,7 @@ export const activateRestaurant = async (req, res, next) => {
 
     restaurant.status = 'ACTIVE';
     await restaurant.save();
-    const updatedRestaurant = await Restaurant.findById(restaurant._id).populate('ownerId', 'email name');
+    const updatedRestaurant = await Restaurant.findById(restaurant._id).populate('ownerId', 'email name username');
     res.json({ message: 'Restoran aktifleştirildi', restaurant: updatedRestaurant });
   } catch (error) {
     next(error);
@@ -229,7 +229,7 @@ export const updateRestaurant = async (req, res, next) => {
       }
     }
 
-    const updatedRestaurant = await Restaurant.findById(restaurant._id).populate('ownerId', 'email name');
+    const updatedRestaurant = await Restaurant.findById(restaurant._id).populate('ownerId', 'email name username');
     res.json({ message: 'Restoran ve kullanıcı bilgileri güncellendi', restaurant: updatedRestaurant });
   } catch (error) {
     next(error);

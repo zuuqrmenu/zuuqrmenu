@@ -3,6 +3,21 @@ import { Link, useLocation } from 'react-router-dom';
 import AdminLayout from '../components/AdminLayout';
 import { adminService } from '../services/adminService';
 import DashboardSkeleton from '../components/DashboardSkeleton';
+import SystemLimitsTab from '../components/admin/SystemLimitsTab';
+import AdminSettingsTab from '../components/admin/AdminSettingsTab';
+import { getPublicMenuAbsoluteUrl } from '../utils/domainHelpers';
+
+const getMenuIdentity = (restaurant) => restaurant?.ownerId?.username || restaurant?.slug || '';
+
+const getRestaurantMenuUrl = (restaurant) => {
+  const identity = getMenuIdentity(restaurant);
+  return identity ? getPublicMenuAbsoluteUrl(identity) : null;
+};
+
+const getRestaurantMenuDisplay = (restaurant) => {
+  const identity = getMenuIdentity(restaurant);
+  return identity ? `zuuqrmenu.com/${identity}/menu` : '—';
+};
 
 const statusLabels = {
   PENDING: 'Onay Bekliyor',
@@ -257,6 +272,24 @@ const RowActionMenu = ({
             <span>Detayları Gör</span>
           </button>
 
+          {/* Menüyü Görüntüle */}
+          {getRestaurantMenuUrl(restaurant) && (
+            <a
+              href={getRestaurantMenuUrl(restaurant)}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => setOpen(false)}
+              className="flex w-full items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 text-left transition-colors"
+            >
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-600">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" y1="14" x2="21" y2="3" />
+              </svg>
+              <span>Menüyü Görüntüle</span>
+            </a>
+          )}
+
           {/* Pending Approval Options */}
           {isPending && (
             <>
@@ -395,14 +428,15 @@ const RestaurantDetailModal = ({
                 <BusinessTypeBadge type={restaurant.businessType} />
               </div>
               <div className="mt-1 flex items-center gap-3 text-xs text-slate-400">
-                {restaurant.slug && (
+                {getMenuIdentity(restaurant) && (
                   <a
-                    href={`https://zuuqrmenu.com/menu/${restaurant.slug}`}
+                    href={getRestaurantMenuUrl(restaurant)}
                     target="_blank"
                     rel="noreferrer"
                     className="font-mono text-emerald-700 hover:underline inline-flex items-center gap-1 font-semibold"
+                    title="Canlı Menüyü Aç"
                   >
-                    <span>zuuqrmenu.com/menu/{restaurant.slug}</span>
+                    <span>{getRestaurantMenuDisplay(restaurant)}</span>
                     <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
                       <polyline points="15 3 21 3 21 9" />
@@ -480,8 +514,31 @@ const RestaurantDetailModal = ({
                 </dd>
               </div>
               <div className="flex justify-between py-2">
-                <dt className="text-slate-500">Menü Yolu (Slug)</dt>
-                <dd className="font-semibold font-mono text-slate-800">/{restaurant.slug || '—'}</dd>
+                <dt className="text-slate-500">Canlı Menü Adresi</dt>
+                <dd className="font-semibold font-mono text-emerald-700">
+                  <a href={getRestaurantMenuUrl(restaurant)} target="_blank" rel="noreferrer" className="hover:underline inline-flex items-center gap-1">
+                    <span>/{getMenuIdentity(restaurant)}/menu</span>
+                    <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                      <polyline points="15 3 21 3 21 9" />
+                      <line x1="10" y1="14" x2="21" y2="3" />
+                    </svg>
+                  </a>
+                </dd>
+              </div>
+              <div className="flex justify-between py-2">
+                <dt className="text-slate-500">Kullanıcı Adı (Menü ID)</dt>
+                <dd className="font-semibold font-mono text-slate-800">
+                  {restaurant.ownerId?.username ? (
+                    <span className="text-emerald-700 font-bold">@{restaurant.ownerId.username}</span>
+                  ) : (
+                    <span className="text-slate-400 font-normal">Henüz seçilmedi</span>
+                  )}
+                </dd>
+              </div>
+              <div className="flex justify-between py-2">
+                <dt className="text-slate-500">Kayıt Slug'ı</dt>
+                <dd className="font-semibold font-mono text-slate-500">/{restaurant.slug || '—'}</dd>
               </div>
             </dl>
           </div>
@@ -842,6 +899,8 @@ const DeleteRestaurantModal = ({ restaurant, onClose, onConfirm, deleting }) => 
 const AdminDashboard = () => {
   const location = useLocation();
   const isRestaurantsPage = location.pathname === '/admin/restaurants';
+  const isServicesPage = location.pathname === '/admin/services' || location.pathname === '/admin/resources';
+  const isSettingsPage = location.pathname === '/admin/settings';
 
   const [stats, setStats] = useState(null);
   const [restaurants, setRestaurants] = useState([]);
@@ -888,8 +947,10 @@ const AdminDashboard = () => {
   };
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (!isServicesPage && !isSettingsPage && !stats) {
+      loadData();
+    }
+  }, [location.pathname, isServicesPage, isSettingsPage]);
 
   // Reset page to 1 when filters change
   useEffect(() => {
@@ -993,7 +1054,8 @@ const AdminDashboard = () => {
           const emailMatch = (r.ownerId?.email || '').toLocaleLowerCase('tr').includes(query);
           const cityMatch = (r.city || '').toLocaleLowerCase('tr').includes(query);
           const slugMatch = (r.slug || '').toLocaleLowerCase('tr').includes(query);
-          if (!nameMatch && !emailMatch && !cityMatch && !slugMatch) return false;
+          const usernameMatch = (r.ownerId?.username || '').toLocaleLowerCase('tr').includes(query);
+          if (!nameMatch && !emailMatch && !cityMatch && !slugMatch && !usernameMatch) return false;
         }
         return true;
       })
@@ -1023,9 +1085,26 @@ const AdminDashboard = () => {
   const publishedRatio = totalCount > 0 ? Math.round((publishedCount / totalCount) * 100) : 0;
 
   return (
-    <AdminLayout title={isRestaurantsPage ? 'Restoranlar | Yönetim Paneli' : 'Yönetim Paneli | zuuqrmenu'}>
-      <div className="overview-dashboard mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-8 sm:py-8">
-        {/* ─── Header ─────────────────────────────────────── */}
+    <AdminLayout
+      title={
+        isSettingsPage
+          ? 'Ayarlar | Yönetim Paneli'
+          : isServicesPage
+            ? 'Kaynak Kontrol | Yönetim Paneli'
+            : isRestaurantsPage
+              ? 'Restoranlar | Yönetim Paneli'
+              : 'Yönetim Paneli | zuuqrmenu'
+      }
+    >
+      {isSettingsPage ? (
+        <AdminSettingsTab />
+      ) : (
+        <div className="overview-dashboard mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-8 sm:py-8">
+          {isServicesPage ? (
+            <SystemLimitsTab />
+          ) : (
+            <>
+            {/* ─── Header ─────────────────────────────────────── */}
         <section className="overview-modern-header">
           <div className="overview-modern-header__identity">
             <span className="overview-modern-header__mark" aria-hidden="true">
@@ -1212,7 +1291,7 @@ const AdminDashboard = () => {
                             <div className="mt-3 flex items-center gap-2 text-xs text-slate-500 flex-wrap">
                               {restaurant.city && <span>📍 {restaurant.city}</span>}
                               {restaurant.phone && <span>📞 {restaurant.phone}</span>}
-                              {restaurant.slug && <span className="font-mono text-[10px]">/{restaurant.slug}</span>}
+                              <span className="font-mono text-[10px] text-emerald-700 font-semibold">/{getMenuIdentity(restaurant)}/menu</span>
                             </div>
                           </div>
 
@@ -1346,7 +1425,7 @@ const AdminDashboard = () => {
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Restoran adı, sahip e-postası, şehir veya slug ara..."
+                      placeholder="Restoran adı, kullanıcı adı (@demo), e-posta, şehir veya slug ara..."
                       className="w-full rounded-xl border border-slate-200 bg-slate-50/60 py-2.5 pl-10 pr-9 text-xs font-medium text-slate-800 outline-none transition-all placeholder:text-slate-400 focus:border-slate-900 focus:bg-white focus:ring-1 focus:ring-slate-900/10"
                     />
                     {searchQuery && (
@@ -1464,11 +1543,16 @@ const AdminDashboard = () => {
                                       </div>
                                       <div className="min-w-0">
                                         <p className="font-bold text-slate-900 text-sm truncate">{restaurant.name}</p>
-                                        {restaurant.slug && (
-                                          <span className="text-[11px] font-mono text-slate-400 truncate block">
-                                            /{restaurant.slug}
+                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                          <span className="text-[11px] font-mono text-emerald-700 font-semibold truncate block">
+                                            /{getMenuIdentity(restaurant)}/menu
                                           </span>
-                                        )}
+                                          {restaurant.ownerId?.username && (
+                                            <span className="text-[10px] text-slate-400 font-medium">
+                                              (@{restaurant.ownerId.username})
+                                            </span>
+                                          )}
+                                        </div>
                                       </div>
                                     </div>
                                   </td>
@@ -1596,7 +1680,10 @@ const AdminDashboard = () => {
             )}
           </>
         )}
+          </>
+        )}
       </div>
+      )}
 
       {/* ─── Detail Modal ────────────────────────────────────── */}
       {detailRestaurant && (
