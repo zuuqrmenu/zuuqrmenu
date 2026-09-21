@@ -24,6 +24,7 @@ const getDefaultSavedMenu = (fallback = {}) => ({
     emphasizeFeatured: fallback.layout?.emphasizeFeatured ?? true,
     style: fallback.layout?.style || 'STANDARD',
     showStories: fallback.layout?.showStories ?? true,
+    showEcoBadge: fallback.layout?.showEcoBadge ?? true,
   },
 });
 
@@ -49,6 +50,7 @@ const normalizeSavedMenuEntries = (entries, fallback = {}) => {
         emphasizeFeatured: layout.emphasizeFeatured !== false,
         style: layoutStyles.includes(layout.style) ? layout.style : fallback.layout?.style || 'STANDARD',
         showStories: layout.showStories !== false,
+        showEcoBadge: layout.showEcoBadge !== false,
       },
     };
   }).filter((entry) => entry && entry.name);
@@ -66,7 +68,7 @@ const normalizeSavedMenuEntries = (entries, fallback = {}) => {
     seen.add(key);
     unique.push({ ...entry, slot: index === 0 ? 1 : Math.min(5, index + 1) });
   });
-  return unique.slice(0, 5);
+  return unique.slice(0, 3);
 };
 
 const getSettings = async (restaurantId) => {

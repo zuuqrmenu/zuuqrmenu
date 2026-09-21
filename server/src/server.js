@@ -85,8 +85,16 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/restaurant/profile', restaurantProfileRoutes);
 
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Something went wrong!' });
+  console.error(err.stack || err);
+  if (err.name === 'ValidationError') {
+    const firstKey = Object.keys(err.errors || {})[0];
+    const message = firstKey ? err.errors[firstKey].message : err.message;
+    return res.status(400).json({ error: message || 'Geçersiz veri formatı.' });
+  }
+  if (err.name === 'CastError') {
+    return res.status(400).json({ error: 'Geçersiz kimlik veya veri formatı.' });
+  }
+  res.status(err.statusCode || 500).json({ error: err.message || 'Something went wrong!' });
 });
 
 export default app;

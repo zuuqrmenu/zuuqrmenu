@@ -5004,7 +5004,11 @@ body[data-dashboard-theme='dark'] .menu-compact-delete-btn:hover:not(:disabled) 
 
 .preview-menu-shell .public-footer {
   margin-top: auto !important;
-  padding: 1.25rem 1rem 1.5rem !important;
+  padding: 0 !important;
+  width: 100% !important;
+  border-bottom-left-radius: 1.55rem;
+  border-bottom-right-radius: 1.55rem;
+  overflow: hidden;
 }
 
 .preview-menu-content {
@@ -5048,9 +5052,13 @@ body[data-dashboard-theme='dark'] .menu-compact-delete-btn:hover:not(:disabled) 
 }
 
 .preview-menu-shell[data-theme='GRID'] .public-footer {
-  padding: 0.65rem 0.75rem 0.85rem !important;
-  margin-top: 0.2rem !important;
+  padding: 0 !important;
+  margin-top: auto !important;
   flex-shrink: 0 !important;
+  width: 100% !important;
+  border-bottom-left-radius: 1.55rem;
+  border-bottom-right-radius: 1.55rem;
+  overflow: hidden;
 }
 
 /* Default & Generic Theme Preview Refinements */
@@ -5178,11 +5186,38 @@ body[data-dashboard-theme='dark'] .menu-compact-delete-btn:hover:not(:disabled) 
 }
 
 .preview-menu-shell .public-footer {
-  padding: 1.15rem 0.75rem 1.4rem !important;
+  padding: 0 !important;
   font-size: 0.68rem !important;
-  margin-top: 0 !important;
+  margin-top: auto !important;
   border-top: 1px solid var(--menu-border, rgba(0, 0, 0, 0.08)) !important;
   background: transparent !important;
+  width: 100% !important;
+  border-bottom-left-radius: 1.55rem;
+  border-bottom-right-radius: 1.55rem;
+  overflow: hidden;
+}
+
+.preview-menu-shell .public-footer__powered {
+  padding: 0.55rem 0.75rem !important;
+  margin: 0 !important;
+  font-size: 0.70rem !important;
+  line-height: 1.2 !important;
+}
+
+.preview-menu-shell .eco-leaf-banner {
+  width: 100% !important;
+  padding: 0.65rem 0.5rem !important;
+  font-size: 0.68rem !important;
+  white-space: nowrap !important;
+  border-bottom-left-radius: 1.55rem !important;
+  border-bottom-right-radius: 1.55rem !important;
+  letter-spacing: -0.01em !important;
+  box-sizing: border-box !important;
+}
+
+.preview-menu-shell .eco-leaf-banner strong {
+  font-weight: 700 !important;
+  padding: 0 0.12rem !important;
 }
 
 /* Dark mode in preview */

@@ -7,7 +7,13 @@ if (!globalForMongoose.__mongooseConnectionPromise) {
 }
 
 const connectDB = async () => {
-  if (globalForMongoose.__mongooseConnectionPromise) {
+  // If already connected, return existing connection immediately
+  if (mongoose.connection.readyState === 1) {
+    return mongoose.connection;
+  }
+
+  // If currently connecting, wait for existing promise
+  if (globalForMongoose.__mongooseConnectionPromise && mongoose.connection.readyState === 2) {
     return globalForMongoose.__mongooseConnectionPromise;
   }
 
@@ -16,7 +22,14 @@ const connectDB = async () => {
     throw new Error('MONGODB_URI is not configured.');
   }
 
-  globalForMongoose.__mongooseConnectionPromise = mongoose.connect(mongoUri)
+  const options = {
+    maxPoolSize: 10,
+    serverSelectionTimeoutMS: 8000,
+    socketTimeoutMS: 45000,
+    family: 4, // Force IPv4 to prevent Windows/Node getaddrinfo DNS timeout on Atlas
+  };
+
+  globalForMongoose.__mongooseConnectionPromise = mongoose.connect(mongoUri, options)
     .then((conn) => {
       console.log(`MongoDB Connected: ${conn.connection.host}`);
       return conn;
@@ -29,5 +42,9 @@ const connectDB = async () => {
 
   return globalForMongoose.__mongooseConnectionPromise;
 };
+
+mongoose.connection.on('disconnected', () => {
+  globalForMongoose.__mongooseConnectionPromise = null;
+});
 
 export default connectDB;

@@ -15,6 +15,7 @@ const menuThemeSchema = new mongoose.Schema({
     emphasizeFeatured: { type: Boolean, default: true },
     style: { type: String, enum: ['STANDARD', 'COMPACT', 'EDITORIAL'], default: 'STANDARD' },
     showStories: { type: Boolean, default: true },
+    showEcoBadge: { type: Boolean, default: true },
   },
 }, { _id: true, timestamps: true });
 

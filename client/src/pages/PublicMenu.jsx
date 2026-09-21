@@ -241,8 +241,8 @@ const PublicMenu = () => {
   const theme = getPublicMenuTheme(data.restaurant.theme || 'DEFAULT');
   const menuTheme = data.restaurant.menuTheme;
   const menuMode = menuTheme?.mode || 'LIGHT';
-  const defaultLayout = { showImages: true, showDescriptions: true, showPrices: true, emphasizeFeatured: true, style: 'STANDARD', showStories: true };
-  const menuLayout = { ...defaultLayout, ...(menuTheme?.layout || {}), showStories: menuTheme?.layout?.showStories !== false };
+  const defaultLayout = { showImages: true, showDescriptions: true, showPrices: true, emphasizeFeatured: true, style: 'STANDARD', showStories: true, showEcoBadge: true };
+  const menuLayout = { ...defaultLayout, ...(menuTheme?.layout || {}), showStories: menuTheme?.layout?.showStories !== false, showEcoBadge: menuTheme?.layout?.showEcoBadge !== false };
   const selectedTheme = getPublicMenuTheme(menuTheme?.theme || data.restaurant.theme || 'DEFAULT', menuMode);
   const canonicalUrl = `${publicSiteOrigin}/${encodeURIComponent(username)}/menu`;
   const seoTitle = `${data.restaurant.name} Menü | zuuqrmenu`;
@@ -446,73 +446,75 @@ const PublicMenu = () => {
 
         <footer className="public-footer">
           <p className="public-footer__powered">Powered by zuuqrmenu</p>
-          <div className="eco-leaf-banner" aria-label="Çevre dostu dijital menü">
-            <div className="eco-ambient-leaves" aria-hidden="true">
-              <span className="eco-ambient-leaf eco-ambient-leaf--1">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor">
-                  <path
-                    d="M19 3C15 4 8.5 8.5 7.5 14c-.8 4.2 1.8 7.5 5.2 7.5 4.5 0 7.5-5 8-10 .3-4-.5-7.5-1.7-8.5z"
-                    fill="currentColor"
-                    fillOpacity="0.45"
-                    strokeWidth="1.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M8.5 19.5C11.5 16 14.5 10.5 19 3"
-                    stroke="currentColor"
-                    strokeWidth="1.1"
-                    strokeLinecap="round"
-                    opacity="0.8"
-                  />
-                  <path d="M11.5 15.5c-1.5-.6-2.5-1.4-3-2.2" stroke="currentColor" strokeWidth="0.8" opacity="0.6" strokeLinecap="round" />
-                  <path d="M14 12c1.8-.4 3.2-1.2 3.8-2" stroke="currentColor" strokeWidth="0.8" opacity="0.6" strokeLinecap="round" />
-                </svg>
-              </span>
-              <span className="eco-ambient-leaf eco-ambient-leaf--2">
-                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor">
-                  <path
-                    d="M20 4c-3.8 2-9 6-11 11.5-1.2 3.3.4 6 3 6 4 0 7.2-4.5 8.8-10.5.8-3 .2-6-.8-7z"
-                    fill="currentColor"
-                    fillOpacity="0.4"
-                    strokeWidth="1.1"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M10 20C12.5 16.5 15.5 11 20 4"
-                    stroke="currentColor"
-                    strokeWidth="1"
-                    strokeLinecap="round"
-                    opacity="0.75"
-                  />
-                </svg>
-              </span>
-              <span className="eco-ambient-leaf eco-ambient-leaf--3">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor">
-                  <path
-                    d="M18.5 4.5c-3.2 1.5-7 5.2-7.8 9.5-.7 3.5 1.4 6.5 4.3 6.5 3.6 0 6-3.8 6.5-8.2.4-3.2-.3-6.5-3-7.8z"
-                    fill="currentColor"
-                    fillOpacity="0.45"
-                    strokeWidth="1.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M12.5 19c2.2-3 4.8-7.5 6-14.5"
-                    stroke="currentColor"
-                    strokeWidth="1"
-                    strokeLinecap="round"
-                    opacity="0.8"
-                  />
-                  <path d="M14.5 15c-1.2-.5-2-1.2-2.5-1.8" stroke="currentColor" strokeWidth="0.8" opacity="0.6" strokeLinecap="round" />
-                </svg>
+          {menuLayout.showEcoBadge !== false && (
+            <div className="eco-leaf-banner" aria-label="Çevre dostu dijital menü">
+              <div className="eco-ambient-leaves" aria-hidden="true">
+                <span className="eco-ambient-leaf eco-ambient-leaf--1">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor">
+                    <path
+                      d="M19 3C15 4 8.5 8.5 7.5 14c-.8 4.2 1.8 7.5 5.2 7.5 4.5 0 7.5-5 8-10 .3-4-.5-7.5-1.7-8.5z"
+                      fill="currentColor"
+                      fillOpacity="0.45"
+                      strokeWidth="1.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M8.5 19.5C11.5 16 14.5 10.5 19 3"
+                      stroke="currentColor"
+                      strokeWidth="1.1"
+                      strokeLinecap="round"
+                      opacity="0.8"
+                    />
+                    <path d="M11.5 15.5c-1.5-.6-2.5-1.4-3-2.2" stroke="currentColor" strokeWidth="0.8" opacity="0.6" strokeLinecap="round" />
+                    <path d="M14 12c1.8-.4 3.2-1.2 3.8-2" stroke="currentColor" strokeWidth="0.8" opacity="0.6" strokeLinecap="round" />
+                  </svg>
+                </span>
+                <span className="eco-ambient-leaf eco-ambient-leaf--2">
+                  <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor">
+                    <path
+                      d="M20 4c-3.8 2-9 6-11 11.5-1.2 3.3.4 6 3 6 4 0 7.2-4.5 8.8-10.5.8-3 .2-6-.8-7z"
+                      fill="currentColor"
+                      fillOpacity="0.4"
+                      strokeWidth="1.1"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M10 20C12.5 16.5 15.5 11 20 4"
+                      stroke="currentColor"
+                      strokeWidth="1"
+                      strokeLinecap="round"
+                      opacity="0.75"
+                    />
+                  </svg>
+                </span>
+                <span className="eco-ambient-leaf eco-ambient-leaf--3">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor">
+                    <path
+                      d="M18.5 4.5c-3.2 1.5-7 5.2-7.8 9.5-.7 3.5 1.4 6.5 4.3 6.5 3.6 0 6-3.8 6.5-8.2.4-3.2-.3-6.5-3-7.8z"
+                      fill="currentColor"
+                      fillOpacity="0.45"
+                      strokeWidth="1.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M12.5 19c2.2-3 4.8-7.5 6-14.5"
+                      stroke="currentColor"
+                      strokeWidth="1"
+                      strokeLinecap="round"
+                      opacity="0.8"
+                    />
+                    <path d="M14.5 15c-1.2-.5-2-1.2-2.5-1.8" stroke="currentColor" strokeWidth="0.8" opacity="0.6" strokeLinecap="round" />
+                  </svg>
+                </span>
+              </div>
+              <span className="eco-leaf-banner__text">
+                Bu menü kağıda basılmadı. Birlikte <strong>{Number(data.restaurant?.menuViewCount || 1).toLocaleString('tr-TR')}</strong> yaprak koruduk.
               </span>
             </div>
-            <span className="eco-leaf-banner__text">
-              Bu menü kağıda basılmadı. Birlikte <strong>{Number(data.restaurant?.menuViewCount || 1).toLocaleString('tr-TR')}</strong> yaprak koruduk.
-            </span>
-          </div>
+          )}
         </footer>
       </div>
       <ProductDetailModal
