@@ -315,8 +315,8 @@ const LandingPage = () => {
   return (
     <div className="lp2-page">
       <SeoHead
-        title="zuuqrmenu — Ücretsiz QR Menü Oluştur | Dijital Restoran Menüsü"
-        description="5 dakikada ücretsiz QR menü oluştur. Restoranına özel dijital menü, anında QR kod ve canlı analitik. Kağıt menü devri bitti — zuuqrmenu ile hemen başla."
+        title="zuuqrmenu — QR Menü Oluştur | Dijital Restoran Menüsü"
+        description="5 dakikada QR menü oluştur, restoranına özel dijital menü oluştur. Anında QR kod ve canlı analitik. Kağıt menü devri bitti — zuuqrmenu ile hemen başla."
         canonical="https://zuuqrmenu.com/"
         image="https://zuuqrmenu.com/og-cover.png"
         ogType="website"
