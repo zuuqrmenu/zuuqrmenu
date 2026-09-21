@@ -22,25 +22,63 @@ const setLink = (rel, href) => {
   document.head.appendChild(element);
 };
 
-const SeoHead = ({ title, description, canonical, image, structuredData, robots = 'index,follow' }) => {
+/**
+ * SeoHead — manages all head meta tags reactively.
+ *
+ * Props:
+ *   title        — page <title> and og:title / twitter:title
+ *   description  — meta description + og:description + twitter:description
+ *   canonical    — canonical URL + og:url
+ *   image        — og:image + twitter:image (use absolute 1200×630 PNG/JPG for best results)
+ *   ogType       — og:type (default: "website"; use "restaurant.menu" for public menu pages)
+ *   structuredData — plain JS object, serialised as application/ld+json
+ *   robots       — meta robots (default: "index,follow")
+ *   twitterSite  — @handle for twitter:site (optional)
+ */
+const SeoHead = ({
+  title,
+  description,
+  canonical,
+  image,
+  ogType = 'website',
+  structuredData,
+  robots = 'index,follow',
+  twitterSite,
+}) => {
   useEffect(() => {
     document.documentElement.lang = 'tr';
     document.title = title;
     removeManagedHead();
+
+    // Core
     setMeta('name', 'description', description);
     setMeta('name', 'robots', robots);
-    setMeta('property', 'og:type', 'restaurant.menu');
+
+    // Open Graph
+    setMeta('property', 'og:type', ogType);
+    setMeta('property', 'og:site_name', 'zuuqrmenu');
     setMeta('property', 'og:title', title);
     setMeta('property', 'og:description', description);
     setMeta('property', 'og:url', canonical);
     setMeta('property', 'og:locale', 'tr_TR');
     setMeta('property', 'og:image', image);
+    if (image) {
+      setMeta('property', 'og:image:width', '1200');
+      setMeta('property', 'og:image:height', '630');
+      setMeta('property', 'og:image:alt', title);
+    }
+
+    // Twitter / X
     setMeta('name', 'twitter:card', image ? 'summary_large_image' : 'summary');
     setMeta('name', 'twitter:title', title);
     setMeta('name', 'twitter:description', description);
     setMeta('name', 'twitter:image', image);
+    if (twitterSite) setMeta('name', 'twitter:site', twitterSite);
+
+    // Canonical
     setLink('canonical', canonical);
 
+    // JSON-LD Structured Data
     if (structuredData) {
       const script = document.createElement('script');
       script.type = 'application/ld+json';
@@ -50,9 +88,10 @@ const SeoHead = ({ title, description, canonical, image, structuredData, robots 
     }
 
     return removeManagedHead;
-  }, [canonical, description, image, robots, structuredData, title]);
+  }, [canonical, description, image, ogType, robots, structuredData, title, twitterSite]);
 
   return null;
 };
 
 export default SeoHead;
+

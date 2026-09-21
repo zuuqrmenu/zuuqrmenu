@@ -315,18 +315,73 @@ const LandingPage = () => {
   return (
     <div className="lp2-page">
       <SeoHead
-        title="zuuqrmenu | Restoranlar için dijital menü platformu"
-        description="zuuqrmenu ile restoranınızın dijital menüsünü oluşturun, QR kodunuzu hazırlayın ve menü deneyiminizi yönetin."
+        title="zuuqrmenu — Ücretsiz QR Menü Oluştur | Dijital Restoran Menüsü"
+        description="5 dakikada ücretsiz QR menü oluştur. Restoranına özel dijital menü, anında QR kod ve canlı analitik. Kağıt menü devri bitti — zuuqrmenu ile hemen başla."
         canonical="https://zuuqrmenu.com/"
-        image="https://zuuqrmenu.com/logo_darkmode.svg"
+        image="https://zuuqrmenu.com/og-cover.png"
+        ogType="website"
         structuredData={{
           '@context': 'https://schema.org',
           '@graph': [
-            { '@type': 'Organization', name: 'zuuqrmenu', url: 'https://zuuqrmenu.com/', logo: 'https://zuuqrmenu.com/logo_darkmode.svg' },
-            { '@type': 'WebSite', name: 'zuuqrmenu', url: 'https://zuuqrmenu.com/', inLanguage: 'tr-TR' },
+            {
+              '@type': 'Organization',
+              '@id': 'https://zuuqrmenu.com/#organization',
+              name: 'zuuqrmenu',
+              url: 'https://zuuqrmenu.com/',
+              logo: {
+                '@type': 'ImageObject',
+                url: 'https://zuuqrmenu.com/logo.svg',
+                width: 512,
+                height: 512,
+              },
+              description: 'Restoranlar için ücretsiz QR menü oluşturma ve dijital menü yönetim platformu.',
+              foundingDate: '2024',
+              areaServed: { '@type': 'Country', name: 'Turkey' },
+              sameAs: [],
+            },
+            {
+              '@type': 'WebSite',
+              '@id': 'https://zuuqrmenu.com/#website',
+              name: 'zuuqrmenu',
+              url: 'https://zuuqrmenu.com/',
+              inLanguage: 'tr-TR',
+              publisher: { '@id': 'https://zuuqrmenu.com/#organization' },
+              potentialAction: {
+                '@type': 'SearchAction',
+                target: {
+                  '@type': 'EntryPoint',
+                  urlTemplate: 'https://zuuqrmenu.com/{search_term_string}/menu',
+                },
+                'query-input': 'required name=search_term_string',
+              },
+            },
+            {
+              '@type': 'SoftwareApplication',
+              '@id': 'https://zuuqrmenu.com/#app',
+              name: 'zuuqrmenu',
+              url: 'https://zuuqrmenu.com/',
+              applicationCategory: 'BusinessApplication',
+              operatingSystem: 'Web',
+              inLanguage: 'tr-TR',
+              description: 'Restoranlar için ücretsiz QR menü oluşturma ve dijital menü yönetim platformu. Kategoriler, ürünler, QR kod ve analitik tek panelden.',
+              offers: {
+                '@type': 'Offer',
+                price: '0',
+                priceCurrency: 'TRY',
+                availability: 'https://schema.org/InStock',
+              },
+              featureList: [
+                'QR menü oluşturma',
+                'Dijital menü yönetimi',
+                'Anlık QR kod üretimi',
+                'Menü analitikleri',
+                'Özelleştirilebilir temalar',
+              ],
+            },
           ],
         }}
       />
+
       <LandingHeader />
 
       <main>

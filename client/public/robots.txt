@@ -4,4 +4,4 @@ Disallow: /dashboard
 Disallow: /admin
 Disallow: /api
 
-Sitemap: /sitemap.xml
+Sitemap: https://zuuqrmenu.com/sitemap.xml

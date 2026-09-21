@@ -306,7 +306,7 @@ const PublicMenu = () => {
 
   return (
     <div className="public-menu-shell" data-theme={currentThemeKey} data-mode={menuMode} data-layout={menuLayout.style || 'STANDARD'} data-show-featured={menuLayout.emphasizeFeatured !== false} style={style}>
-      <SeoHead title={seoTitle} description={seoDescription} canonical={canonicalUrl} image={absoluteImage(data.restaurant.coverImage || data.restaurant.logo)} structuredData={structuredData} />
+      <SeoHead title={seoTitle} description={seoDescription} canonical={canonicalUrl} image={absoluteImage(data.restaurant.coverImage || data.restaurant.logo)} ogType="restaurant.menu" structuredData={structuredData} />
       <div className="public-menu-page">
         {isGridTheme ? (
           <>

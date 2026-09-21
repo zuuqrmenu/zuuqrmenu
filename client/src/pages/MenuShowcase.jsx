@@ -176,10 +176,32 @@ const MenuShowcase = () => {
   return (
     <div className="tsc-page">
       <SeoHead
-        title="Menü Temaları | zuuqrmenu"
-        description="zuuqrmenu'nun farklı menü temalarını keşfedin. Restoranınıza en uygun tasarımı seçin ve demo menüyü anında görüntüleyin."
+        title="QR Menü Temaları — Restoranınıza Özel Tasarım | zuuqrmenu"
+        description="Restoranınız için en şık QR menü temasını seçin. Modern, bistro ve minimalist tasarımları ücretsiz deneyin. zuuqrmenu ile dijital menünüzü özelleştirin."
         canonical="https://zuuqrmenu.com/menu"
-        image="https://zuuqrmenu.com/logo_darkmode.svg"
+        image="https://zuuqrmenu.com/og-cover.png"
+        ogType="website"
+        structuredData={{
+          '@context': 'https://schema.org',
+          '@graph': [
+            {
+              '@type': 'CollectionPage',
+              '@id': 'https://zuuqrmenu.com/menu#page',
+              name: 'QR Menü Temaları | zuuqrmenu',
+              description: 'Restoranınız için QR menü temaları koleksiyonu. Her tema farklı bir dijital menü deneyimi sunar.',
+              url: 'https://zuuqrmenu.com/menu',
+              inLanguage: 'tr-TR',
+              isPartOf: { '@id': 'https://zuuqrmenu.com/#website' },
+            },
+            {
+              '@type': 'BreadcrumbList',
+              itemListElement: [
+                { '@type': 'ListItem', position: 1, name: 'Ana Sayfa', item: 'https://zuuqrmenu.com/' },
+                { '@type': 'ListItem', position: 2, name: 'QR Menü Temaları', item: 'https://zuuqrmenu.com/menu' },
+              ],
+            },
+          ],
+        }}
       />
 
       {/* Header */}
