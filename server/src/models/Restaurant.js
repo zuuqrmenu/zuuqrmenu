@@ -74,6 +74,20 @@ const restaurantSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  zuuai: {
+    enabled: {
+      type: Boolean,
+      default: true,
+    },
+    customDailyLimit: {
+      type: Number,
+      default: null,
+    },
+    customMonthlyLimit: {
+      type: Number,
+      default: null,
+    },
+  },
 }, {
   timestamps: true,
 });

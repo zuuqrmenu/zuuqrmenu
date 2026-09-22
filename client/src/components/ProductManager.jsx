@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { menuService } from '../services/menuService';
 import { compressImageToWebp, formatFileSize } from '../utils/imageOptimizer';
 
@@ -48,6 +49,14 @@ export const ProductModal = ({ product, categoryId, categories, onClose, onSaved
       else if (typeof onClose === 'function') onClose();
     }, 200);
   };
+
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -151,9 +160,9 @@ export const ProductModal = ({ product, categoryId, categories, onClose, onSaved
     }
   };
 
-  return (
+  const modalContent = (
     <div
-      className={`product-modal-backdrop fixed inset-0 z-20 flex items-center justify-center bg-slate-900/40 px-4 ${isClosing ? 'is-closing' : ''}`}
+      className={`product-modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4 ${isClosing ? 'is-closing' : ''}`}
       role="presentation"
       onMouseDown={(event) => event.target === event.currentTarget && handleClose()}
     >
@@ -209,6 +218,10 @@ export const ProductModal = ({ product, categoryId, categories, onClose, onSaved
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined'
+    ? createPortal(modalContent, document.body)
+    : modalContent;
 };
 
 const ProductManager = ({ category, products, categories, onChanged, onMessage }) => {

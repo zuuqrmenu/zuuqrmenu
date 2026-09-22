@@ -11,6 +11,11 @@ export const adminService = {
     return response.data;
   },
 
+  getRestaurant: async (restaurantId) => {
+    const response = await api.get(`/admin/restaurants/${restaurantId}`);
+    return response.data;
+  },
+
   updateStatus: async (restaurantId, action) => {
     const response = await api.patch(`/admin/restaurants/${restaurantId}/${action}`);
     return response.data;
@@ -32,6 +37,17 @@ export const adminService = {
     if (service) params.append('service', service);
     const qs = params.toString() ? `?${params.toString()}` : '';
     const response = await api.get(`/admin/external-services${qs}`);
+    return response.data;
+  },
+
+  getAiSettings: async () => {
+    const response = await api.get('/admin/ai/settings');
+    return response.data;
+  },
+
+  updateAiSettings: async (settings) => {
+    const payload = typeof settings === 'string' ? { model: settings } : settings;
+    const response = await api.put('/admin/ai/settings', payload);
     return response.data;
   },
 };

@@ -235,7 +235,7 @@ export const AuthProvider = ({ children }) => {
     try {
       return await authService.linkFirebase();
     } catch (linkError) {
-      return { success: false, error: linkError.response?.data?.error || 'Firebase hesabı eşleştirilemedi.' };
+      return { success: false, error: linkError.response?.data?.error || 'Hesap eşleştirilemedi.' };
     }
   };
 

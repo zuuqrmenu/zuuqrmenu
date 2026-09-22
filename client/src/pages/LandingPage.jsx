@@ -5,6 +5,7 @@ import { trackEvent } from '../utils/analytics';
 import { getPanelUrl } from '../utils/domainHelpers';
 import { useAuth } from '../context/AuthContext';
 import { publicMenuService } from '../services/publicMenuService';
+import LandingZuuAI from '../components/LandingZuuAI';
 
 const prefetchDemo = () => {
   try {
@@ -334,7 +335,7 @@ const LandingPage = () => {
                 width: 512,
                 height: 512,
               },
-              description: 'Restoranlar için ücretsiz QR menü oluşturma ve dijital menü yönetim platformu.',
+              description: 'Restoranlar için modern QR menü oluşturma ve dijital menü yönetim platformu.',
               foundingDate: '2024',
               areaServed: { '@type': 'Country', name: 'Turkey' },
               sameAs: [],
@@ -363,7 +364,7 @@ const LandingPage = () => {
               applicationCategory: 'BusinessApplication',
               operatingSystem: 'Web',
               inLanguage: 'tr-TR',
-              description: 'Restoranlar için ücretsiz QR menü oluşturma ve dijital menü yönetim platformu. Kategoriler, ürünler, QR kod ve analitik tek panelden.',
+              description: 'Restoranlar için modern QR menü oluşturma ve dijital menü yönetim platformu. Kategoriler, ürünler, QR kod ve analitik tek panelden.',
               offers: {
                 '@type': 'Offer',
                 price: '0',
@@ -610,6 +611,9 @@ const LandingPage = () => {
           <small className="lp2-footer__copy">© 2026 zuuqrmenu</small>
         </div>
       </footer>
+
+      {/* ── Landing Page ZuuAI Product Assistant ─────── */}
+      <LandingZuuAI />
     </div>
   );
 };

@@ -4,7 +4,7 @@ import User from '../models/User.js';
 
 const unauthorizedMessage = 'Kimlik doğrulaması gerekli.';
 const conflictMessage = 'Kimlik doğrulama bilgileri birbiriyle eşleşmiyor.';
-const unlinkedMessage = 'Bu Firebase hesabı zuuqrmenu hesabıyla eşleştirilmemiş.';
+const unlinkedMessage = 'Bu hesap henüz bir zuuqrmenu hesabıyla eşleştirilmemiş.';
 
 const getBearerToken = (req) => {
   const authorization = req.get('authorization') || '';
@@ -34,7 +34,7 @@ const loadJwtUser = async (token) => {
 const loadFirebaseIdentity = async (bearerToken) => {
   if (!bearerToken) return null;
   if (firebaseAdminConfigError || !firebaseAdminAuth) {
-    const error = new Error('Firebase Admin authentication is not configured.');
+    const error = new Error('Kimlik doğrulama servisi şu anda kullanılamıyor.');
     error.statusCode = 503;
     throw error;
   }
@@ -43,7 +43,7 @@ const loadFirebaseIdentity = async (bearerToken) => {
   try {
     decodedToken = await firebaseAdminAuth.verifyIdToken(bearerToken);
   } catch {
-    const error = new Error('Invalid Firebase session.');
+    const error = new Error('Geçersiz veya süresi dolmuş oturum.');
     error.statusCode = 401;
     throw error;
   }

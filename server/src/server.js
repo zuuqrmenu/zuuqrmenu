@@ -11,6 +11,7 @@ import publicRoutes from './routes/public.js';
 import restaurantSettingsRoutes from './routes/restaurantSettings.js';
 import analyticsRoutes from './routes/analytics.js';
 import restaurantProfileRoutes from './routes/restaurantProfile.js';
+import aiRoutes from './routes/ai.js';
 import { getPublicSitemap } from './controllers/publicMenuController.js';
 
 dotenv.config();
@@ -83,6 +84,7 @@ app.use('/api/public', publicRoutes);
 app.use('/api/restaurant/settings', restaurantSettingsRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/restaurant/profile', restaurantProfileRoutes);
+app.use('/api/ai', aiRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack || err);

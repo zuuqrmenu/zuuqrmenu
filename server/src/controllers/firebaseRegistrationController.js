@@ -39,8 +39,8 @@ export const registerFirebase = async (req, res, next) => {
   let createdMenu = null;
 
   try {
-    if (!firebaseUser?.uid) return res.status(401).json({ error: 'Geçersiz veya süresi dolmuş Firebase oturumu.' });
-    if (!firebaseUser.email) return res.status(400).json({ error: 'Firebase hesabında e-posta adresi bulunamadı.' });
+    if (!firebaseUser?.uid) return res.status(401).json({ error: 'Geçersiz veya süresi dolmuş oturum.' });
+    if (!firebaseUser.email) return res.status(400).json({ error: 'Giriş hesabında e-posta adresi bulunamadı.' });
 
     const email = firebaseUser.email.trim().toLowerCase();
     const authProvider = providerFromToken(firebaseUser);
@@ -53,7 +53,7 @@ export const registerFirebase = async (req, res, next) => {
     if (invalidField) return res.status(400).json({ error: invalidField });
 
     const existingUid = await User.findOne({ firebaseUid: firebaseUser.uid }).select('_id');
-    if (existingUid) return res.status(409).json({ error: 'Bu Firebase hesabı zaten bir zuuqrmenu hesabına bağlı.' });
+    if (existingUid) return res.status(409).json({ error: 'Bu hesap zaten bir zuuqrmenu hesabına bağlı.' });
 
     const existingEmail = await User.findOne({ email }).select('_id');
     if (existingEmail) return res.status(409).json({ error: 'Bu e-posta adresiyle zaten bir zuuqrmenu hesabı bulunuyor.' });
@@ -101,7 +101,7 @@ export const registerFirebase = async (req, res, next) => {
     ]);
 
     if (error?.code === 11000) {
-      if (error.keyPattern?.firebaseUid) return res.status(409).json({ error: 'Bu Firebase hesabı zaten bir zuuqrmenu hesabına bağlı.' });
+      if (error.keyPattern?.firebaseUid) return res.status(409).json({ error: 'Bu hesap zaten bir zuuqrmenu hesabına bağlı.' });
       if (error.keyPattern?.email) return res.status(409).json({ error: 'Bu e-posta adresiyle zaten bir zuuqrmenu hesabı bulunuyor.' });
       if (error.keyPattern?.slug) return res.status(409).json({ error: 'Bu restoran adıyla kayıt oluşturulamadı. Lütfen farklı bir restoran adı deneyin.' });
     }

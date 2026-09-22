@@ -122,14 +122,34 @@ export const login = async (req, res) => {
 export const firebaseSession = async (req, res, next) => {
   try {
     const firebaseUid = req.firebaseUser?.uid;
-    if (!firebaseUid) return res.status(401).json({ error: 'Geçersiz veya süresi dolmuş Firebase oturumu.' });
-    const user = await User.findOne({ firebaseUid }).select('-password');
+    if (!firebaseUid) return res.status(401).json({ error: 'Geçersiz veya süresi dolmuş oturum.' });
+
+    let user = await User.findOne({ firebaseUid }).select('-password');
+
+    // Auto-link if restaurant user exists with the exact verified email but no firebaseUid linked yet
+    if (!user && req.firebaseUser?.email) {
+      const email = req.firebaseUser.email.toLowerCase().trim();
+      const existingUser = await User.findOne({
+        email,
+        role: 'RESTAURANT_USER',
+        $or: [{ firebaseUid: { $exists: false } }, { firebaseUid: null }],
+      });
+      if (existingUser) {
+        existingUser.firebaseUid = firebaseUid;
+        if (!existingUser.authProvider || existingUser.authProvider === 'PASSWORD') {
+          existingUser.authProvider = 'MULTIPLE';
+        }
+        await existingUser.save();
+        user = existingUser;
+      }
+    }
+
     if (!user || user.role !== 'RESTAURANT_USER' || !user.isActive) {
-      return res.status(409).json({ error: 'Bu Firebase hesabı henüz bir zuuqrmenu hesabıyla eşleştirilmemiş.' });
+      return res.status(409).json({ error: 'Giriş yapılamadı. Lütfen tekrar deneyin.' });
     }
 
     const restaurant = user.restaurantId ? await Restaurant.findById(user.restaurantId) : null;
-    if (!restaurant) return res.status(409).json({ error: 'Bu Firebase hesabı henüz bir zuuqrmenu hesabıyla eşleştirilmemiş.' });
+    if (!restaurant) return res.status(409).json({ error: 'Giriş yapılamadı. Lütfen tekrar deneyin.' });
 
     if (restaurant.status !== 'ACTIVE') {
       return res.status(403).json({ error: restaurant.status === 'PENDING'
@@ -139,7 +159,7 @@ export const firebaseSession = async (req, res, next) => {
 
     const token = setAuthCookie(res, user);
     res.json({
-      message: 'Firebase uygulama oturumu oluşturuldu.',
+      message: 'Uygulama oturumu oluşturuldu.',
       token,
       user: { id: user._id, email: user.email, name: user.name, username: user.username || '', role: user.role, restaurantId: user.restaurantId },
       restaurant: { id: restaurant._id, name: restaurant.name, slug: restaurant.slug, status: restaurant.status, menuStatus: restaurant.menuStatus },
@@ -318,7 +338,7 @@ export const updateEmail = async (req, res, next) => {
     if (!currentEmail || !currentPassword || !newEmail || !/^\S+@\S+\.\S+$/.test(newEmail.trim())) return res.status(400).json({ error: 'E-posta veya şifre hatalı.' });
     const user = await User.findById(req.user.userId).select('+password');
     if (!user || user.email !== currentEmail.trim().toLowerCase() || !(await user.comparePassword(currentPassword))) return res.status(401).json({ error: 'E-posta veya şifre hatalı.' });
-    if (user.firebaseUid) return res.status(409).json({ error: 'Firebase bağlantılı hesaplarda e-posta değişikliği Firebase hesabı üzerinden yapılmalıdır.' });
+    if (user.firebaseUid) return res.status(409).json({ error: 'Bağlantılı hesaplarda e-posta değişikliği doğrudan bağlı hesabınız üzerinden yapılmalıdır.' });
     const normalizedEmail = newEmail.trim().toLowerCase();
     const existing = await User.findOne({ email: normalizedEmail, _id: { $ne: user._id } }).select('_id');
     if (existing) return res.status(409).json({ error: 'Bu e-posta adresi zaten kullanılıyor.' });

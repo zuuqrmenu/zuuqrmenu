@@ -1,0 +1,367 @@
+/* ══════════════════════════════════════════════════════════════════════
+   Category Suggestions & Description Sparkle Button Styles
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* Category Name Suggestions Dropdown */
+.category-suggestions-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 230px;
+  overflow-y: auto;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.85rem;
+  box-shadow: 
+    0 12px 28px -4px rgba(15, 23, 42, 0.14),
+    0 6px 12px -2px rgba(15, 23, 42, 0.06);
+  z-index: 60;
+  padding: 0.35rem;
+  animation: cat-dropdown-in 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes cat-dropdown-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.category-suggestion-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.6rem;
+  border: none;
+  background: transparent;
+  text-align: left;
+  font-size: 0.83rem;
+  font-weight: 500;
+  color: #1e293b;
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease, transform 0.12s ease;
+}
+
+.category-suggestion-item:hover,
+.category-suggestion-item.is-selected {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.category-suggestion-item__badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #64748b;
+  background: #e2e8f0;
+  padding: 0.1rem 0.4rem;
+  border-radius: 9999px;
+}
+
+.category-suggestion-empty {
+  padding: 0.65rem 0.75rem;
+  font-size: 0.78rem;
+  color: #64748b;
+  text-align: center;
+}
+
+/* Dark theme for suggestions dropdown */
+body[data-dashboard-theme='dark'] .category-suggestions-dropdown {
+  background: #1e293b;
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 
+    0 16px 36px -4px rgba(0, 0, 0, 0.65),
+    0 6px 14px -2px rgba(0, 0, 0, 0.4);
+}
+
+body[data-dashboard-theme='dark'] .category-suggestion-item {
+  color: #e2e8f0;
+}
+
+body[data-dashboard-theme='dark'] .category-suggestion-item:hover,
+body[data-dashboard-theme='dark'] .category-suggestion-item.is-selected {
+  background: #273549;
+  color: #ffffff;
+}
+
+body[data-dashboard-theme='dark'] .category-suggestion-item__badge {
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Category Description Sparkle Button (Modern Soft AI Aesthetic) */
+.category-sparkle-btn {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 9999px;
+  background: #0f172a;
+  border: 1px solid rgba(222, 255, 54, 0.45);
+  color: #DEFF36;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  outline: none;
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(222, 255, 54, 0.1);
+  transition: 
+    transform 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    opacity 0.2s ease;
+  z-index: 10;
+}
+
+.category-sparkle-btn:hover:not(:disabled) {
+  transform: scale(1.08);
+  border-color: #DEFF36;
+  background: #182234;
+  box-shadow: 
+    0 4px 14px rgba(0, 0, 0, 0.28),
+    0 0 14px rgba(222, 255, 54, 0.5);
+}
+
+.category-sparkle-btn:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.category-sparkle-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+}
+
+/* Soft, elegant AI breathing state (NO harsh mechanical spinning!) */
+.category-sparkle-btn.is-generating {
+  animation: cat-sparkle-breathe 1.8s ease-in-out infinite alternate;
+  border-color: #DEFF36;
+  background: #111b27;
+  box-shadow: 
+    0 0 16px rgba(222, 255, 54, 0.5),
+    0 0 32px rgba(222, 255, 54, 0.25);
+}
+
+@keyframes cat-sparkle-breathe {
+  0% {
+    transform: scale(1);
+    box-shadow: 
+      0 0 10px rgba(222, 255, 54, 0.4),
+      0 2px 8px rgba(0, 0, 0, 0.25);
+  }
+  100% {
+    transform: scale(1.08);
+    box-shadow: 
+      0 0 20px rgba(222, 255, 54, 0.7),
+      0 0 36px rgba(222, 255, 54, 0.25);
+  }
+}
+
+.category-sparkle-icon {
+  display: block;
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+/* Soft celestial sparkle twinkle */
+.category-sparkle-btn.is-generating .category-sparkle-icon {
+  animation: cat-sparkle-twinkle 1.4s ease-in-out infinite alternate;
+}
+
+@keyframes cat-sparkle-twinkle {
+  0% {
+    transform: scale(0.92) rotate(-8deg);
+    filter: drop-shadow(0 0 2px rgba(222, 255, 54, 0.6));
+  }
+  100% {
+    transform: scale(1.15) rotate(8deg);
+    filter: drop-shadow(0 0 8px rgba(222, 255, 54, 0.95));
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   Modern Soft AI Textarea & Subtle Ambient Aura
+   ────────────────────────────────────────────────────────────────────── */
+.category-ai-textarea-wrapper {
+  position: relative;
+}
+
+.category-textarea {
+  transition: 
+    border-color 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.3s ease;
+}
+
+/* Soft ambient aura when AI is working */
+.category-textarea.is-generating {
+  border-color: rgba(222, 255, 54, 0.85) !important;
+  background: linear-gradient(135deg, rgba(222, 255, 54, 0.025) 0%, rgba(255, 255, 255, 1) 100%) !important;
+  animation: cat-soft-ambient 2s ease-in-out infinite alternate;
+}
+
+body[data-dashboard-theme='dark'] .category-textarea.is-generating {
+  border-color: rgba(222, 255, 54, 0.9) !important;
+  background: linear-gradient(135deg, rgba(222, 255, 54, 0.05) 0%, #1e293b 100%) !important;
+}
+
+@keyframes cat-soft-ambient {
+  0% {
+    box-shadow: 
+      0 0 0 2px rgba(222, 255, 54, 0.22),
+      0 4px 16px -2px rgba(222, 255, 54, 0.12);
+  }
+  100% {
+    box-shadow: 
+      0 0 0 3px rgba(222, 255, 54, 0.42),
+      0 6px 24px -2px rgba(222, 255, 54, 0.22);
+  }
+}
+
+/* Gentle completion ease-out */
+.category-textarea.is-completed {
+  border-color: rgba(222, 255, 54, 0.75) !important;
+  box-shadow: 
+    0 0 0 2px rgba(222, 255, 54, 0.25),
+    0 2px 10px rgba(222, 255, 54, 0.1) !important;
+  transition: border-color 0.9s ease, box-shadow 0.9s ease;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   Floating Modern Mini Pill Indicator (Non-intrusive, Apple/Linear style)
+   ────────────────────────────────────────────────────────────────────── */
+.category-ai-soft-pill {
+  position: absolute;
+  bottom: 0.45rem;
+  right: 0.55rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  padding: 0.22rem 0.6rem;
+  border-radius: 9999px;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(222, 255, 54, 0.35);
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.25),
+    0 0 10px rgba(222, 255, 54, 0.15);
+  pointer-events: none;
+  animation: cat-pill-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  z-index: 5;
+}
+
+body[data-dashboard-theme='dark'] .category-ai-soft-pill {
+  background: rgba(15, 23, 42, 0.92);
+  border-color: rgba(222, 255, 54, 0.45);
+}
+
+@keyframes cat-pill-in {
+  0% {
+    opacity: 0;
+    transform: translateY(4px) scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.category-ai-soft-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #DEFF36;
+  box-shadow: 0 0 8px #DEFF36;
+  animation: cat-soft-dot-pulse 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes cat-soft-dot-pulse {
+  0% {
+    transform: scale(0.75);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1.25);
+    opacity: 1;
+  }
+}
+
+.category-ai-soft-text {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #f8fafc;
+  letter-spacing: 0.02em;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   Category Description Status Row (With Soft Gradient Shimmer)
+   ────────────────────────────────────────────────────────────────────── */
+.category-desc-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+  font-size: 0.72rem;
+  min-height: 1.15rem;
+}
+
+.category-desc-status__generating {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 600;
+  background: linear-gradient(90deg, #10b981 0%, #a3e635 40%, #deff36 60%, #10b981 100%);
+  background-size: 250% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: cat-text-shimmer 2.2s linear infinite;
+}
+
+body[data-dashboard-theme='dark'] .category-desc-status__generating {
+  background: linear-gradient(90deg, #34d399 0%, #deff36 50%, #34d399 100%);
+  background-size: 250% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@keyframes cat-text-shimmer {
+  0% {
+    background-position: 0% center;
+  }
+  100% {
+    background-position: 250% center;
+  }
+}
+
+.category-desc-status__exhausted {
+  color: #e11d48;
+  font-weight: 500;
+}
+
+body[data-dashboard-theme='dark'] .category-desc-status__exhausted {
+  color: #fb7185;
+}
+
+.category-desc-status__hint {
+  color: #64748b;
+  font-weight: 500;
+  margin-left: auto;
+}
+
+body[data-dashboard-theme='dark'] .category-desc-status__hint {
+  color: #94a3b8;
+}

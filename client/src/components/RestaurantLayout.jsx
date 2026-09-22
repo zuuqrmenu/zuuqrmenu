@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import SeoHead from './SeoHead';
+import ZuuAIAssistant from './ZuuAIAssistant';
 
 const RestaurantLayout = ({ children }) => {
   const { user, restaurant, logout } = useAuth();
@@ -216,6 +217,9 @@ const RestaurantLayout = ({ children }) => {
 
         {children}
       </main>
+
+      {/* Persistent Floating ZuuAI Assistant */}
+      <ZuuAIAssistant />
     </div>
   );
 };

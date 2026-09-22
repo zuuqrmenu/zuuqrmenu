@@ -256,7 +256,7 @@ const RowActionMenu = ({
 
       {open && (
         <div className="absolute right-0 top-full z-40 mt-1 w-48 rounded-2xl border border-slate-200 bg-white py-1.5 shadow-xl animate-fadeIn">
-          {/* 1. Detayları Gör (Always first) */}
+          {/* 1. Detayları Gör */}
           <button
             type="button"
             onClick={() => {
@@ -272,7 +272,23 @@ const RowActionMenu = ({
             <span>Detayları Gör</span>
           </button>
 
-          {/* Menüyü Görüntüle */}
+          {/* 2. Düzenle */}
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              onEdit(restaurant);
+            }}
+            className="flex w-full items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 text-left transition-colors"
+          >
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-500">
+              <path d="M12 20h9" />
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+            </svg>
+            <span>Düzenle</span>
+          </button>
+
+          {/* 3. Menüyü Görüntüle */}
           {getRestaurantMenuUrl(restaurant) && (
             <a
               href={getRestaurantMenuUrl(restaurant)}
@@ -290,10 +306,9 @@ const RowActionMenu = ({
             </a>
           )}
 
-          {/* Pending Approval Options */}
+          {/* 4. Pending Approval Options */}
           {isPending && (
             <>
-              <div className="my-1 border-t border-slate-100" />
               <button
                 type="button"
                 onClick={() => {
@@ -324,25 +339,7 @@ const RowActionMenu = ({
             </>
           )}
 
-          <div className="my-1 border-t border-slate-100" />
-
-          {/* 2. Düzenle */}
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false);
-              onEdit(restaurant);
-            }}
-            className="flex w-full items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 text-left transition-colors"
-          >
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-500">
-              <path d="M12 20h9" />
-              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-            </svg>
-            <span>Düzenle</span>
-          </button>
-
-          {/* 3. Askıya Al / Aktifleştir */}
+          {/* 5. Askıya Al / Aktifleştir */}
           <button
             type="button"
             onClick={() => {
@@ -373,7 +370,7 @@ const RowActionMenu = ({
 
           <div className="my-1 border-t border-slate-100" />
 
-          {/* 4. Sil */}
+          {/* 6. Sil */}
           <button
             type="button"
             onClick={() => {
@@ -400,10 +397,99 @@ const RestaurantDetailModal = ({
   onClose,
   onEdit,
   onSuspendToggle,
+  onRestaurantUpdated,
 }) => {
   if (!restaurant) return null;
 
   const isSuspended = restaurant.status === 'SUSPENDED';
+
+  // ZuuAI state for this restaurant
+  const [zuuaiEnabled, setZuuaiEnabled] = useState(restaurant.zuuai?.enabled !== false);
+  const [customDailyLimit, setCustomDailyLimit] = useState(
+    restaurant.zuuai?.customDailyLimit !== null && restaurant.zuuai?.customDailyLimit !== undefined
+      ? String(restaurant.zuuai.customDailyLimit)
+      : ''
+  );
+  const [customMonthlyLimit, setCustomMonthlyLimit] = useState(
+    restaurant.zuuai?.customMonthlyLimit !== null && restaurant.zuuai?.customMonthlyLimit !== undefined
+      ? String(restaurant.zuuai.customMonthlyLimit)
+      : ''
+  );
+  const [zuuaiUsage, setZuuaiUsage] = useState({ todayUsed: 0, thisMonthUsed: 0 });
+  const [globalDefaults, setGlobalDefaults] = useState({ dailyLimit: 20, monthlyLimit: 300 });
+  const [savingZuuai, setSavingZuuai] = useState(false);
+  const [zuuaiMsg, setZuuaiMsg] = useState({ type: '', text: '' });
+
+  // Load fresh ZuuAI stats & defaults on mount/change
+  useEffect(() => {
+    let isMounted = true;
+    adminService.getRestaurant(restaurant._id)
+      .then((res) => {
+        if (!isMounted) return;
+        if (res?.zuuaiStats) setZuuaiUsage(res.zuuaiStats);
+        if (res?.globalDefaults) setGlobalDefaults(res.globalDefaults);
+        if (res?.restaurant?.zuuai) {
+          setZuuaiEnabled(res.restaurant.zuuai.enabled !== false);
+          setCustomDailyLimit(
+            res.restaurant.zuuai.customDailyLimit !== null && res.restaurant.zuuai.customDailyLimit !== undefined
+              ? String(res.restaurant.zuuai.customDailyLimit)
+              : ''
+          );
+          setCustomMonthlyLimit(
+            res.restaurant.zuuai.customMonthlyLimit !== null && res.restaurant.zuuai.customMonthlyLimit !== undefined
+              ? String(res.restaurant.zuuai.customMonthlyLimit)
+              : ''
+          );
+        }
+      })
+      .catch((err) => console.warn('Failed to load restaurant ZuuAI stats:', err));
+
+    return () => {
+      isMounted = false;
+    };
+  }, [restaurant._id]);
+
+  const handleSaveZuuai = async () => {
+    setSavingZuuai(true);
+    setZuuaiMsg({ type: '', text: '' });
+    try {
+      const dailyVal = customDailyLimit.trim() === '' ? null : Number(customDailyLimit);
+      const monthlyVal = customMonthlyLimit.trim() === '' ? null : Number(customMonthlyLimit);
+
+      if (dailyVal !== null && (isNaN(dailyVal) || dailyVal < 0)) {
+        setZuuaiMsg({ type: 'error', text: 'Günlük limit 0 veya pozitif bir tam sayı olmalıdır.' });
+        setSavingZuuai(false);
+        return;
+      }
+      if (monthlyVal !== null && (isNaN(monthlyVal) || monthlyVal < 0)) {
+        setZuuaiMsg({ type: 'error', text: 'Aylık limit 0 veya pozitif bir tam sayı olmalıdır.' });
+        setSavingZuuai(false);
+        return;
+      }
+
+      const res = await adminService.updateRestaurant(restaurant._id, {
+        zuuai: {
+          enabled: zuuaiEnabled,
+          customDailyLimit: dailyVal,
+          customMonthlyLimit: monthlyVal,
+        },
+      });
+
+      if (res?.restaurant) {
+        setZuuaiMsg({ type: 'success', text: 'ZuuAI ayarları kaydedildi.' });
+        if (res.zuuaiStats) setZuuaiUsage(res.zuuaiStats);
+        if (onRestaurantUpdated) {
+          onRestaurantUpdated(res.restaurant);
+        }
+        setTimeout(() => setZuuaiMsg({ type: '', text: '' }), 3500);
+      }
+    } catch (err) {
+      setZuuaiMsg({ type: 'error', text: err?.response?.data?.error || 'ZuuAI ayarları kaydedilemedi.' });
+      setTimeout(() => setZuuaiMsg({ type: '', text: '' }), 4500);
+    } finally {
+      setSavingZuuai(false);
+    }
+  };
 
   return (
     <div
@@ -583,6 +669,139 @@ const RestaurantDetailModal = ({
               </div>
             </dl>
           </div>
+
+          {/* Section 3: ZuuAI Yönetimi & Özel Limitler */}
+          <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-2xs md:col-span-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+                  </svg>
+                </span>
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">ZuuAI</h4>
+                  <p className="text-[11px] text-slate-400">Bu işletmeye özel yapay zeka asistanı erişimi ve limit kontrolü</p>
+                </div>
+              </div>
+
+              {/* Status Badge */}
+              <div className="flex items-center gap-2">
+                {customDailyLimit === '' && customMonthlyLimit === '' ? (
+                  <span className="rounded-md bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                    Varsayılan limitler kullanılıyor
+                  </span>
+                ) : (
+                  <span className="rounded-md bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 text-[11px] font-bold text-amber-600">
+                    Özel Limit Devrede
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* Access State Toggle */}
+              <div>
+                <label className="text-xs font-semibold text-slate-500 block mb-1.5">Durum</label>
+                <button
+                  type="button"
+                  onClick={() => setZuuaiEnabled(!zuuaiEnabled)}
+                  className={`w-full flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition-all border ${
+                    zuuaiEnabled
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                      : 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
+                  }`}
+                >
+                  <span className={`h-2 w-2 rounded-full ${zuuaiEnabled ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                  <span>{zuuaiEnabled ? 'Açık' : 'Kapalı'}</span>
+                </button>
+              </div>
+
+              {/* Custom Daily Limit */}
+              <div>
+                <label className="text-xs font-semibold text-slate-500 block mb-1.5">
+                  Günlük Mesaj Limiti
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder={`Varsayılan (${globalDefaults.dailyLimit})`}
+                    value={customDailyLimit}
+                    onChange={(e) => setCustomDailyLimit(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-800 shadow-2xs focus:border-slate-900 focus:outline-none"
+                  />
+                  {customDailyLimit !== '' && (
+                    <button
+                      type="button"
+                      onClick={() => setCustomDailyLimit('')}
+                      className="absolute right-2 top-2 text-[10px] font-semibold text-slate-400 hover:text-slate-700"
+                      title="Varsayılana sıfırla"
+                    >
+                      Sıfırla
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Custom Monthly Limit */}
+              <div>
+                <label className="text-xs font-semibold text-slate-500 block mb-1.5">
+                  Aylık Mesaj Limiti
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder={`Varsayılan (${globalDefaults.monthlyLimit})`}
+                    value={customMonthlyLimit}
+                    onChange={(e) => setCustomMonthlyLimit(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-800 shadow-2xs focus:border-slate-900 focus:outline-none"
+                  />
+                  {customMonthlyLimit !== '' && (
+                    <button
+                      type="button"
+                      onClick={() => setCustomMonthlyLimit('')}
+                      className="absolute right-2 top-2 text-[10px] font-semibold text-slate-400 hover:text-slate-700"
+                      title="Varsayılana sıfırla"
+                    >
+                      Sıfırla
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Usage Stats Row & Save Button */}
+            <div className="mt-4 pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="flex items-center gap-4 text-xs">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-slate-400">Bugün kullanılan:</span>
+                  <strong className="text-slate-800 font-bold">{zuuaiUsage.todayUsed ?? 0} mesaj</strong>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-slate-400">Bu ay kullanılan:</span>
+                  <strong className="text-slate-800 font-bold">{zuuaiUsage.thisMonthUsed ?? 0} mesaj</strong>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 self-end sm:self-auto">
+                {zuuaiMsg.text && (
+                  <span className={`text-xs font-semibold ${zuuaiMsg.type === 'error' ? 'text-rose-600' : 'text-emerald-600'}`}>
+                    {zuuaiMsg.text}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  disabled={savingZuuai}
+                  onClick={handleSaveZuuai}
+                  className="rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-[#DEFF36] hover:bg-black transition-colors disabled:opacity-50 shadow-2xs"
+                >
+                  {savingZuuai ? 'Kaydediliyor...' : 'Kaydet'}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Modal Actions */}
@@ -613,13 +832,10 @@ const RestaurantDetailModal = ({
                 onClose();
                 onEdit(restaurant);
               }}
-              className="flex items-center gap-1.5 rounded-xl bg-slate-900 hover:bg-black text-[#DEFF36] px-4 py-2 text-xs font-bold shadow-xs transition-colors"
+              className="flex items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800"
             >
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 20h9" />
-                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-              </svg>
-              <span>Düzenle</span>
+              <PencilIcon className="h-3.5 w-3.5" />
+              Restoranı Düzenle
             </button>
           </div>
         </div>
@@ -628,7 +844,7 @@ const RestaurantDetailModal = ({
   );
 };
 
-/* ─── Edit Restaurant Modal ────────────────────────────────── */
+/* ─── Edit Restaurant Modal ──────────────────────────────── */
 const EditRestaurantModal = ({ restaurant, onClose, onSave, saving }) => {
   const [form, setForm] = useState({
     name: restaurant?.name || '',
@@ -640,6 +856,13 @@ const EditRestaurantModal = ({ restaurant, onClose, onSave, saving }) => {
     password: '',
     status: restaurant?.status || 'ACTIVE',
     menuStatus: restaurant?.menuStatus || 'DRAFT',
+    zuuaiEnabled: restaurant?.zuuai?.enabled !== false,
+    zuuaiDailyLimit: restaurant?.zuuai?.customDailyLimit !== null && restaurant?.zuuai?.customDailyLimit !== undefined
+      ? String(restaurant.zuuai.customDailyLimit)
+      : '',
+    zuuaiMonthlyLimit: restaurant?.zuuai?.customMonthlyLimit !== null && restaurant?.zuuai?.customMonthlyLimit !== undefined
+      ? String(restaurant.zuuai.customMonthlyLimit)
+      : '',
   });
   const [error, setError] = useState('');
 
@@ -659,8 +882,39 @@ const EditRestaurantModal = ({ restaurant, onClose, onSave, saving }) => {
       setError('Şifre en az 6 karakter olmalıdır.');
       return;
     }
+
+    const dailyVal = form.zuuaiDailyLimit.trim() === '' ? null : Number(form.zuuaiDailyLimit);
+    const monthlyVal = form.zuuaiMonthlyLimit.trim() === '' ? null : Number(form.zuuaiMonthlyLimit);
+
+    if (dailyVal !== null && (isNaN(dailyVal) || dailyVal < 0)) {
+      setError('ZuuAI günlük limiti 0 veya pozitif bir tam sayı olmalıdır.');
+      return;
+    }
+    if (monthlyVal !== null && (isNaN(monthlyVal) || monthlyVal < 0)) {
+      setError('ZuuAI aylık limiti 0 veya pozitif bir tam sayı olmalıdır.');
+      return;
+    }
+
     setError('');
-    onSave(form);
+    const payload = {
+      name: form.name.trim(),
+      businessType: form.businessType,
+      city: form.city.trim(),
+      phone: form.phone.trim(),
+      ownerName: form.ownerName.trim(),
+      ownerEmail: form.ownerEmail.trim(),
+      status: form.status,
+      menuStatus: form.menuStatus,
+      zuuai: {
+        enabled: form.zuuaiEnabled,
+        customDailyLimit: dailyVal,
+        customMonthlyLimit: monthlyVal,
+      },
+    };
+    if (form.password && form.password.trim()) {
+      payload.password = form.password.trim();
+    }
+    onSave(payload);
   };
 
   return (
@@ -813,6 +1067,61 @@ const EditRestaurantModal = ({ restaurant, onClose, onSave, saving }) => {
                 <option value="DRAFT">Taslak</option>
                 <option value="HIDDEN">Gizli</option>
               </select>
+            </div>
+          </div>
+
+          {/* ZuuAI Kullanım Hakları ve Limitleri */}
+          <div className="rounded-xl border border-slate-100 bg-slate-50 p-3.5 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500">
+                  <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+                </svg>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">ZuuAI Kullanım Hakları</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, zuuaiEnabled: !form.zuuaiEnabled })}
+                className={`rounded-lg px-2.5 py-1 text-[11px] font-bold border transition-colors ${
+                  form.zuuaiEnabled
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : 'bg-rose-50 text-rose-700 border-rose-200'
+                }`}
+              >
+                {form.zuuaiEnabled ? '● ZuuAI Açık' : '○ ZuuAI Kapalı'}
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Özel Günlük Mesaj Limiti
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="Varsayılan (20)"
+                  value={form.zuuaiDailyLimit}
+                  onChange={(e) => setForm({ ...form, zuuaiDailyLimit: e.target.value })}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-slate-900"
+                />
+                <span className="text-[10px] text-slate-400 mt-1 block">Boş bırakılırsa global varsayılan geçerlidir</span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Özel Aylık Mesaj Limiti
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="Varsayılan (300)"
+                  value={form.zuuaiMonthlyLimit}
+                  onChange={(e) => setForm({ ...form, zuuaiMonthlyLimit: e.target.value })}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-slate-900"
+                />
+                <span className="text-[10px] text-slate-400 mt-1 block">Boş bırakılırsa global varsayılan geçerlidir</span>
+              </div>
             </div>
           </div>
 
@@ -1696,6 +2005,12 @@ const AdminDashboard = () => {
           }}
           onSuspendToggle={(r) => {
             handleQuickStatus(r, r.status === 'SUSPENDED' ? 'activate' : 'suspend');
+          }}
+          onRestaurantUpdated={(updated) => {
+            setRestaurants((prev) =>
+              prev.map((r) => (r._id === updated._id ? { ...r, ...updated } : r))
+            );
+            setDetailRestaurant(updated);
           }}
         />
       )}

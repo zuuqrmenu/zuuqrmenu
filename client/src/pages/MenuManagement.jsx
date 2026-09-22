@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import RestaurantLayout from '../components/RestaurantLayout';
 import ProductManager from '../components/ProductManager';
 import MenuStructureEditor from '../components/MenuStructureEditor';
@@ -9,8 +10,27 @@ import { useAuth } from '../context/AuthContext';
 import { menuService } from '../services/menuService';
 import { restaurantSettingsService } from '../services/restaurantSettingsService';
 import { publicMenuService } from '../services/publicMenuService';
+import '../components/CategorySuggester.css';
+import {
+  findMatchingCategory,
+  getFilteredCategorySuggestions,
+  getNextCategoryDescription,
+} from '../data/categoryDescriptionTemplates';
 
 const emptyForm = { name: '', description: '', isActive: true, displayOrder: 0 };
+
+const IconSparkle = ({ size = 14, className = '' }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    className={className}
+    aria-hidden="true"
+  >
+    <path d="M12 1L14.8 8.8L22 12L14.8 15.2L12 23L9.2 15.2L2 12L9.2 8.8L12 1Z" />
+  </svg>
+);
 
 const CategoryModal = ({ category, nextOrder, onClose, onSaved }) => {
   const [form, setForm] = useState(category ? { name: category.name, description: category.description || '', isActive: category.isActive, displayOrder: category.displayOrder } : { ...emptyForm, displayOrder: nextOrder });
@@ -18,8 +38,39 @@ const CategoryModal = ({ category, nextOrder, onClose, onSaved }) => {
   const [error, setError] = useState('');
   const [isClosing, setIsClosing] = useState(false);
 
+  // Category suggestions & description states
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isGeneratingDesc, setIsGeneratingDesc] = useState(false);
+  const [streamState, setStreamState] = useState('idle'); // 'idle' | 'thinking' | 'streaming'
+  const [, setForceUpdate] = useState(0);
+  const categoryInputContainerRef = useRef(null);
+  const categoryInputRef = useRef(null);
+  const thinkTimeoutRef = useRef(null);
+  const streamIntervalRef = useRef(null);
+
+  // Clean up timers on unmount
+  useEffect(() => {
+    return () => {
+      if (thinkTimeoutRef.current) clearTimeout(thinkTimeoutRef.current);
+      if (streamIntervalRef.current) clearInterval(streamIntervalRef.current);
+    };
+  }, []);
+
+  // Recognized category derived from normalized input
+  const recognizedCategoryItem = useMemo(() => {
+    return findMatchingCategory(form.name);
+  }, [form.name]);
+
+  const recognizedKey = recognizedCategoryItem?.key || null;
+  const canSuggestDescription = Boolean(recognizedKey);
+  const filteredSuggestions = useMemo(() => {
+    return getFilteredCategorySuggestions(form.name);
+  }, [form.name]);
+
   const handleClose = (callback) => {
     if (isClosing) return;
+    if (thinkTimeoutRef.current) clearTimeout(thinkTimeoutRef.current);
+    if (streamIntervalRef.current) clearInterval(streamIntervalRef.current);
     setIsClosing(true);
     setTimeout(() => {
       if (typeof callback === 'function') callback();
@@ -28,16 +79,93 @@ const CategoryModal = ({ category, nextOrder, onClose, onSaved }) => {
   };
 
   useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
+
+  // Dismiss suggestions on outside click
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        categoryInputContainerRef.current &&
+        !categoryInputContainerRef.current.contains(event.target)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
     const handleKeyDown = (event) => {
-      if (event.key === 'Escape') handleClose();
+      if (event.key === 'Escape') {
+        if (showSuggestions) {
+          event.stopPropagation();
+          setShowSuggestions(false);
+        } else {
+          handleClose();
+        }
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isClosing]);
+  }, [isClosing, showSuggestions]);
 
   const updateField = (event) => {
     const { name, value, type, checked } = event.target;
     setForm((current) => ({ ...current, [name]: type === 'checkbox' ? checked : value }));
+  };
+
+  const handleGenerateDescription = () => {
+    if (!canSuggestDescription || isGeneratingDesc) return;
+
+    if (thinkTimeoutRef.current) clearTimeout(thinkTimeoutRef.current);
+    if (streamIntervalRef.current) clearInterval(streamIntervalRef.current);
+
+    setIsGeneratingDesc(true);
+    setStreamState('thinking');
+
+    // Phase 1: Soft preparation / AI synthesis (200ms)
+    thinkTimeoutRef.current = setTimeout(() => {
+      const next = getNextCategoryDescription(recognizedKey);
+      if (!next?.description) {
+        setIsGeneratingDesc(false);
+        setStreamState('idle');
+        return;
+      }
+
+      setStreamState('streaming');
+      setForm((curr) => ({ ...curr, description: '' }));
+
+      // Phase 2: Smooth text stream lasting precisely 2.5 seconds (2500ms)
+      const targetText = next.description;
+      const totalDuration = 2500; // 2.5 saniye
+      const textLength = targetText.length;
+      const startTime = performance.now();
+
+      streamIntervalRef.current = setInterval(() => {
+        const elapsed = performance.now() - startTime;
+        const progress = Math.min(1, elapsed / totalDuration);
+        const currentLength = Math.floor(progress * textLength);
+
+        setForm((curr) => ({ ...curr, description: targetText.slice(0, currentLength) }));
+
+        if (progress >= 1) {
+          clearInterval(streamIntervalRef.current);
+          setForm((curr) => ({ ...curr, description: targetText }));
+          setIsGeneratingDesc(false);
+          setStreamState('completed');
+          setTimeout(() => {
+            setStreamState('idle');
+          }, 850);
+          setForceUpdate((v) => v + 1);
+        }
+      }, 30);
+    }, 200);
   };
 
   const handleSubmit = async (event) => {
@@ -58,9 +186,9 @@ const CategoryModal = ({ category, nextOrder, onClose, onSaved }) => {
     }
   };
 
-  return (
+  const modalContent = (
     <div
-      className={`category-modal-backdrop fixed inset-0 z-20 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4 ${isClosing ? 'is-closing' : ''}`}
+      className={`category-modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4 ${isClosing ? 'is-closing' : ''}`}
       role="presentation"
       onMouseDown={(event) => event.target === event.currentTarget && handleClose()}
     >
@@ -79,14 +207,115 @@ const CategoryModal = ({ category, nextOrder, onClose, onSaved }) => {
         </div>
         {error && <div className="mt-5 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-          <div>
-            <label htmlFor="category-name" className="mb-1.5 block text-sm font-medium text-slate-700">Kategori adı</label>
-            <input id="category-name" name="name" value={form.name} onChange={updateField} autoFocus className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" placeholder="Örn. Ana Yemekler" />
+          {/* Category Name Input & Suggestions Dropdown */}
+          <div className="relative" ref={categoryInputContainerRef}>
+            <label htmlFor="category-name" className="mb-1.5 block text-sm font-medium text-slate-700">
+              Kategori adı
+            </label>
+            <input
+              ref={categoryInputRef}
+              id="category-name"
+              name="name"
+              value={form.name}
+              onChange={(e) => {
+                updateField(e);
+                setShowSuggestions(true);
+              }}
+              onFocus={() => setShowSuggestions(true)}
+              autoFocus
+              autoComplete="off"
+              className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+              placeholder="Örn. Ana Yemekler"
+            />
+            {showSuggestions && filteredSuggestions.length > 0 && (
+              <div className="category-suggestions-dropdown">
+                {filteredSuggestions.map((item) => (
+                  <button
+                    key={item.key}
+                    type="button"
+                    className={`category-suggestion-item ${recognizedKey === item.key ? 'is-selected' : ''}`}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      setForm((current) => ({ ...current, name: item.name }));
+                      setShowSuggestions(false);
+                    }}
+                  >
+                    <span>{item.name}</span>
+                    {recognizedKey === item.key && (
+                      <span className="category-suggestion-item__badge">Seçili</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
+
+          {/* Category Description & Sparkle Button */}
           <div>
-            <label htmlFor="category-description" className="mb-1.5 block text-sm font-medium text-slate-700">Açıklama <span className="font-normal text-slate-400">(opsiyonel)</span></label>
-            <textarea id="category-description" name="description" value={form.description} onChange={updateField} rows="3" className="w-full resize-none rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" placeholder="Kategori hakkında kısa bilgi" />
+            <div className="flex items-center justify-between mb-1.5">
+              <label htmlFor="category-description" className="block text-sm font-medium text-slate-700">
+                Açıklama <span className="font-normal text-slate-400">(opsiyonel)</span>
+              </label>
+            </div>
+            <div className="category-ai-textarea-wrapper">
+              <textarea
+                id="category-description"
+                name="description"
+                value={form.description}
+                onChange={updateField}
+                rows="3"
+                className={`category-textarea w-full resize-none rounded-xl border border-slate-300 pl-3 pr-11 py-2.5 text-sm outline-none transition-all duration-300 ${
+                  isGeneratingDesc
+                    ? 'is-generating'
+                    : streamState === 'completed'
+                    ? 'is-completed'
+                    : 'focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10'
+                }`}
+                placeholder={isGeneratingDesc ? 'ZuuAI açıklama oluşturuyor...' : 'Kategori hakkında kısa bilgi'}
+              />
+              {/* Soft modern AI floating mini pill */}
+              {isGeneratingDesc && (
+                <div className="category-ai-soft-pill" aria-hidden="true">
+                  <span className="category-ai-soft-dot" />
+                  <span className="category-ai-soft-text">
+                    {streamState === 'thinking' ? 'ZuuAI hazırlanıyor' : 'Yazılıyor'}
+                  </span>
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={handleGenerateDescription}
+                disabled={!canSuggestDescription || isGeneratingDesc}
+                className={`category-sparkle-btn ${isGeneratingDesc ? 'is-generating' : ''}`}
+                aria-label={
+                  isGeneratingDesc
+                    ? 'Açıklama hazırlanıyor...'
+                    : recognizedKey
+                    ? 'ZuuAI ile açıklama öner'
+                    : 'Açıklama önerisi için geçerli bir kategori seçin'
+                }
+                title={
+                  isGeneratingDesc
+                    ? 'Açıklama hazırlanıyor...'
+                    : recognizedKey
+                    ? 'ZuuAI ile açıklama öner'
+                    : 'Açıklama önerisi için geçerli bir kategori seçin'
+                }
+              >
+                <IconSparkle size={13} className="category-sparkle-icon" />
+              </button>
+            </div>
+            <div className="category-desc-status">
+              {isGeneratingDesc ? (
+                <span className="category-desc-status__generating">✨ ZuuAI açıklama üretiyor...</span>
+              ) : recognizedKey ? (
+                <span className="category-desc-status__hint">{recognizedCategoryItem.name} için ZuuAI önerisi hazır</span>
+              ) : (
+                <span className="category-desc-status__hint text-slate-400">Standart kategoriler için ZuuAI önerisi aktiftir</span>
+              )}
+            </div>
           </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label htmlFor="category-order" className="mb-1.5 block text-sm font-medium text-slate-700">Görüntüleme sırası</label>
@@ -104,6 +333,10 @@ const CategoryModal = ({ category, nextOrder, onClose, onSaved }) => {
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined'
+    ? createPortal(modalContent, document.body)
+    : modalContent;
 };
 
 const ThemeArtCard = ({ theme }) => {

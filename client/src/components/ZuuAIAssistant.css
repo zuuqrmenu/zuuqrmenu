@@ -1,0 +1,1282 @@
+/* ══════════════════════════════════════════════════════════════════════
+   ZuuAI Floating Assistant - Refined Native Design System
+   ══════════════════════════════════════════════════════════════════════ */
+
+.zuuai-widget {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 900;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Safe area for mobile navigation bars (iOS Safari) */
+@supports (padding: max(0px)) {
+  .zuuai-widget {
+    bottom: max(1.5rem, env(safe-area-inset-bottom, 1.5rem));
+    right: max(1.5rem, env(safe-area-inset-right, 1.5rem));
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   1. Floating Trigger Button
+   ────────────────────────────────────────────────────────────────────── */
+.zuuai-trigger-btn {
+  position: relative;
+  width: 3.375rem; /* 54px */
+  height: 3.375rem;
+  border-radius: 9999px;
+  background: #0f172a;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 
+    0 10px 25px -4px rgba(15, 23, 42, 0.35),
+    0 4px 10px -2px rgba(15, 23, 42, 0.2),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  outline: none;
+  transition: 
+    transform 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.zuuai-trigger-btn:hover {
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 
+    0 14px 32px -4px rgba(15, 23, 42, 0.42),
+    0 6px 14px -2px rgba(15, 23, 42, 0.25),
+    0 0 0 1px rgba(222, 255, 54, 0.3);
+  border-color: rgba(222, 255, 54, 0.4);
+}
+
+.zuuai-trigger-btn:active {
+  transform: translateY(0) scale(0.96);
+}
+
+.zuuai-trigger-btn:focus-visible {
+  box-shadow: 
+    0 0 0 3px rgba(222, 255, 54, 0.45),
+    0 10px 25px -4px rgba(15, 23, 42, 0.35);
+}
+
+/* Icon rotation / transition between Sparkle and Close */
+.zuuai-trigger-btn__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+}
+
+.zuuai-trigger-btn.is-open .zuuai-trigger-btn__icon {
+  transform: rotate(90deg);
+}
+
+/* Sparkle icon accent */
+.zuuai-sparkle-glyph {
+  color: #DEFF36;
+}
+
+/* Custom SVG logo inside trigger button */
+.zuuai-trigger-btn__logo {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+
+/* Subtle online status indicator on button */
+.zuuai-trigger-btn__badge {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  width: 11px;
+  height: 11px;
+  background: #DEFF36;
+  border: 2px solid #0f172a;
+  border-radius: 9999px;
+  box-shadow: 0 0 6px rgba(222, 255, 54, 0.5);
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.zuuai-trigger-btn.is-open .zuuai-trigger-btn__badge {
+  opacity: 0;
+  transform: scale(0.5);
+}
+
+/* Dark theme overrides for trigger button */
+body[data-dashboard-theme='dark'] .zuuai-trigger-btn {
+  background: #111827;
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: 
+    0 12px 30px -4px rgba(0, 0, 0, 0.6),
+    0 4px 12px -2px rgba(0, 0, 0, 0.4);
+}
+
+body[data-dashboard-theme='dark'] .zuuai-trigger-btn:hover {
+  border-color: rgba(222, 255, 54, 0.45);
+  box-shadow: 
+    0 16px 36px -4px rgba(0, 0, 0, 0.75),
+    0 0 0 1px rgba(222, 255, 54, 0.35);
+}
+
+body[data-dashboard-theme='dark'] .zuuai-trigger-btn__badge {
+  border-color: #111827;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   2. Chat Panel Container & Animation
+   ────────────────────────────────────────────────────────────────────── */
+.zuuai-panel {
+  position: absolute;
+  bottom: calc(100% + 1rem);
+  right: 0;
+  width: 400px;
+  max-width: calc(100vw - 2.5rem);
+  height: 580px;
+  max-height: calc(100vh - 7rem);
+  min-height: 420px;
+  background: #ffffff;
+  border-radius: 1.25rem; /* 20px */
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  box-shadow: 
+    0 24px 48px -12px rgba(15, 23, 42, 0.22),
+    0 8px 20px -4px rgba(15, 23, 42, 0.08),
+    0 0 0 1px rgba(15, 23, 42, 0.04);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform-origin: bottom right;
+  transition: 
+    opacity 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+    visibility 0.28s;
+  will-change: transform, opacity;
+}
+
+/* Closed state */
+.zuuai-panel.is-closed {
+  opacity: 0;
+  transform: translateY(16px) scale(0.94);
+  pointer-events: none;
+  visibility: hidden;
+}
+
+/* Open state */
+.zuuai-panel.is-open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+  visibility: visible;
+}
+
+/* Dark mode panel */
+body[data-dashboard-theme='dark'] .zuuai-panel {
+  background: #0f172a;
+  border-color: rgba(255, 255, 255, 0.09);
+  box-shadow: 
+    0 28px 56px -12px rgba(0, 0, 0, 0.7),
+    0 10px 24px -4px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .zuuai-panel,
+  .zuuai-trigger-btn,
+  .zuuai-trigger-btn__icon {
+    transition: opacity 0.15s ease !important;
+    transform: none !important;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   3. Header
+   ────────────────────────────────────────────────────────────────────── */
+.zuuai-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.15rem;
+  background: #ffffff;
+  border-bottom: 1px solid #f1f5f9;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-header {
+  background: #0f172a;
+  border-bottom-color: rgba(255, 255, 255, 0.07);
+}
+
+.zuuai-header__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.zuuai-header__avatar {
+  position: relative;
+  width: 2.25rem; /* 36px */
+  height: 2.25rem;
+  border-radius: 9999px;
+  background: #0f172a;
+  color: #DEFF36;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid rgba(222, 255, 54, 0.25);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.zuuai-header__logo {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-header__avatar {
+  background: #1e293b;
+  border-color: rgba(222, 255, 54, 0.3);
+}
+
+.zuuai-header__info {
+  display: flex;
+  flex-direction: column;
+}
+
+.zuuai-header__title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.zuuai-header__title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-header__title {
+  color: #f8fafc;
+}
+
+.zuuai-header__live-dot {
+  position: relative;
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #DEFF36;
+  box-shadow: 0 0 8px rgba(222, 255, 54, 0.8);
+  flex-shrink: 0;
+  margin-left: 0.2rem;
+}
+
+.zuuai-header__live-dot::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1.5px solid #DEFF36;
+  animation: zuuai-live-ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes zuuai-live-ping {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+body[data-dashboard-theme='dark'] .zuuai-header__live-dot {
+  box-shadow: 0 0 10px rgba(222, 255, 54, 0.9);
+}
+
+body[data-dashboard-theme='dark'] .zuuai-header__live-dot::after {
+  border-color: #DEFF36;
+}
+
+.zuuai-header__subtitle {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 0.1rem;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-header__subtitle {
+  color: #94a3b8;
+}
+
+.zuuai-header__close-btn {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  padding: 0.4rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.zuuai-header__close-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-header__close-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f8fafc;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   4. Message Body & Empty State
+   ────────────────────────────────────────────────────────────────────── */
+.zuuai-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 1rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  background: #f8fafc;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-messages {
+  background: #0b1120;
+}
+
+/* Custom subtle scrollbar */
+.zuuai-messages::-webkit-scrollbar {
+  width: 5px;
+}
+
+.zuuai-messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.zuuai-messages::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 9999px;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-messages::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Empty / Welcome State */
+.zuuai-welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 1.25rem 0.75rem 0.75rem;
+  margin: auto 0;
+}
+
+.zuuai-welcome__icon {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 9999px;
+  background: #0f172a;
+  color: #DEFF36;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.85rem;
+  border: 1px solid rgba(222, 255, 54, 0.3);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+}
+
+.zuuai-welcome__logo {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-welcome__icon {
+  background: #1e293b;
+  border-color: rgba(222, 255, 54, 0.35);
+}
+
+.zuuai-welcome__title {
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 0.35rem;
+  letter-spacing: -0.01em;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-welcome__title {
+  color: #f8fafc;
+}
+
+.zuuai-welcome__desc {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #64748b;
+  margin: 0 0 1.25rem;
+  max-width: 280px;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-welcome__desc {
+  color: #94a3b8;
+}
+
+/* Quick Action Suggestion Buttons */
+.zuuai-suggestions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.zuuai-suggestion-btn {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: #1e293b;
+  text-align: left;
+  cursor: pointer;
+  transition: 
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+  line-height: 1.35;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+}
+
+.zuuai-suggestion-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.zuuai-suggestion-btn:active {
+  transform: translateY(0);
+}
+
+body[data-dashboard-theme='dark'] .zuuai-suggestion-btn {
+  background: #1e293b;
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #e2e8f0;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-suggestion-btn:hover {
+  background: #273549;
+  border-color: rgba(222, 255, 54, 0.3);
+  color: #ffffff;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   5. Message Bubbles
+   ────────────────────────────────────────────────────────────────────── */
+.zuuai-msg-row {
+  display: flex;
+  gap: 0.55rem;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.zuuai-msg-row.is-user {
+  justify-content: flex-end;
+}
+
+.zuuai-msg-avatar {
+  width: 1.625rem; /* 26px */
+  height: 1.625rem;
+  border-radius: 9999px;
+  background: #0f172a;
+  color: #DEFF36;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+  border: 1px solid rgba(222, 255, 54, 0.2);
+}
+
+.zuuai-msg-avatar__logo {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-msg-avatar {
+  background: #1e293b;
+  border: 1px solid rgba(222, 255, 54, 0.2);
+}
+
+.zuuai-bubble {
+  max-width: 82%;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* User Bubble */
+.zuuai-bubble.is-user {
+  background: #0f172a;
+  color: #ffffff;
+  border-radius: 1rem 1rem 0.25rem 1rem;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+}
+
+body[data-dashboard-theme='dark'] .zuuai-bubble.is-user {
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #f8fafc;
+}
+
+/* Assistant Bubble */
+.zuuai-bubble.is-assistant {
+  background: #ffffff;
+  color: #0f172a;
+  border-radius: 1rem 1rem 1rem 0.25rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+body[data-dashboard-theme='dark'] .zuuai-bubble.is-assistant {
+  background: #162033;
+  color: #f1f5f9;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Error Bubble */
+.zuuai-bubble.is-error {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+  border-radius: 1rem 1rem 1rem 0.25rem;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-bubble.is-error {
+  background: #2a1215;
+  border-color: #4c1d24;
+  color: #fca5a5;
+}
+
+.zuuai-retry-btn {
+  margin-top: 0.45rem;
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 0.4rem;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: inherit;
+  transition: opacity 0.15s ease;
+}
+
+.zuuai-retry-btn:hover {
+  opacity: 0.8;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   6. Typing / Loading State
+   ────────────────────────────────────────────────────────────────────── */
+.zuuai-typing {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.8rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem 1rem 1rem 0.25rem;
+  width: fit-content;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-typing {
+  background: #162033;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.zuuai-typing__dots {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.zuuai-typing__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #64748b;
+  animation: zuuai-bounce 1.4s infinite ease-in-out both;
+}
+
+.zuuai-typing__dot:nth-child(1) { animation-delay: -0.32s; }
+.zuuai-typing__dot:nth-child(2) { animation-delay: -0.16s; }
+.zuuai-typing__dot:nth-child(3) { animation-delay: 0s; }
+
+body[data-dashboard-theme='dark'] .zuuai-typing__dot {
+  background: #DEFF36;
+}
+
+.zuuai-typing__text {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-typing__text {
+  color: #94a3b8;
+}
+
+@keyframes zuuai-bounce {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40% { transform: scale(1); opacity: 1; }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   7. Input Area
+   ────────────────────────────────────────────────────────────────────── */
+.zuuai-input-wrap {
+  padding: 0.75rem 0.85rem;
+  background: #ffffff;
+  border-top: 1px solid #f1f5f9;
+  flex-shrink: 0;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-input-wrap {
+  background: #0f172a;
+  border-top-color: rgba(255, 255, 255, 0.07);
+}
+
+.zuuai-input-box {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.45rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 1.25rem;
+  padding: 0.35rem 0.4rem 0.35rem 0.85rem;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+
+.zuuai-input-box:focus-within {
+  background: #ffffff;
+  border-color: #94a3b8;
+  box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.18);
+}
+
+body[data-dashboard-theme='dark'] .zuuai-input-box {
+  background: #0b1120;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+body[data-dashboard-theme='dark'] .zuuai-input-box:focus-within {
+  background: #0f172a;
+  border-color: rgba(222, 255, 54, 0.5);
+  box-shadow: 0 0 0 3px rgba(222, 255, 54, 0.12);
+}
+
+.zuuai-textarea {
+  flex: 1;
+  background: transparent;
+  border: none !important;
+  padding: 0.35rem 0;
+  margin: 0;
+  resize: none;
+  outline: none !important;
+  box-shadow: none !important;
+  font-family: inherit;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: #0f172a;
+  min-height: 1.5rem;
+  max-height: 6.5rem;
+  display: block;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+}
+
+.zuuai-textarea::-webkit-scrollbar {
+  width: 4px;
+}
+
+.zuuai-textarea::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.zuuai-textarea::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 9999px;
+}
+
+.zuuai-textarea::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.6);
+}
+
+.zuuai-textarea:focus,
+.zuuai-textarea:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+.zuuai-textarea::placeholder {
+  color: #94a3b8;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-textarea {
+  color: #f8fafc;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-textarea::placeholder {
+  color: #64748b;
+}
+
+.zuuai-send-btn {
+  width: 2.125rem; /* 34px */
+  height: 2.125rem;
+  border-radius: 9999px;
+  background: #0f172a;
+  color: #ffffff;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  margin-bottom: 2px;
+  transition: 
+    background-color 0.15s ease,
+    transform 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.zuuai-send-btn:hover:not(:disabled) {
+  background: #1e293b;
+  transform: scale(1.05);
+}
+
+.zuuai-send-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.zuuai-send-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-send-btn {
+  background: #DEFF36;
+  color: #000000;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-send-btn:hover:not(:disabled) {
+  background: #c9ea1e;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   8. Mobile Adaptations (<= 640px)
+   ────────────────────────────────────────────────────────────────────── */
+@media screen and (max-width: 640px) {
+  .zuuai-widget {
+    bottom: 1.15rem;
+    right: 1.15rem;
+  }
+
+  @supports (padding: max(0px)) {
+    .zuuai-widget {
+      bottom: max(1.15rem, env(safe-area-inset-bottom, 1.15rem));
+      right: max(1.15rem, env(safe-area-inset-right, 1.15rem));
+    }
+  }
+
+  /* Enlarged mobile trigger button */
+  .zuuai-trigger-btn {
+    width: 3.75rem; /* 60px */
+    height: 3.75rem;
+  }
+
+  .zuuai-trigger-btn__logo {
+    width: 50px;
+    height: 50px;
+  }
+
+  .zuuai-trigger-btn__badge {
+    width: 12px;
+    height: 12px;
+    top: 2px;
+    right: 2px;
+  }
+
+  .zuuai-panel {
+    position: fixed;
+    right: 1rem;
+    left: 1rem;
+    bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
+    width: auto;
+    max-width: none;
+    height: auto;
+    max-height: calc(100dvh - 6.5rem);
+    min-height: 380px;
+    border-radius: 1.15rem;
+    transform-origin: bottom right;
+  }
+
+  .zuuai-suggestions {
+    grid-template-columns: 1fr;
+    gap: 0.4rem;
+  }
+
+  .zuuai-bubble {
+    max-width: 88%;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   9. Compact Usage Indicator & Floating Popover (Isolated UI/UX Experiment)
+   ────────────────────────────────────────────────────────────────────── */
+.zuuai-input-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  margin-bottom: 2px;
+}
+
+.zuuai-usage-anchor {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.zuuai-usage-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  height: 28px;
+  padding: 0 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.73rem;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  border: 1px solid transparent;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+  line-height: 1;
+}
+
+.zuuai-usage-pill:active {
+  transform: scale(0.96);
+}
+
+.zuuai-usage-pill__icon {
+  flex-shrink: 0;
+}
+
+.zuuai-usage-pill__count {
+  letter-spacing: -0.01em;
+}
+
+/* State: Normal (Plenty of messages remaining) */
+.zuuai-usage-pill.is-normal {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+  color: #475569;
+}
+
+.zuuai-usage-pill.is-normal .zuuai-usage-pill__icon {
+  color: #64748b;
+}
+
+.zuuai-usage-pill.is-normal:hover {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-usage-pill.is-normal {
+  background: #1e293b;
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-usage-pill.is-normal .zuuai-usage-pill__icon {
+  color: #DEFF36;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-usage-pill.is-normal:hover {
+  background: #273549;
+  border-color: rgba(222, 255, 54, 0.3);
+  color: #f8fafc;
+}
+
+/* State: Low (<= 5 remaining) */
+.zuuai-usage-pill.is-low {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #b45309;
+}
+
+.zuuai-usage-pill.is-low .zuuai-usage-pill__icon {
+  color: #d97706;
+}
+
+.zuuai-usage-pill.is-low:hover {
+  background: #fef3c7;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-usage-pill.is-low {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #fbbf24;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-usage-pill.is-low .zuuai-usage-pill__icon {
+  color: #fbbf24;
+}
+
+/* State: Critical (1-2 remaining) */
+.zuuai-usage-pill.is-critical {
+  background: #fff7ed;
+  border-color: #fed7aa;
+  color: #c2410c;
+}
+
+.zuuai-usage-pill.is-critical .zuuai-usage-pill__icon {
+  color: #ea580c;
+}
+
+.zuuai-usage-pill.is-critical:hover {
+  background: #ffedd5;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-usage-pill.is-critical {
+  background: rgba(234, 88, 12, 0.16);
+  border-color: rgba(234, 88, 12, 0.35);
+  color: #fb923c;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-usage-pill.is-critical .zuuai-usage-pill__icon {
+  color: #fb923c;
+}
+
+/* State: Exhausted (0 remaining) */
+.zuuai-usage-pill.is-exhausted {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+.zuuai-usage-pill.is-exhausted .zuuai-usage-pill__icon {
+  color: #ef4444;
+}
+
+.zuuai-usage-pill.is-exhausted:hover {
+  background: #fee2e2;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-usage-pill.is-exhausted {
+  background: rgba(239, 68, 68, 0.14);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #f87171;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-usage-pill.is-exhausted .zuuai-usage-pill__icon {
+  color: #f87171;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   Floating Popover (NOT a modal, no backdrop)
+   ────────────────────────────────────────────────────────────────────── */
+.zuuai-usage-popover {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  width: 260px;
+  max-width: calc(100vw - 2rem);
+  padding: 0.8rem 0.9rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.85rem;
+  box-shadow: 0 10px 25px -4px rgba(15, 23, 42, 0.12), 0 4px 6px -2px rgba(15, 23, 42, 0.05);
+  z-index: 70;
+  animation: zuuai-popover-in 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  user-select: none;
+}
+
+@keyframes zuuai-popover-in {
+  0% {
+    opacity: 0;
+    transform: translateY(6px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+body[data-dashboard-theme='dark'] .zuuai-usage-popover {
+  background: #111827;
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 14px 32px -4px rgba(0, 0, 0, 0.5);
+}
+
+.zuuai-usage-popover__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 0.55rem;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-usage-popover__header {
+  border-bottom-color: rgba(255, 255, 255, 0.07);
+}
+
+.zuuai-usage-popover__title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.zuuai-usage-popover__bolt {
+  color: #eab308;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-usage-popover__bolt {
+  color: #DEFF36;
+}
+
+.zuuai-usage-popover__title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-usage-popover__title {
+  color: #f8fafc;
+}
+
+.zuuai-usage-popover__admin-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.35rem;
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-usage-popover__admin-badge {
+  background: rgba(222, 255, 54, 0.12);
+  color: #DEFF36;
+  border-color: rgba(222, 255, 54, 0.3);
+}
+
+.zuuai-usage-popover__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.zuuai-usage-popover__section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.zuuai-usage-popover__section + .zuuai-usage-popover__section {
+  padding-top: 0.45rem;
+  border-top: 1px solid #f8fafc;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-usage-popover__section + .zuuai-usage-popover__section {
+  border-top-color: rgba(255, 255, 255, 0.05);
+}
+
+.zuuai-usage-popover__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+}
+
+.zuuai-usage-popover__label {
+  font-weight: 600;
+  color: #475569;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-usage-popover__label {
+  color: #94a3b8;
+}
+
+.zuuai-usage-popover__count {
+  font-size: 0.74rem;
+  color: #64748b;
+}
+
+.zuuai-usage-popover__count strong {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-usage-popover__count {
+  color: #94a3b8;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-usage-popover__count strong {
+  color: #f8fafc;
+}
+
+.zuuai-usage-popover__meta {
+  font-size: 0.67rem;
+  color: #64748b;
+  line-height: 1.35;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-usage-popover__meta {
+  color: #94a3b8;
+}
+
+.zuuai-usage-popover__reset.is-exhausted {
+  color: #dc2626;
+  font-weight: 500;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-usage-popover__reset.is-exhausted {
+  color: #f87171;
+}
+
+.zuuai-usage-popover__warning {
+  margin-top: 0.25rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: 0.5rem;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-usage-popover__warning {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.25);
+}
+
+.zuuai-usage-popover__warning-title {
+  font-size: 0.71rem;
+  font-weight: 700;
+  color: #b45309;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-usage-popover__warning-title {
+  color: #fbbf24;
+}
+
+.zuuai-usage-popover__upgrade-hint {
+  font-size: 0.66rem;
+  color: #92400e;
+  line-height: 1.3;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-usage-popover__upgrade-hint {
+  color: #fde68a;
+}
+
+.zuuai-usage-popover__admin-text,
+.zuuai-usage-popover__disabled-text {
+  font-size: 0.74rem;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.45;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-usage-popover__admin-text,
+body[data-dashboard-theme='dark'] .zuuai-usage-popover__disabled-text {
+  color: #94a3b8;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   Exhausted State: Helper Text & Disabled Composer
+   ────────────────────────────────────────────────────────────────────── */
+.zuuai-composer-helper {
+  font-size: 0.7rem;
+  color: #dc2626;
+  text-align: center;
+  margin-top: 0.4rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-composer-helper {
+  color: #f87171;
+}
+
+.zuuai-input-box.is-disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-input-box.is-disabled {
+  background: #090e18;
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.zuuai-input-box.is-disabled textarea {
+  cursor: not-allowed;
+  user-select: none;
+  pointer-events: none;
+}
+
+.zuuai-input-box.is-disabled button {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+

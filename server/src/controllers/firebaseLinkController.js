@@ -1,14 +1,14 @@
 import User from '../models/User.js';
 
-const emailMismatchMessage = 'Firebase hesabının e-posta adresi mevcut hesapla eşleşmiyor.';
-const alreadyLinkedMessage = 'Bu Firebase hesabı başka bir kullanıcıya bağlı.';
-const existingLinkMessage = 'Bu kullanıcı farklı bir Firebase hesabına bağlı.';
+const emailMismatchMessage = 'Giriş hesabının e-posta adresi mevcut hesapla eşleşmiyor.';
+const alreadyLinkedMessage = 'Bu hesap başka bir kullanıcıya bağlı.';
+const existingLinkMessage = 'Bu kullanıcı farklı bir hesaba bağlı.';
 
 const isSameUser = (left, right) => left && right && String(left) === String(right);
 
 const successResponse = (res, authProvider) => res.json({
   success: true,
-  message: 'Firebase hesabı başarıyla bağlandı.',
+  message: 'Hesap başarıyla bağlandı.',
   authProvider,
   firebaseLinked: true,
 });
@@ -16,8 +16,8 @@ const successResponse = (res, authProvider) => res.json({
 export const linkFirebaseAccount = async (req, res, next) => {
   try {
     const firebaseUser = req.firebaseUser;
-    if (!firebaseUser?.uid) return res.status(401).json({ error: 'Geçersiz veya süresi dolmuş Firebase oturumu.' });
-    if (!firebaseUser.email) return res.status(400).json({ error: 'Firebase hesabında e-posta adresi bulunamadı.' });
+    if (!firebaseUser?.uid) return res.status(401).json({ error: 'Geçersiz veya süresi dolmuş oturum.' });
+    if (!firebaseUser.email) return res.status(400).json({ error: 'Giriş hesabında e-posta adresi bulunamadı.' });
 
     const user = await User.findById(req.user.userId).select('email role firebaseUid authProvider');
     if (!user) return res.status(401).json({ error: 'Kullanıcı bulunamadı.' });

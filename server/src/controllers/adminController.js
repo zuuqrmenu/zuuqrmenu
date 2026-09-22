@@ -6,6 +6,7 @@ import Category from '../models/Category.js';
 import RestaurantSettings from '../models/RestaurantSettings.js';
 import MenuView from '../models/MenuView.js';
 import MenuEvent from '../models/MenuEvent.js';
+import aiConfigService from '../services/ai/aiConfigService.js';
 
 const statusLabels = {
   PENDING: 'Onay Bekliyor',
@@ -68,7 +69,20 @@ export const getRestaurant = async (req, res, next) => {
   try {
     const restaurant = await getRestaurantOrError(req.params.id, res);
     if (!restaurant) return;
-    res.json({ restaurant });
+
+    const [zuuaiStats, globalConfig] = await Promise.all([
+      aiConfigService.getRestaurantZuuAiStats(restaurant._id),
+      aiConfigService.getAiConfig(),
+    ]);
+
+    res.json({
+      restaurant,
+      zuuaiStats,
+      globalDefaults: {
+        dailyLimit: globalConfig.dailyLimit,
+        monthlyLimit: globalConfig.monthlyLimit,
+      },
+    });
   } catch (error) {
     next(error);
   }
@@ -192,6 +206,7 @@ export const updateRestaurant = async (req, res, next) => {
       password,
       status,
       menuStatus,
+      zuuai,
     } = req.body;
 
     if (name && name.trim()) restaurant.name = name.trim();
@@ -201,6 +216,35 @@ export const updateRestaurant = async (req, res, next) => {
     if (email !== undefined) restaurant.email = email.trim().toLowerCase();
     if (status) restaurant.status = status;
     if (menuStatus) restaurant.menuStatus = menuStatus;
+
+    if (zuuai && typeof zuuai === 'object') {
+      if (!restaurant.zuuai) {
+        restaurant.zuuai = { enabled: true, customDailyLimit: null, customMonthlyLimit: null };
+      }
+      if (zuuai.enabled !== undefined) {
+        restaurant.zuuai.enabled = Boolean(zuuai.enabled);
+      }
+      if (zuuai.customDailyLimit !== undefined) {
+        if (zuuai.customDailyLimit === null || zuuai.customDailyLimit === '' || zuuai.customDailyLimit === undefined) {
+          restaurant.zuuai.customDailyLimit = null;
+        } else {
+          const d = Number(zuuai.customDailyLimit);
+          if (!isNaN(d) && d >= 0) {
+            restaurant.zuuai.customDailyLimit = d;
+          }
+        }
+      }
+      if (zuuai.customMonthlyLimit !== undefined) {
+        if (zuuai.customMonthlyLimit === null || zuuai.customMonthlyLimit === '' || zuuai.customMonthlyLimit === undefined) {
+          restaurant.zuuai.customMonthlyLimit = null;
+        } else {
+          const m = Number(zuuai.customMonthlyLimit);
+          if (!isNaN(m) && m >= 0) {
+            restaurant.zuuai.customMonthlyLimit = m;
+          }
+        }
+      }
+    }
 
     await restaurant.save();
 
@@ -229,8 +273,21 @@ export const updateRestaurant = async (req, res, next) => {
       }
     }
 
-    const updatedRestaurant = await Restaurant.findById(restaurant._id).populate('ownerId', 'email name username');
-    res.json({ message: 'Restoran ve kullanıcı bilgileri güncellendi', restaurant: updatedRestaurant });
+    const [updatedRestaurant, zuuaiStats, globalConfig] = await Promise.all([
+      Restaurant.findById(restaurant._id).populate('ownerId', 'email name username'),
+      aiConfigService.getRestaurantZuuAiStats(restaurant._id),
+      aiConfigService.getAiConfig(),
+    ]);
+
+    res.json({
+      message: 'Restoran ve kullanıcı bilgileri güncellendi',
+      restaurant: updatedRestaurant,
+      zuuaiStats,
+      globalDefaults: {
+        dailyLimit: globalConfig.dailyLimit,
+        monthlyLimit: globalConfig.monthlyLimit,
+      },
+    });
   } catch (error) {
     next(error);
   }

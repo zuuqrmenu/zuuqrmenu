@@ -12,11 +12,11 @@ const formatTimeAgo = (isoString) => {
 };
 
 // ─── Theme-Aware Progress Bar ───────────────────────────────
-const ProgressBar = ({ percent = 0, className = '' }) => {
+const ProgressBar = ({ percent = 0, status, className = '' }) => {
   const clamped = Math.min(Math.max(Number(percent) || 0, 0), 100);
   let fillModifier = 'resource-progress-fill--normal';
-  if (clamped >= 90) fillModifier = 'resource-progress-fill--rose';
-  else if (clamped >= 70) fillModifier = 'resource-progress-fill--amber';
+  if (status === 'critical' || clamped >= 90) fillModifier = 'resource-progress-fill--rose';
+  else if (status === 'warning' || clamped >= 70) fillModifier = 'resource-progress-fill--amber';
 
   return (
     <div className={`resource-progress-track h-2.5 w-full overflow-hidden rounded-full ${className}`}>
@@ -86,6 +86,36 @@ const CalendarIcon = ({ className = 'w-3.5 h-3.5' }) => (
   </svg>
 );
 
+const SparklesIcon = ({ className = 'w-5 h-5' }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+    <path d="M5 3v4" />
+    <path d="M19 17v4" />
+    <path d="M3 5h4" />
+    <path d="M17 19h4" />
+  </svg>
+);
+
+const CheckIcon = ({ className = 'w-4 h-4' }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+
+const InfoIcon = ({ className = 'w-4 h-4' }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <circle cx="12" cy="12" r="10" />
+    <line x1="12" y1="16" x2="12" y2="12" />
+    <line x1="12" y1="8" x2="12.01" y2="8" />
+  </svg>
+);
+
+const ChevronDownIcon = ({ className = 'w-3.5 h-3.5' }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <polyline points="6 9 12 15 18 9" />
+  </svg>
+);
+
 // ─── Renewal Calculation Helper ─────────────────────────────
 const getRenewalInfo = (serverRenewal) => {
   if (serverRenewal?.resetDate) {
@@ -124,6 +154,115 @@ export default function SystemLimitsTab() {
   const [refreshingService, setRefreshingService] = useState('');
   const [error, setError] = useState('');
 
+  // ZuuAI Settings & Usage State
+  const [aiData, setAiData] = useState(null);
+  const [aiLoading, setAiLoading] = useState(true);
+  const [aiRefreshing, setAiRefreshing] = useState(false);
+  const [selectedModel, setSelectedModel] = useState('gemini-3.1-flash-lite');
+  const [dailyLimitInput, setDailyLimitInput] = useState(20);
+  const [monthlyLimitInput, setMonthlyLimitInput] = useState(300);
+  const [savingModel, setSavingModel] = useState(false);
+  const [modelSuccessMsg, setModelSuccessMsg] = useState('');
+  const [modelErrorMsg, setModelErrorMsg] = useState('');
+  const [showGeminiDetails, setShowGeminiDetails] = useState(false);
+  const [selectedPlanTier, setSelectedPlanTier] = useState('standard');
+
+  const loadAiData = async (isManualRefresh = false) => {
+    if (isManualRefresh) {
+      setAiRefreshing(true);
+    } else {
+      setAiLoading(true);
+    }
+    try {
+      const res = await adminService.getAiSettings();
+      if (res?.data) {
+        setAiData(res.data);
+        if (res.data.activeModel) {
+          setSelectedModel(res.data.activeModel);
+        }
+        if (res.data.dailyLimit !== undefined) {
+          setDailyLimitInput(res.data.dailyLimit);
+        }
+        if (res.data.monthlyLimit !== undefined) {
+          setMonthlyLimitInput(res.data.monthlyLimit);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load ZuuAI settings:', err);
+    } finally {
+      setAiLoading(false);
+      setAiRefreshing(false);
+    }
+  };
+
+  const handleAiSettingsSave = async () => {
+    if (savingModel) return;
+    const dailyNum = parseInt(dailyLimitInput, 10);
+    const monthlyNum = parseInt(monthlyLimitInput, 10);
+
+    if (isNaN(dailyNum) || dailyNum < 1) {
+      setModelErrorMsg('Günlük kullanıcı limiti en az 1 olmalıdır.');
+      return;
+    }
+    if (isNaN(monthlyNum) || monthlyNum < 1) {
+      setModelErrorMsg('Aylık kullanıcı limiti en az 1 olmalıdır.');
+      return;
+    }
+
+    setSavingModel(true);
+    setModelSuccessMsg('');
+    setModelErrorMsg('');
+    try {
+      const res = await adminService.updateAiSettings({
+        model: selectedModel,
+        dailyLimit: dailyNum,
+        monthlyLimit: monthlyNum,
+      });
+      if (res?.data) {
+        setAiData((prev) => ({
+          ...prev,
+          activeModel: res.data.activeModel,
+          dailyLimit: res.data.dailyLimit,
+          monthlyLimit: res.data.monthlyLimit,
+        }));
+        setModelSuccessMsg('ZuuAI ayarları ve limitleri başarıyla kaydedildi.');
+        setTimeout(() => setModelSuccessMsg(''), 3500);
+      }
+    } catch (err) {
+      setModelErrorMsg(err?.response?.data?.error || 'Ayarlar kaydedilirken hata oluştu.');
+      setTimeout(() => setModelErrorMsg(''), 4500);
+    } finally {
+      setSavingModel(false);
+    }
+  };
+
+  const handleModelChange = async (newModel) => {
+    if (savingModel || newModel === selectedModel) return;
+    setSelectedModel(newModel);
+    setSavingModel(true);
+    setModelSuccessMsg('');
+    setModelErrorMsg('');
+    try {
+      const res = await adminService.updateAiSettings({
+        model: newModel,
+      });
+      if (res?.data) {
+        setAiData((prev) => ({
+          ...prev,
+          activeModel: res.data.activeModel,
+        }));
+        setModelSuccessMsg(`Aktif model başarıyla değiştirildi: ${newModel}`);
+        setTimeout(() => setModelSuccessMsg(''), 3500);
+        await loadAiData(true);
+      }
+    } catch (err) {
+      setModelErrorMsg(err?.response?.data?.error || 'Model değiştirilirken hata oluştu.');
+      setTimeout(() => setModelErrorMsg(''), 4500);
+    } finally {
+      setSavingModel(false);
+    }
+  };
+
   const loadServicesData = async (forceRefresh = false, targetService = '') => {
     if (targetService) {
       setRefreshingService(targetService);
@@ -151,6 +290,7 @@ export default function SystemLimitsTab() {
 
   useEffect(() => {
     loadServicesData();
+    loadAiData();
   }, []);
 
   const services = data?.services || {};
@@ -202,13 +342,16 @@ export default function SystemLimitsTab() {
 
           <button
             type="button"
-            disabled={fullRefreshing || loading}
-            onClick={() => loadServicesData(true)}
+            disabled={fullRefreshing || loading || aiRefreshing}
+            onClick={() => {
+              loadServicesData(true);
+              loadAiData(true);
+            }}
             className="resource-refresh-btn inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold shadow-xs disabled:opacity-50"
             title="Tüm kaynakları canlı sorgula"
           >
-            <RefreshIcon spinning={fullRefreshing} />
-            <span>{fullRefreshing ? 'Yenileniyor...' : 'Tümünü Yenile'}</span>
+            <RefreshIcon spinning={fullRefreshing || aiRefreshing} />
+            <span>{fullRefreshing || aiRefreshing ? 'Yenileniyor...' : 'Tümünü Yenile'}</span>
           </button>
         </div>
       </section>
@@ -642,7 +785,465 @@ export default function SystemLimitsTab() {
           </div>
         </div>
 
-        {/* 5. GOOGLE ANALYTICS CARD */}
+        {/* 5. ZUUAI MANAGEMENT CONTROL CENTER */}
+        <div className="resource-card flex flex-col p-6 lg:col-span-2 space-y-6">
+          {/* Header & Active Model Control */}
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-5 border-b border-slate-200/40 dark:border-white/[0.06]">
+            <div className="flex items-center gap-3.5">
+              <div className="resource-icon-wrap flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl shadow-xs text-amber-500 dark:text-brand">
+                <SparklesIcon />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-bold">ZuuAI Kontrol Merkezi</h3>
+                  <span className="resource-badge--brand rounded-md px-2 py-0.5 text-[11px] font-bold">
+                    Google Gemini
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Sağlayıcı limitleri, model seçimi ve restoran kullanıcı limitleri
+                </p>
+              </div>
+            </div>
+
+            {/* Model Selector */}
+            <div className="flex items-center gap-3 self-start sm:self-auto">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Aktif Model:</span>
+                <select
+                  value={selectedModel}
+                  disabled={savingModel || aiLoading}
+                  onChange={(e) => handleModelChange(e.target.value)}
+                  className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 shadow-xs focus:border-brand focus:outline-none dark:border-white/10 dark:bg-neutral-900 dark:text-white"
+                >
+                  {(aiData?.availableModels || [
+                    { id: 'gemini-3.1-flash-lite', name: 'Gemini 3.1 Flash-Lite', isDefault: true },
+                    { id: 'gemini-3.6-flash', name: 'Gemini 3.6 Flash', isDefault: false },
+                  ]).map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name} {m.isDefault ? '(Varsayılan)' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                type="button"
+                disabled={aiRefreshing}
+                onClick={() => loadAiData(true)}
+                className="resource-refresh-btn inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold shadow-xs transition-colors"
+                title="ZuuAI verilerini ve kullanım sayaçlarını yenile"
+              >
+                <RefreshIcon spinning={aiRefreshing} />
+                <span>Yenile</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Feedback messages */}
+          {modelSuccessMsg && (
+            <div className="flex items-center gap-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+              <CheckIcon />
+              <span>{modelSuccessMsg}</span>
+            </div>
+          )}
+
+          {modelErrorMsg && (
+            <div className="flex items-center gap-2 rounded-lg bg-rose-500/10 border border-rose-500/20 px-3 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400">
+              <span>{modelErrorMsg}</span>
+            </div>
+          )}
+
+          {/* SECTION A: GEMINI API USAGE (Token-First Unified Meter Box) */}
+          <div className="resource-meter-box p-5 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                    Google Gemini Model Token Kapasitesi
+                  </h4>
+                  <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-white dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10">
+                    {aiData?.providerLimits?.modelName || 'Gemini 3.1 Flash-Lite'}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Modelin anlık veri işleme kapasitesi ve dakika başına token tüketim durumu (TPM).
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                  (aiData?.providerLimits?.tpm?.status === 'critical')
+                    ? 'bg-rose-500/10 text-rose-500 border border-rose-500/30'
+                    : (aiData?.providerLimits?.tpm?.status === 'warning')
+                    ? 'bg-amber-500/10 text-amber-500 border border-amber-500/30'
+                    : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/30'
+                }`}>
+                  %{aiData?.providerLimits?.tpm?.percent ?? 0} anlık kullanıldı
+                </span>
+              </div>
+            </div>
+
+            {/* Main Progress Bar & Token Numbers */}
+            <div>
+              <div className="flex items-baseline justify-between">
+                <div className="text-2xl font-extrabold sm:text-3xl tracking-tight text-slate-900 dark:text-white font-mono">
+                  {(aiData?.providerLimits?.tpm?.used ?? 0).toLocaleString('tr-TR')}{' '}
+                  <span className="text-sm font-normal text-slate-400 font-sans">
+                    / {(aiData?.providerLimits?.tpm?.limit ?? 250000).toLocaleString('tr-TR')} Token / dk
+                  </span>
+                </div>
+                <span className="text-xs font-medium text-slate-400">
+                  Kalan: <strong className="text-slate-700 dark:text-slate-200 font-mono">
+                    {Math.max(0, (aiData?.providerLimits?.tpm?.limit ?? 250000) - (aiData?.providerLimits?.tpm?.used ?? 0)).toLocaleString('tr-TR')} token
+                  </strong>
+                </span>
+              </div>
+
+              <ProgressBar
+                percent={aiData?.providerLimits?.tpm?.percent}
+                className="mt-3 h-3"
+              />
+            </div>
+
+            {/* Quick Token Statistics Strip */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+              <div className="rounded-xl bg-white dark:bg-neutral-900/60 p-3 border border-slate-200/80 dark:border-white/[0.06]">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Kalan Anlık Kapasite</span>
+                <span className="text-base font-extrabold font-mono text-emerald-600 dark:text-emerald-400">
+                  {Math.max(0, (aiData?.providerLimits?.tpm?.limit ?? 250000) - (aiData?.providerLimits?.tpm?.used ?? 0)).toLocaleString('tr-TR')}
+                </span>
+                <span className="text-[10px] text-slate-400 ml-1">token</span>
+              </div>
+
+              <div className="rounded-xl bg-white dark:bg-neutral-900/60 p-3 border border-slate-200/80 dark:border-white/[0.06]">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Bugün Tüketilen Token</span>
+                <span className="text-base font-extrabold font-mono text-slate-800 dark:text-slate-100">
+                  {(aiData?.usageStats?.tokenUsage?.todayTokens ?? 0).toLocaleString('tr-TR')}
+                </span>
+                <span className="text-[10px] text-slate-400 ml-1">token</span>
+              </div>
+
+              <div className="rounded-xl bg-white dark:bg-neutral-900/60 p-3 border border-slate-200/80 dark:border-white/[0.06]">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Kümülatif Toplam Token</span>
+                <span className="text-base font-extrabold font-mono text-amber-500 dark:text-brand">
+                  {(aiData?.usageStats?.tokenUsage?.totalTokens ?? 0).toLocaleString('tr-TR')}
+                </span>
+                <span className="text-[10px] text-slate-400 ml-1">token</span>
+              </div>
+            </div>
+
+            {/* Renewal & Toggle Details Footer */}
+            <div className="pt-3 border-t border-slate-200/60 dark:border-white/[0.06] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+              <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                <RefreshIcon className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                <span>
+                  <strong>Google Token Sıfırlanması:</strong> Her <strong>1 dakikada bir</strong> (kayan pencerede) otomatik sıfırlanır; <strong>{(aiData?.providerLimits?.tpm?.limit ?? 250000).toLocaleString('tr-TR')} tokenlik</strong> kapasite anında yeniden açılır.
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowGeminiDetails(!showGeminiDetails)}
+                className="inline-flex items-center gap-1.5 self-start sm:self-auto text-xs font-bold text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors"
+              >
+                <span>{showGeminiDetails ? 'İstek & Ayrıntıları Gizle' : 'İstek & Diğer Detayları Gör'}</span>
+                <ChevronDownIcon className={`w-3.5 h-3.5 transition-transform duration-200 ${showGeminiDetails ? 'rotate-180' : ''}`} />
+              </button>
+            </div>
+
+            {/* Collapsible Technical Details (RPD, RPM, Token Breakdown) */}
+            {showGeminiDetails && (
+              <div className="mt-4 pt-4 border-t border-dashed border-slate-200 dark:border-white/[0.08] space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                    Sağlayıcı İstek Kotaları & Model Detayları
+                  </span>
+                  <span className="text-[11px] text-slate-400">
+                    Google AI Studio Free Tier
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {/* 1. Günlük İstek Kotası (RPD) */}
+                  <div className="resource-stat-box p-3.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Günlük İstek Kotası (RPD)</span>
+                      <span className="text-[10px] font-bold text-emerald-500">
+                        %{aiData?.providerLimits?.rpd?.percent ?? 0}
+                      </span>
+                    </div>
+                    <div className="mt-1.5 text-base font-bold">
+                      {aiData?.providerLimits?.rpd?.used?.toLocaleString('tr-TR') ?? 0}{' '}
+                      <span className="text-xs font-normal text-slate-400">
+                        / {aiData?.providerLimits?.rpd?.limit?.toLocaleString('tr-TR') ?? '1.500'} istek
+                      </span>
+                    </div>
+                    <p className="mt-2 text-[10px] text-slate-400">
+                      Sıfırlanma: Her gün gece yarısı Pasifik Saati (PT) — TSİ ~10:00. Kalan: {Math.max(0, (aiData?.providerLimits?.rpd?.limit ?? 1500) - (aiData?.providerLimits?.rpd?.used ?? 0))} istek.
+                    </p>
+                  </div>
+
+                  {/* 2. Dakikadaki İstek (RPM) */}
+                  <div className="resource-stat-box p-3.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Dakikadaki İstek Sınırı (RPM)</span>
+                      <span className="text-[10px] font-bold text-emerald-500">
+                        %{aiData?.providerLimits?.rpm?.percent ?? 0}
+                      </span>
+                    </div>
+                    <div className="mt-1.5 text-base font-bold">
+                      {aiData?.providerLimits?.rpm?.used ?? 0}{' '}
+                      <span className="text-xs font-normal text-slate-400">
+                        / {aiData?.providerLimits?.rpm?.limit ?? 15} istek
+                      </span>
+                    </div>
+                    <p className="mt-2 text-[10px] text-slate-400">
+                      Sıfırlanma: 1 dakikalık kayan pencere. Aşılırsa Google anlık daralma (429) döndürür.
+                    </p>
+                  </div>
+
+                  {/* 3. Token Dağılımı (Girdi / Çıktı) */}
+                  <div className="resource-stat-box p-3.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Girdi & Çıktı Dağılımı</span>
+                      <span className="text-[10px] font-bold text-amber-500">Token Oranı</span>
+                    </div>
+                    <div className="mt-1.5 text-xs font-mono space-y-1">
+                      <div>Girdi (Prompt): <strong>{aiData?.usageStats?.tokenUsage?.promptTokens?.toLocaleString('tr-TR') || '0'}</strong></div>
+                      <div>Çıktı (Yanıt): <strong>{aiData?.usageStats?.tokenUsage?.candidateTokens?.toLocaleString('tr-TR') || '0'}</strong></div>
+                    </div>
+                    <p className="mt-2 text-[10px] text-slate-400">
+                      ZuuAI etkileşimlerinde işlenen menü verisi ve üretilen cevap hacmi.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* SECTION B & C: USER LIMITS & APPLICATION USAGE DUAL GRID */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* ZUUQRMENU USER LIMITS CARD (Abonelik Paketleri & Plan Mimarisi) */}
+            <div className="resource-meter-box p-4 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between pb-2 border-b border-slate-200/30 dark:border-white/[0.06]">
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Paket Kotaları & Kullanıcı Limitleri</h4>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      Restoranların abonelik paketine göre ZuuAI kullanım kotaları.
+                    </p>
+                  </div>
+                  <span className="rounded-md bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 text-[10px] font-bold text-amber-500">
+                    Abonelik Planları
+                  </span>
+                </div>
+
+                {/* Plan Tier Selector (Extensible for upcoming tiers) */}
+                <div className="mt-3.5 flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-white/[0.04]">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPlanTier('standard')}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-bold transition-all ${
+                      selectedPlanTier === 'standard'
+                        ? 'bg-white dark:bg-neutral-800 text-slate-900 dark:text-white shadow-xs'
+                        : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
+                    }`}
+                  >
+                    <span>Standart Paket</span>
+                    <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold">Aktif</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPlanTier('pro')}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-medium transition-all ${
+                      selectedPlanTier === 'pro'
+                        ? 'bg-white dark:bg-neutral-800 text-slate-900 dark:text-white shadow-xs'
+                        : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                    }`}
+                  >
+                    <span>Pro Paket</span>
+                    <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-slate-200 dark:bg-white/[0.08] text-slate-500 font-semibold">Yakında</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPlanTier('enterprise')}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-medium transition-all ${
+                      selectedPlanTier === 'enterprise'
+                        ? 'bg-white dark:bg-neutral-800 text-slate-900 dark:text-white shadow-xs'
+                        : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                    }`}
+                  >
+                    <span>Kurumsal</span>
+                    <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-slate-200 dark:bg-white/[0.08] text-slate-500 font-semibold">Özel</span>
+                  </button>
+                </div>
+
+                {selectedPlanTier === 'standard' ? (
+                  <>
+                    <div className="mt-3.5 grid grid-cols-2 gap-3">
+                      <div className="flex flex-col gap-1.5">
+                        <label htmlFor="daily-limit-input" className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                          Standart Günlük Limit
+                        </label>
+                        <div className="relative">
+                          <input
+                            id="daily-limit-input"
+                            type="number"
+                            min="1"
+                            disabled={savingModel || aiLoading}
+                            value={dailyLimitInput}
+                            onChange={(e) => {
+                              setDailyLimitInput(e.target.value);
+                              setModelSuccessMsg('');
+                              setModelErrorMsg('');
+                            }}
+                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-800 shadow-xs focus:border-brand focus:outline-none dark:border-white/10 dark:bg-neutral-900 dark:text-white"
+                          />
+                          <span className="absolute right-3 top-2.5 text-xs text-slate-400">mesaj</span>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-1.5">
+                        <label htmlFor="monthly-limit-input" className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                          Standart Aylık Limit
+                        </label>
+                        <div className="relative">
+                          <input
+                            id="monthly-limit-input"
+                            type="number"
+                            min="1"
+                            disabled={savingModel || aiLoading}
+                            value={monthlyLimitInput}
+                            onChange={(e) => {
+                              setMonthlyLimitInput(e.target.value);
+                              setModelSuccessMsg('');
+                              setModelErrorMsg('');
+                            }}
+                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-800 shadow-xs focus:border-brand focus:outline-none dark:border-white/10 dark:bg-neutral-900 dark:text-white"
+                          />
+                          <span className="absolute right-3 top-2.5 text-xs text-slate-400">mesaj</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className="mt-3 text-[11px] text-slate-400 leading-relaxed">
+                      💡 Özel limiti tanımlanmamış tüm restoranlar bu standart paket limitlerini kullanır. İstediğiniz restorana özel kota tanımlamak için Restoranlar listesinden düzenleme yapabilirsiniz.
+                    </p>
+                  </>
+                ) : (
+                  <div className="mt-4 p-4 rounded-xl border border-dashed border-slate-200 dark:border-white/10 text-center">
+                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                      {selectedPlanTier === 'pro' ? 'Pro Paket (Yüksek Kapasite)' : 'Kurumsal Paket (Sınırsız / Özel Limitler)'}
+                    </p>
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      Bu paket seviyesi abonelik ve ödeme altyapısıyla birlikte aktif olacaktır. Şu anda tüm restoranlar Standart Paket üzerinden yönetilmektedir.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-slate-200/30 dark:border-white/[0.04] flex items-center justify-between">
+                <span className="text-[11px] text-slate-400">
+                  Sıfırlanma: <strong>00:00 Europe/Istanbul</strong>
+                </span>
+                <button
+                  type="button"
+                  onClick={handleAiSettingsSave}
+                  disabled={
+                    savingModel ||
+                    selectedPlanTier !== 'standard' ||
+                    (Number(dailyLimitInput) === aiData?.dailyLimit &&
+                      Number(monthlyLimitInput) === aiData?.monthlyLimit)
+                  }
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white transition-all hover:bg-slate-800 disabled:opacity-40 dark:bg-brand dark:text-black dark:hover:bg-brand/90"
+                >
+                  {savingModel ? 'Kaydediliyor...' : 'Paket Limitlerini Kaydet'}
+                </button>
+              </div>
+            </div>
+
+            {/* ZUUAI APPLICATION USAGE CARD */}
+            <div className="resource-meter-box p-4 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between pb-2 border-b border-slate-200/30 dark:border-white/[0.06]">
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">ZuuAI Kullanımı</h4>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      Uygulama düzeyinde gerçekleşen gerçek restoran etkileşimleri.
+                    </p>
+                  </div>
+                  <span className="rounded-md bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold text-emerald-500">
+                    Uygulama İstatistiği
+                  </span>
+                </div>
+
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  <div className="resource-stat-box p-3 text-center">
+                    <span className="text-[11px] text-slate-400 font-medium">Bugün</span>
+                    <p className="mt-1 text-base font-extrabold sm:text-lg">
+                      {aiData?.usageStats?.requestsToday?.toLocaleString('tr-TR') ?? 0}
+                    </p>
+                    <span className="text-[10px] text-slate-400">mesaj</span>
+                  </div>
+
+                  <div className="resource-stat-box p-3 text-center">
+                    <span className="text-[11px] text-slate-400 font-medium">Bu Ay</span>
+                    <p className="mt-1 text-base font-extrabold sm:text-lg">
+                      {aiData?.usageStats?.requestsThisMonth?.toLocaleString('tr-TR') ?? 0}
+                    </p>
+                    <span className="text-[10px] text-slate-400">mesaj</span>
+                  </div>
+                </div>
+
+                {/* Token breakdown */}
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  <div className="rounded-xl bg-white dark:bg-white/[0.04] p-2 text-center border border-slate-200/80 dark:border-white/[0.06]">
+                    <span className="text-[10px] text-slate-400 block font-medium">Girdi (Prompt)</span>
+                    <span className="text-xs font-bold font-mono text-slate-700 dark:text-slate-300">
+                      {aiData?.usageStats?.tokenUsage?.promptTokens?.toLocaleString('tr-TR') || '0'}
+                    </span>
+                  </div>
+                  <div className="rounded-xl bg-white dark:bg-white/[0.04] p-2 text-center border border-slate-200/80 dark:border-white/[0.06]">
+                    <span className="text-[10px] text-slate-400 block font-medium">Çıktı (Yanıt)</span>
+                    <span className="text-xs font-bold font-mono text-slate-700 dark:text-slate-300">
+                      {aiData?.usageStats?.tokenUsage?.candidateTokens?.toLocaleString('tr-TR') || '0'}
+                    </span>
+                  </div>
+                  <div className="rounded-xl bg-white dark:bg-white/[0.04] p-2 text-center border border-slate-200/80 dark:border-white/[0.06]">
+                    <span className="text-[10px] text-slate-400 block font-medium">Toplam Token</span>
+                    <span className="text-xs font-bold font-mono text-amber-500 dark:text-brand">
+                      {aiData?.usageStats?.tokenUsage?.totalTokens?.toLocaleString('tr-TR') || '0'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-3 pt-2.5 border-t border-slate-200/30 dark:border-white/[0.04] flex items-center justify-between text-[11px] text-slate-400">
+                <span>Başarı Oranı: <strong className="text-emerald-500 font-bold">
+                  {(aiData?.usageStats?.totalRequests || 0) > 0
+                    ? `%${Math.round((aiData.usageStats.successfulRequests / aiData.usageStats.totalRequests) * 100)}`
+                    : '%100'}
+                </strong></span>
+                <span>Aktif Restoran: <strong className="text-slate-700 dark:text-slate-300 font-bold">{aiData?.usageStats?.activeRestaurantsCount ?? 0}</strong></span>
+              </div>
+            </div>
+          </div>
+
+          {/* Clean minimal footer */}
+          <div className="pt-3 border-t border-slate-200/25 dark:border-white/[0.04] flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
+            <span>Sağlayıcı: <strong className="font-bold text-slate-700 dark:text-slate-300">Google Gemini API</strong></span>
+            <span>Desteklenen Modeller: <strong className="font-mono text-slate-600 dark:text-slate-400">gemini-3.1-flash-lite, gemini-3.6-flash</strong></span>
+            <span className="inline-flex items-center gap-1.5 font-medium text-emerald-500">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              Hazır & Canlı
+            </span>
+          </div>
+        </div>
+
+        {/* 6. GOOGLE ANALYTICS CARD */}
         <div className="resource-card flex flex-col p-6 lg:col-span-2">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3.5">

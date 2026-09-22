@@ -69,7 +69,13 @@ const Login = () => {
       redirectApplicationUser(session.user, session.restaurant);
     } catch (error) {
       await signOut(auth);
-      setError(error.response?.data?.error || getFirebaseAuthError(error));
+      console.error('Restaurant login failed:', error);
+      const serverError = error.response?.data?.error;
+      if (serverError && !serverError.toLowerCase().includes('firebase') && !serverError.toLowerCase().includes('admin')) {
+        setError(serverError);
+      } else {
+        setError(getFirebaseAuthError(error));
+      }
     } finally {
       setLoading(false);
     }
@@ -104,11 +110,14 @@ const Login = () => {
           trackEvent('create_restaurant', { method: 'google' });
           navigate('/pending-approval');
         } catch (registrationError) {
-          setError(registrationError.response?.data?.error || 'Google hesabınızla kayıt tamamlanamadı. Lütfen tekrar deneyin.');
+          console.error('Google registration failed:', registrationError);
+          const regErr = registrationError.response?.data?.error;
+          setError(regErr && !regErr.toLowerCase().includes('firebase') ? regErr : 'Giriş yapılamadı. Lütfen tekrar deneyin.');
           await signOut(auth);
         }
       }
     } catch (firebaseError) {
+      console.error('Google login failed:', firebaseError);
       setError(getFirebaseAuthError(firebaseError));
     } finally {
       setLoading(false);

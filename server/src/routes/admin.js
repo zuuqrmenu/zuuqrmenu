@@ -11,6 +11,7 @@ import {
   updateRestaurant,
 } from '../controllers/adminController.js';
 import { getExternalServicesUsage } from '../controllers/externalServicesController.js';
+import { getAiSettings, updateAiSettings } from '../controllers/adminAiController.js';
 import { adminAuth, auth } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -26,5 +27,7 @@ router.patch('/restaurants/:id/suspend', suspendRestaurant);
 router.patch('/restaurants/:id/activate', activateRestaurant);
 router.get('/stats', getStats);
 router.get('/external-services', getExternalServicesUsage);
+router.get('/ai/settings', getAiSettings);
+router.put('/ai/settings', updateAiSettings);
 
 export default router;
