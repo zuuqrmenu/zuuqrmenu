@@ -35,8 +35,19 @@ const IconSparkle = ({ size = 14, className = '' }) => (
 const CategoryModal = ({ category, nextOrder, onClose, onSaved }) => {
   const [form, setForm] = useState(category ? { name: category.name, description: category.description || '', isActive: category.isActive, displayOrder: category.displayOrder } : { ...emptyForm, displayOrder: nextOrder });
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
   const [isClosing, setIsClosing] = useState(false);
+
+  // Global top-center toast state (3s fade in/out)
+  const [siteToast, setSiteToast] = useState(null);
+  const toastTimeoutRef = useRef(null);
+
+  const showToast = (message, type = 'error') => {
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    setSiteToast({ message, type, id: Date.now() });
+    toastTimeoutRef.current = setTimeout(() => {
+      setSiteToast(null);
+    }, 3000);
+  };
 
   // Category suggestions & description states
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -53,6 +64,7 @@ const CategoryModal = ({ category, nextOrder, onClose, onSaved }) => {
     return () => {
       if (thinkTimeoutRef.current) clearTimeout(thinkTimeoutRef.current);
       if (streamIntervalRef.current) clearInterval(streamIntervalRef.current);
+      if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
     };
   }, []);
 
@@ -171,42 +183,52 @@ const CategoryModal = ({ category, nextOrder, onClose, onSaved }) => {
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!form.name.trim()) {
-      setError('Kategori adı zorunludur.');
+      showToast('Kategori adı zorunludur.', 'error');
       return;
     }
     setSaving(true);
-    setError('');
     try {
       const payload = { ...form, name: form.name.trim(), displayOrder: Number(form.displayOrder) };
       const result = category ? await menuService.updateCategory(category._id, payload) : await menuService.createCategory(payload);
       handleClose(() => onSaved(result.message));
     } catch (err) {
-      setError(err.response?.data?.error || 'Kategori kaydedilemedi.');
+      showToast(err.response?.data?.error || 'Kategori kaydedilemedi.', 'error');
       setSaving(false);
     }
   };
 
   const modalContent = (
-    <div
-      className={`category-modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4 ${isClosing ? 'is-closing' : ''}`}
-      role="presentation"
-      onMouseDown={(event) => event.target === event.currentTarget && handleClose()}
-    >
+    <>
+      {siteToast && typeof document !== 'undefined' && createPortal(
+        <div
+          key={siteToast.id}
+          className={`site-global-toast site-global-toast--${siteToast.type}`}
+          role="alert"
+        >
+          <span>{siteToast.type === 'error' ? '⚠️' : '✓'}</span>
+          <span>{siteToast.message}</span>
+        </div>,
+        document.body
+      )}
       <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="category-dialog-title"
-        className={`category-modal-panel w-full max-w-md rounded-2xl bg-white p-6 shadow-xl border border-slate-100 ${isClosing ? 'is-closing' : ''}`}
+        className={`category-modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4 ${isClosing ? 'is-closing' : ''}`}
+        role="presentation"
+        onMouseDown={(event) => event.target === event.currentTarget && handleClose()}
       >
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-sm font-medium text-emerald-600">Menü</p>
-            <h2 id="category-dialog-title" className="mt-1 text-xl font-semibold">{category ? 'Kategoriyi düzenle' : 'Kategori ekle'}</h2>
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="category-dialog-title"
+          className={`category-modal-panel w-full max-w-md rounded-2xl bg-white p-6 shadow-xl border border-slate-100 ${isClosing ? 'is-closing' : ''}`}
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium text-emerald-600">Menü</p>
+              <h2 id="category-dialog-title" className="mt-1 text-xl font-semibold">{category ? 'Kategoriyi düzenle' : 'Kategori ekle'}</h2>
+            </div>
+            <button type="button" onClick={() => handleClose()} className="text-2xl leading-none text-slate-400 hover:text-slate-700" aria-label="Kapat">×</button>
           </div>
-          <button type="button" onClick={() => handleClose()} className="text-2xl leading-none text-slate-400 hover:text-slate-700" aria-label="Kapat">×</button>
-        </div>
-        {error && <div className="mt-5 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           {/* Category Name Input & Suggestions Dropdown */}
           <div className="relative" ref={categoryInputContainerRef}>
             <label htmlFor="category-name" className="mb-1.5 block text-sm font-medium text-slate-700">
@@ -332,6 +354,7 @@ const CategoryModal = ({ category, nextOrder, onClose, onSaved }) => {
         </form>
       </div>
     </div>
+    </>
   );
 
   return typeof document !== 'undefined'
@@ -644,11 +667,15 @@ const MenuManagement = () => {
 
   useEffect(() => {
     if (!notice) return undefined;
-    setNoticeVisible(true);
-    const fadeTimer = window.setTimeout(() => setNoticeVisible(false), 3000);
-    const clearTimer = window.setTimeout(() => setNotice(''), 3300);
-    return () => { window.clearTimeout(fadeTimer); window.clearTimeout(clearTimer); };
+    const clearTimer = window.setTimeout(() => setNotice(''), 3000);
+    return () => { window.clearTimeout(clearTimer); };
   }, [notice]);
+
+  useEffect(() => {
+    if (!error) return undefined;
+    const clearTimer = window.setTimeout(() => setError(''), 3000);
+    return () => { window.clearTimeout(clearTimer); };
+  }, [error]);
 
   const loadData = async (silent = false) => {
     if (!silent) setLoading(true);
@@ -839,7 +866,20 @@ const MenuManagement = () => {
             />
           )}
         </section>
-        {notice && <div className={`settings-status settings-status--success ${noticeVisible ? 'is-visible' : 'is-hiding'}`} role="status">{notice}<button onClick={() => setNotice('')} className="ml-3" aria-label="Bildirimi kapat">×</button></div>}
+        {notice && typeof document !== 'undefined' && createPortal(
+          <div key={notice} className="site-global-toast site-global-toast--success" role="status">
+            <span>✓</span>
+            <span>{notice}</span>
+          </div>,
+          document.body
+        )}
+        {error && typeof document !== 'undefined' && createPortal(
+          <div key={error} className="site-global-toast site-global-toast--error" role="alert">
+            <span>⚠️</span>
+            <span>{error}</span>
+          </div>,
+          document.body
+        )}
         <div className="menu-management-header-grid">
           {overview ? (
             <section className="menu-publish-card">

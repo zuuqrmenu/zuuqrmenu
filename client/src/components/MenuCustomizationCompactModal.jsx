@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import FeaturedStories from './public-menu/FeaturedStories';
 import CategoryNavigation from './public-menu/CategoryNavigation';
 import CategorySection from './public-menu/CategorySection';
@@ -8,6 +9,7 @@ import CategoryCardGrid from './public-menu/CategoryCardGrid';
 import { getPublicMenuTheme, publicMenuFonts, publicMenuThemes } from '../utils/publicMenuTheme';
 import useBodyScrollLock from '../hooks/useBodyScrollLock';
 import { useAuth } from '../context/AuthContext';
+import './CategorySuggester.css';
 
 const previewDemoRestaurant = {
   name: 'Demo Restoran',
@@ -445,6 +447,7 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, onDelete = nu
   const [savedThemes, setSavedThemes] = useState(Array.isArray(themes) ? themes : []);
   const [draft, setDraft] = useState(() => (initialMenu ? normalize(initialMenu) : buildDefaultMenuTemplate({ name: '' })));
   const [feedback, setFeedback] = useState({ kind: 'idle', message: '', id: 0, isHiding: false });
+  const [siteToast, setSiteToast] = useState(null);
   const [nameError, setNameError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -454,7 +457,16 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, onDelete = nu
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const feedbackTimeoutRef = useRef(null);
+  const toastTimeoutRef = useRef(null);
   const initialDraftSnapshotRef = useRef('');
+
+  const showToast = (message, type = 'error') => {
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    setSiteToast({ message, type, id: Date.now() });
+    toastTimeoutRef.current = setTimeout(() => {
+      setSiteToast(null);
+    }, 3000);
+  };
 
   const isEditingExisting = Boolean(initialMenu && (initialMenu._id || initialMenu.id || typeof editingIndex === 'number'));
 
@@ -505,24 +517,16 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, onDelete = nu
 
   useEffect(() => () => {
     if (feedbackTimeoutRef.current) window.clearTimeout(feedbackTimeoutRef.current);
+    if (toastTimeoutRef.current) window.clearTimeout(toastTimeoutRef.current);
   }, []);
 
   const triggerFeedback = (kind, message) => {
-    if (feedbackTimeoutRef.current) window.clearTimeout(feedbackTimeoutRef.current);
-    const nextId = Date.now() + Math.random();
-    setFeedback({ kind, message, id: nextId, isHiding: false });
-    feedbackTimeoutRef.current = window.setTimeout(() => {
-      setFeedback((current) => (current.id === nextId ? { ...current, isHiding: true } : current));
-      feedbackTimeoutRef.current = window.setTimeout(() => {
-        setFeedback((current) => (current.id === nextId ? { kind: 'idle', message: '', id: current.id + 1, isHiding: false } : current));
-      }, 350);
-    }, 2200);
+    showToast(message, kind === 'error' ? 'error' : kind === 'warning' ? 'warning' : 'success');
   };
 
   const update = (field, value) => {
     setDraft((current) => ({ ...current, [field]: value }));
     setError('');
-    setFeedback({ kind: 'idle', message: '', id: Date.now() + Math.random() });
   };
   const updateLayout = (field, value) => setDraft((current) => ({ ...current, layout: { ...current.layout, [field]: value } }));
 
@@ -540,8 +544,7 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, onDelete = nu
     const cleanName = draft.name?.trim() || '';
     if (!cleanName) {
       setNameError(true);
-      setError('Lütfen bir tema adı girin.');
-      triggerFeedback('error', 'Lütfen bir tema adı girin.');
+      showToast('Lütfen bir tema adı girin.', 'error');
       return;
     }
 
@@ -652,8 +655,20 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, onDelete = nu
   const showPreviewSection = !isMobileViewport || showMobilePreview;
 
   return (
-    <div className={`menu-compact-backdrop ${isClosing ? 'is-closing' : ''}`} role="presentation" onMouseDown={(event) => event.target === event.currentTarget && handleClose()}>
-      <div className={`menu-compact-modal ${isClosing ? 'is-closing' : ''} ${feedback.kind === 'error' ? 'is-invalid' : ''} ${feedback.kind === 'success' ? 'is-success' : ''}`} role="dialog" aria-modal="true" aria-labelledby="menu-compact-title">
+    <>
+      {siteToast && typeof document !== 'undefined' && createPortal(
+        <div
+          key={siteToast.id}
+          className={`site-global-toast site-global-toast--${siteToast.type}`}
+          role="alert"
+        >
+          <span>{siteToast.type === 'error' ? '⚠️' : siteToast.type === 'warning' ? '💡' : '✓'}</span>
+          <span>{siteToast.message}</span>
+        </div>,
+        document.body
+      )}
+      <div className={`menu-compact-backdrop ${isClosing ? 'is-closing' : ''}`} role="presentation" onMouseDown={(event) => event.target === event.currentTarget && handleClose()}>
+        <div className={`menu-compact-modal ${isClosing ? 'is-closing' : ''}`} role="dialog" aria-modal="true" aria-labelledby="menu-compact-title">
         <header className="menu-compact-header">
           <div className="menu-compact-header__title-wrap">
             <span className="menu-compact-kicker">MENÜ TASARIMI</span>
@@ -757,12 +772,6 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, onDelete = nu
               <circle cx="12" cy="12" r="2.5" />
             </svg>
           </button>
-        )}
-
-        {feedback.kind !== 'idle' && (
-          <div key={`${feedback.kind}-${feedback.id}`} className={`menu-compact-feedback is-${feedback.kind} ${feedback.isHiding ? 'is-hiding' : ''}`} role="alert">
-            {feedback.message}
-          </div>
         )}
 
         <div className={`menu-compact-layout ${isMobileViewport ? 'is-mobile' : ''} ${showMobilePreview && isMobileViewport ? 'is-mobile-preview' : ''}`}>
@@ -905,6 +914,7 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, onDelete = nu
         />
       </div>
     </div>
+    </>
   );
 };
 
