@@ -93,6 +93,13 @@ const BusinessTypeIcon = ({ type, className = 'w-3.5 h-3.5' }) => {
   }
 };
 
+const PencilIcon = ({ className = 'w-3.5 h-3.5' }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M12 20h9" />
+    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+  </svg>
+);
+
 /* ─── Business Type Badge ──────────────────────────────────── */
 const BusinessTypeBadge = ({ type }) => (
   <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-200/90 bg-slate-50 px-2 py-0.5 text-xs font-semibold text-slate-700">
@@ -399,19 +406,15 @@ const RestaurantDetailModal = ({
   onSuspendToggle,
   onRestaurantUpdated,
 }) => {
-  if (!restaurant) return null;
-
-  const isSuspended = restaurant.status === 'SUSPENDED';
-
   // ZuuAI state for this restaurant
-  const [zuuaiEnabled, setZuuaiEnabled] = useState(restaurant.zuuai?.enabled !== false);
+  const [zuuaiEnabled, setZuuaiEnabled] = useState(restaurant?.zuuai?.enabled !== false);
   const [customDailyLimit, setCustomDailyLimit] = useState(
-    restaurant.zuuai?.customDailyLimit !== null && restaurant.zuuai?.customDailyLimit !== undefined
+    restaurant?.zuuai?.customDailyLimit !== null && restaurant?.zuuai?.customDailyLimit !== undefined
       ? String(restaurant.zuuai.customDailyLimit)
       : ''
   );
   const [customMonthlyLimit, setCustomMonthlyLimit] = useState(
-    restaurant.zuuai?.customMonthlyLimit !== null && restaurant.zuuai?.customMonthlyLimit !== undefined
+    restaurant?.zuuai?.customMonthlyLimit !== null && restaurant?.zuuai?.customMonthlyLimit !== undefined
       ? String(restaurant.zuuai.customMonthlyLimit)
       : ''
   );
@@ -422,6 +425,7 @@ const RestaurantDetailModal = ({
 
   // Load fresh ZuuAI stats & defaults on mount/change
   useEffect(() => {
+    if (!restaurant?._id) return;
     let isMounted = true;
     adminService.getRestaurant(restaurant._id)
       .then((res) => {
@@ -447,7 +451,11 @@ const RestaurantDetailModal = ({
     return () => {
       isMounted = false;
     };
-  }, [restaurant._id]);
+  }, [restaurant?._id]);
+
+  if (!restaurant) return null;
+
+  const isSuspended = restaurant.status === 'SUSPENDED';
 
   const handleSaveZuuai = async () => {
     setSavingZuuai(true);
