@@ -126,18 +126,38 @@ const Register = () => {
 
   if (registrationComplete) {
     return (
-    <div className="reg-page">
-      <SeoHead title="Kayıt Tamamlandı | zuuqrmenu" description="Restoranınız başarıyla oluşturuldu." canonical="https://zuuqrmenu.com/register" robots="noindex,nofollow" />
-      <div className="reg-success">
-        <span className="reg-success__icon" aria-hidden="true">✓</span>
-        <h2>Kaydınız alındı</h2>
-        <p>Restoranınız incelemeye alındı. Onaylandığında e-posta ile bildirileceksiniz.</p>
-        <Link to="/login" className="reg-btn reg-btn--primary" style={{ marginTop: '1.5rem', display: 'inline-flex', justifyContent: 'center' }}>
-          Giriş sayfasına dön
-        </Link>
+      <div className="reg-page reg-page--center">
+        <SeoHead
+          title="Kayıt Tamamlandı | zuuqrmenu"
+          description="Restoranınız başarıyla oluşturuldu."
+          canonical="https://zuuqrmenu.com/register"
+          robots="noindex,nofollow"
+        />
+        <div className="reg-success">
+          <Link to="/" className="reg-success__logo">
+            <img src="/logo.svg" alt="zuuqrmenu" />
+          </Link>
+          <div className="reg-success__badge">
+            <span className="reg-success__icon" aria-hidden="true">✓</span>
+          </div>
+          <h2>Kaydınız Alındı</h2>
+          <p>
+            Restoranınız incelemeye alındı. Hesabınız onaylandığında e-posta ile bilgilendirileceksiniz.
+          </p>
+          <div className="reg-success__status">
+            <span className="reg-success__status-dot" aria-hidden="true" />
+            <span>Başvuru Durumu: <strong>İnceleniyor</strong></span>
+          </div>
+          <Link
+            to="/login"
+            className="reg-btn reg-btn--primary"
+            style={{ width: '100%', marginTop: '1.25rem', display: 'inline-flex', justifyContent: 'center' }}
+          >
+            Giriş Sayfasına Dön
+          </Link>
+        </div>
       </div>
-    </div>
-  );
+    );
   }
 
   return (
