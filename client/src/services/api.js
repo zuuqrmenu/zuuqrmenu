@@ -19,7 +19,7 @@ api.interceptors.request.use(
     config.headers = config.headers || {};
     const path = config.url || '';
     const isPublicEndpoint = path.startsWith('/public/');
-    const isAnonymousAuth = path === '/auth/login' || path === '/auth/register-firebase';
+    const isAnonymousAuth = path === '/auth/login';
 
     // Prevent browser disk-cache and cross-origin CORS cache collisions between subdomains
     if (config.method?.toLowerCase() === 'get' && !isPublicEndpoint) {
@@ -32,8 +32,9 @@ api.interceptors.request.use(
       return config;
     }
 
-    // Firebase session exchange endpoint must always use Firebase ID token
-    if (path === '/auth/firebase-session') {
+    // Firebase authenticated endpoints must always use Firebase ID token
+    const isFirebaseEndpoint = path === '/auth/firebase-session' || path === '/auth/register-firebase' || path === '/auth/link-firebase';
+    if (isFirebaseEndpoint) {
       const token = await getFirebaseIdToken();
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;

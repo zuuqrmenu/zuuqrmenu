@@ -126,12 +126,11 @@ export const firebaseSession = async (req, res, next) => {
 
     let user = await User.findOne({ firebaseUid }).select('-password');
 
-    // Auto-link if restaurant user exists with the exact verified email but no firebaseUid linked yet
+    // Auto-link if user exists with the exact verified email but no firebaseUid linked yet
     if (!user && req.firebaseUser?.email) {
       const email = req.firebaseUser.email.toLowerCase().trim();
       const existingUser = await User.findOne({
         email,
-        role: 'RESTAURANT_USER',
         $or: [{ firebaseUid: { $exists: false } }, { firebaseUid: null }],
       });
       if (existingUser) {
@@ -144,17 +143,46 @@ export const firebaseSession = async (req, res, next) => {
       }
     }
 
-    if (!user || user.role !== 'RESTAURANT_USER' || !user.isActive) {
-      return res.status(409).json({ error: 'Giriş yapılamadı. Lütfen tekrar deneyin.' });
+    if (!user) {
+      return res.status(409).json({
+        error: 'Bu hesaba bağlı bir restoran kaydı bulunamadı. Lütfen önce restoran kaydınızı oluşturun.',
+        code: 'NO_RESTAURANT_ACCOUNT',
+      });
+    }
+
+    if (!user.isActive) {
+      return res.status(403).json({ error: 'Hesabınız askıya alınmıştır. Lütfen destek ile iletişime geçin.' });
+    }
+
+    if (user.role === 'ADMIN') {
+      const token = setAuthCookie(res, user);
+      return res.json({
+        message: 'Admin oturumu oluşturuldu.',
+        token,
+        user: { id: user._id, email: user.email, name: user.name, username: user.username || '', role: user.role },
+        restaurant: null,
+      });
+    }
+
+    if (user.role !== 'RESTAURANT_USER') {
+      return res.status(403).json({ error: 'Yetkisiz erişim türü.' });
     }
 
     const restaurant = user.restaurantId ? await Restaurant.findById(user.restaurantId) : null;
-    if (!restaurant) return res.status(409).json({ error: 'Giriş yapılamadı. Lütfen tekrar deneyin.' });
+    if (!restaurant) {
+      return res.status(409).json({
+        error: 'Hesabınıza ait restoran profili bulunamadı. Lütfen destek ile iletişime geçin.',
+        code: 'NO_RESTAURANT_PROFILE',
+      });
+    }
 
     if (restaurant.status !== 'ACTIVE') {
-      return res.status(403).json({ error: restaurant.status === 'PENDING'
-        ? 'Hesabınız henüz yönetici tarafından onaylanmadı. Onaylandıktan sonra giriş yapabilirsiniz.'
-        : 'Hesabınız şu anda restoran paneline erişemiyor.' });
+      return res.status(403).json({
+        error: restaurant.status === 'PENDING'
+          ? 'Hesabınız henüz yönetici tarafından onaylanmadı. Onaylandıktan sonra giriş yapabilirsiniz.'
+          : 'Hesabınız şu anda restoran paneline erişemiyor.',
+        status: restaurant.status,
+      });
     }
 
     const token = setAuthCookie(res, user);

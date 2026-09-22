@@ -52,7 +52,19 @@ const Register = () => {
       const reuseGoogleUser = Boolean(isGoogleRegistration && currentFirebaseUser.email === formData.email);
       if (!reuseGoogleUser) {
         if (currentFirebaseUser) await signOut(auth);
-        await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+        try {
+          await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+        } catch (firebaseErr) {
+          if (firebaseErr?.code === 'auth/email-already-in-use') {
+            try {
+              await signInWithEmailAndPassword(auth, formData.email, formData.password);
+            } catch {
+              throw new Error('Bu e-posta adresi zaten kullanımda. Hesabınız varsa lütfen giriş yapın veya farklı bir e-posta deneyin.');
+            }
+          } else {
+            throw firebaseErr;
+          }
+        }
       }
       const result = await authService.registerFirebase({
         ...formData,
@@ -68,7 +80,14 @@ const Register = () => {
         setError(result.error);
       }
     } catch (err) {
-      setError(err?.code?.startsWith('auth/') ? getFirebaseAuthError(err) : err.response?.data?.error || 'Kayit basarisiz. Lutfen tekrar deneyin.');
+      const backendError = err.response?.data?.error;
+      if (backendError) {
+        setError(backendError);
+      } else if (err?.code?.startsWith('auth/')) {
+        setError(getFirebaseAuthError(err));
+      } else {
+        setError(err?.message || 'Kayıt başarısız. Lütfen tekrar deneyin.');
+      }
     } finally {
       setLoading(false);
     }

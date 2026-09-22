@@ -169,7 +169,14 @@ const Login = () => {
 
           {error && (
             <div className="reg-error" role="alert">
-              {error}
+              <div>{error}</div>
+              {error.includes('kaydı bulunamadı') && (
+                <div style={{ marginTop: '0.5rem', fontSize: '0.875rem' }}>
+                  <Link to="/register" style={{ color: 'inherit', textDecoration: 'underline', fontWeight: 600 }}>
+                    Restoran kaydınızı oluşturmak için buraya tıklayın →
+                  </Link>
+                </div>
+              )}
             </div>
           )}
 
