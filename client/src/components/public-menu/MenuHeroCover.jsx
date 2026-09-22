@@ -12,7 +12,7 @@ const MenuHeroCover = ({
   const coverImg =
     restaurant?.coverImage ||
     restaurant?.storeImage ||
-    'https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=1200&q=80';
+    null;
 
   const handleExplore = () => {
     if (onExplore) {
@@ -26,7 +26,9 @@ const MenuHeroCover = ({
   return (
     <div className="menu-hero-cover" aria-label="Restoran karşılama alanı">
       <div className="menu-hero-cover__backdrop">
-        <BlurImage src={coverImg} alt={`${restaurant?.name || 'Menü'} kapağı`} className="menu-hero-cover__img" />
+        {coverImg && (
+          <BlurImage src={coverImg} alt={`${restaurant?.name || 'Menü'} kapağı`} className="menu-hero-cover__img" />
+        )}
         <div className="menu-hero-cover__overlay" />
       </div>
 
