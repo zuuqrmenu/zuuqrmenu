@@ -154,6 +154,179 @@ const ProductDetailModal = ({ product, onClose, allProducts = [], onSelectProduc
     };
   }, [product]);
 
+  // Smooth kinetic mouse drag-to-scroll & fluid wheel support for recommendations carousel
+  const recScrollRef = useRef(null);
+  const isPointerDownRef = useRef(false);
+  const pointerStartXRef = useRef(0);
+  const scrollStartLeftRef = useRef(0);
+  const hasDraggedRef = useRef(false);
+  const lastPointerXRef = useRef(0);
+  const lastPointerTimeRef = useRef(0);
+  const dragVelocityRef = useRef(0);
+  const wheelRafRef = useRef(null);
+  const momentumRafRef = useRef(null);
+  const targetScrollLeftRef = useRef(0);
+
+  const stopAllScrollAnimations = () => {
+    if (wheelRafRef.current) {
+      cancelAnimationFrame(wheelRafRef.current);
+      wheelRafRef.current = null;
+    }
+    if (momentumRafRef.current) {
+      cancelAnimationFrame(momentumRafRef.current);
+      momentumRafRef.current = null;
+    }
+  };
+
+  const handleRecPointerDown = (e) => {
+    if (e.button !== 0) return;
+    stopAllScrollAnimations();
+    isPointerDownRef.current = true;
+    pointerStartXRef.current = e.pageX;
+    lastPointerXRef.current = e.pageX;
+    lastPointerTimeRef.current = performance.now();
+    dragVelocityRef.current = 0;
+    scrollStartLeftRef.current = recScrollRef.current ? recScrollRef.current.scrollLeft : 0;
+    targetScrollLeftRef.current = scrollStartLeftRef.current;
+    hasDraggedRef.current = false;
+  };
+
+  const handleRecPointerMove = (e) => {
+    if (!isPointerDownRef.current || !recScrollRef.current) return;
+    const now = performance.now();
+    const dt = Math.max(1, now - lastPointerTimeRef.current);
+    const moveX = e.pageX - lastPointerXRef.current;
+
+    // Moving average of velocity for smooth exit inertia
+    const instantaneousV = moveX / dt;
+    dragVelocityRef.current = dragVelocityRef.current * 0.35 + instantaneousV * 0.65;
+    lastPointerXRef.current = e.pageX;
+    lastPointerTimeRef.current = now;
+
+    const totalDx = e.pageX - pointerStartXRef.current;
+    if (Math.abs(totalDx) > 4) {
+      hasDraggedRef.current = true;
+      recScrollRef.current.classList.add('is-dragging');
+    }
+    if (hasDraggedRef.current) {
+      recScrollRef.current.scrollLeft = scrollStartLeftRef.current - totalDx;
+      targetScrollLeftRef.current = recScrollRef.current.scrollLeft;
+    }
+  };
+
+  const handleRecPointerUp = () => {
+    if (!isPointerDownRef.current) return;
+    isPointerDownRef.current = false;
+    const el = recScrollRef.current;
+    if (el) {
+      el.classList.remove('is-dragging');
+    }
+
+    // Apply smooth inertia glide if released while moving
+    if (el && hasDraggedRef.current && Math.abs(dragVelocityRef.current) > 0.12) {
+      stopAllScrollAnimations();
+      let velocity = -dragVelocityRef.current * 16;
+      const maxVel = 26;
+      velocity = Math.max(-maxVel, Math.min(maxVel, velocity));
+
+      const runMomentum = () => {
+        if (!el || isPointerDownRef.current || Math.abs(velocity) < 0.25) {
+          momentumRafRef.current = null;
+          return;
+        }
+        el.scrollLeft += velocity;
+        velocity *= 0.93; // Smooth decelerating glide
+        const maxScroll = el.scrollWidth - el.clientWidth;
+        if (el.scrollLeft <= 0 || el.scrollLeft >= maxScroll) {
+          momentumRafRef.current = null;
+          return;
+        }
+        momentumRafRef.current = requestAnimationFrame(runMomentum);
+      };
+
+      momentumRafRef.current = requestAnimationFrame(runMomentum);
+    }
+
+    window.setTimeout(() => {
+      hasDraggedRef.current = false;
+    }, 80);
+  };
+
+  useEffect(() => {
+    const onWindowPointerUp = () => {
+      if (isPointerDownRef.current) {
+        handleRecPointerUp();
+      }
+    };
+    window.addEventListener('pointerup', onWindowPointerUp);
+    return () => {
+      window.removeEventListener('pointerup', onWindowPointerUp);
+      stopAllScrollAnimations();
+    };
+  }, []);
+
+  useEffect(() => {
+    const el = recScrollRef.current;
+    if (!el) return;
+
+    let targetScroll = el.scrollLeft;
+
+    const runWheelAnimation = () => {
+      if (!el) {
+        wheelRafRef.current = null;
+        return;
+      }
+      const maxScroll = el.scrollWidth - el.clientWidth;
+      const clampedTarget = Math.max(0, Math.min(maxScroll, targetScroll));
+      const diff = clampedTarget - el.scrollLeft;
+
+      if (Math.abs(diff) < 0.5) {
+        el.scrollLeft = clampedTarget;
+        wheelRafRef.current = null;
+        return;
+      }
+
+      // 0.13 lerp factor produces a liquid-smooth gliding transition
+      el.scrollLeft += diff * 0.13;
+      wheelRafRef.current = requestAnimationFrame(runWheelAnimation);
+    };
+
+    const onWheel = (e) => {
+      if (el.scrollWidth > el.clientWidth) {
+        if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+          const maxScroll = el.scrollWidth - el.clientWidth;
+          const atLeft = el.scrollLeft <= 0 && e.deltaY < 0;
+          const atRight = Math.ceil(el.scrollLeft + el.clientWidth) >= maxScroll - 1 && e.deltaY > 0;
+
+          if (!atLeft && !atRight) {
+            e.preventDefault();
+            if (momentumRafRef.current) {
+              cancelAnimationFrame(momentumRafRef.current);
+              momentumRafRef.current = null;
+            }
+
+            let delta = e.deltaY;
+            if (e.deltaMode === 1) delta *= 28;
+            else if (e.deltaMode === 2) delta *= 450;
+
+            const basePos = wheelRafRef.current ? targetScroll : el.scrollLeft;
+            targetScroll = Math.max(0, Math.min(maxScroll, basePos + delta * 1.05));
+
+            if (!wheelRafRef.current) {
+              wheelRafRef.current = requestAnimationFrame(runWheelAnimation);
+            }
+          }
+        }
+      }
+    };
+
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => {
+      el.removeEventListener('wheel', onWheel);
+      if (wheelRafRef.current) cancelAnimationFrame(wheelRafRef.current);
+    };
+  }, [recommendations]);
+
   if (!product) return null;
 
   const handleClose = () => {
@@ -204,6 +377,11 @@ const ProductDetailModal = ({ product, onClose, allProducts = [], onSelectProduc
   // Sheet body touch swipe down when scrolled to top
   const handleSheetTouchStart = (e) => {
     if (e.touches.length !== 1 || closing) return;
+    // Do not initiate modal pull-down if touch originates in recommendations carousel
+    if (e.target.closest('.modal-recommendations-scroll')) {
+      dragStartY.current = null;
+      return;
+    }
     const touch = e.touches[0];
     const scrollTop = scrollRef.current?.scrollTop ?? sheetRef.current?.scrollTop ?? 0;
     if (scrollTop <= 2) {
@@ -215,6 +393,9 @@ const ProductDetailModal = ({ product, onClose, allProducts = [], onSelectProduc
 
   const handleSheetTouchMove = (e) => {
     if (dragStartY.current === null || closing) return;
+    if (e.target.closest('.modal-recommendations-scroll')) {
+      return;
+    }
     const touch = e.touches[0];
     const deltaY = touch.clientY - dragStartY.current;
     const scrollTop = scrollRef.current?.scrollTop ?? sheetRef.current?.scrollTop ?? 0;
@@ -373,7 +554,14 @@ const ProductDetailModal = ({ product, onClose, allProducts = [], onSelectProduc
               {recommendations.length > 0 && (
                 <div className="modal-recommendations-section">
                   <h3 className="modal-recommendations-title">Öneriler</h3>
-                  <div className="modal-recommendations-scroll">
+                  <div
+                    ref={recScrollRef}
+                    className="modal-recommendations-scroll"
+                    onPointerDown={handleRecPointerDown}
+                    onPointerMove={handleRecPointerMove}
+                    onPointerUp={handleRecPointerUp}
+                    onPointerCancel={handleRecPointerUp}
+                  >
                     {recommendations.map((rec) => {
                       const hasImage = Boolean(rec.image);
                       return (
@@ -381,12 +569,18 @@ const ProductDetailModal = ({ product, onClose, allProducts = [], onSelectProduc
                           key={rec.id}
                           type="button"
                           className={`modal-rec-card ${hasImage ? 'has-image' : 'no-image'}`}
-                          onClick={() => {
+                          onClick={(e) => {
+                            if (hasDraggedRef.current) {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              return;
+                            }
                             if (scrollRef.current) {
                               scrollRef.current.scrollTop = 0;
                             }
                             onSelectProduct?.(rec);
                           }}
+                          onDragStart={(e) => e.preventDefault()}
                           aria-label={`${rec.name} ürününü görüntüle`}
                         >
                           <div className="modal-rec-card__body">
