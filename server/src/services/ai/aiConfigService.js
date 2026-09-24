@@ -25,6 +25,18 @@ export const AVAILABLE_MODELS = [
     description: 'NVIDIA API üzerinden Google Gemma 4 31B Instruct',
     isDefault: false,
   },
+  {
+    id: 'z-ai/glm-5.3-flash',
+    name: 'NVIDIA GLM 5.3 Flash',
+    description: 'NVIDIA API üzerinden hızlı GLM 5.3 Flash modeli',
+    isDefault: false,
+  },
+  {
+    id: 'deepseek-ai/deepseek-v4.1-flash',
+    name: 'NVIDIA DeepSeek V4.1 Flash',
+    description: 'NVIDIA API üzerinden görsel destekli DeepSeek V4.1 Flash',
+    isDefault: false,
+  },
 ];
 
 export const MODEL_PROVIDER_LIMITS = {
@@ -48,6 +60,24 @@ export const MODEL_PROVIDER_LIMITS = {
   },
   'google/gemma-4-31b-it': {
     name: 'NVIDIA Gemma 4 31B',
+    rpm: 40,
+    tpm: 1000000,
+    rpd: 1500,
+    rpmResetText: '1 dakikalık kayan pencere',
+    tpmResetText: '1 dakikalık kayan pencere',
+    rpdResetText: 'Sağlayıcının günlük kota penceresine göre',
+  },
+  'z-ai/glm-5.3-flash': {
+    name: 'NVIDIA GLM 5.3 Flash',
+    rpm: 40,
+    tpm: 1000000,
+    rpd: 1500,
+    rpmResetText: '1 dakikalık kayan pencere',
+    tpmResetText: '1 dakikalık kayan pencere',
+    rpdResetText: 'Sağlayıcının günlük kota penceresine göre',
+  },
+  'deepseek-ai/deepseek-v4.1-flash': {
+    name: 'NVIDIA DeepSeek V4.1 Flash',
     rpm: 40,
     tpm: 1000000,
     rpd: 1500,

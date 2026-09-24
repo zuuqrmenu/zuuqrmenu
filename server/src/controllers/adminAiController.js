@@ -65,13 +65,14 @@ export const updateAiSettings = async (req, res, next) => {
  * Admin-only ZuuAI chat without restaurant topic scope or user quotas.
  */
 export const handleAdminChat = async (req, res) => {
-  const { message, context } = req.body || {};
+  const { message, context, images = [] } = req.body || {};
 
   try {
     const config = await aiConfigService.getAiConfig();
     const model = aiConfigService.getAvailableModels().find((item) => item.id === config.activeModel);
     const result = await aiService.generateResponse({
       message,
+      images,
       context,
       userId: req.user?.userId,
       systemInstruction: getAdminSystemPrompt({
@@ -91,6 +92,8 @@ export const handleAdminChat = async (req, res) => {
     const isClientError = statusCode >= 400 && statusCode < 500;
     const errorMessage = statusCode === 503
       ? 'Aktif model şu anda geçici olarak yoğun. Kullanım hakkınız bitmedi; lütfen birkaç saniye sonra tekrar deneyin.'
+      : (statusCode === 502 || statusCode === 504)
+      ? error.message
       : (isClientError ? error.message : 'ZuuAI şu anda yanıt veremiyor. Lütfen tekrar deneyin.');
     return res.status(statusCode).json({
       success: false,

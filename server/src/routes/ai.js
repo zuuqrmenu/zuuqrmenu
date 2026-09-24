@@ -1,5 +1,5 @@
 import express from 'express';
-import { testGeminiConnection, handleChat, getQuotaStatus } from '../controllers/aiController.js';
+import { testGeminiConnection, handleChat, getQuotaStatus, analyzeMenuImages } from '../controllers/aiController.js';
 import { restaurantAuth } from '../middleware/auth.js';
 import { authDual } from '../middleware/authDual.js';
 
@@ -13,5 +13,6 @@ router.get('/usage', authDual, getQuotaStatus);
 
 // POST /api/ai/chat - Chat with ZuuAI (requires authenticated restaurant user)
 router.post('/chat', authDual, restaurantAuth, handleChat);
+router.post('/menu-analyze', authDual, restaurantAuth, analyzeMenuImages);
 
 export default router;

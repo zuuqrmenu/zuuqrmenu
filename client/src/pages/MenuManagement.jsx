@@ -1,11 +1,13 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
+import { useLocation } from 'react-router-dom';
 import RestaurantLayout from '../components/RestaurantLayout';
 import ProductManager from '../components/ProductManager';
 import MenuStructureEditor from '../components/MenuStructureEditor';
 import DashboardSkeleton from '../components/DashboardSkeleton';
 import PublicMenuButton from '../components/PublicMenuButton';
 import MenuCustomizationCompactModal, { ThemePreview, buildDefaultMenuTemplate, ThemeDeleteConfirmDialog } from '../components/MenuCustomizationCompactModal';
+import MenuImportPanel from '../components/MenuImportPanel';
 import { useAuth } from '../context/AuthContext';
 import { menuService } from '../services/menuService';
 import { restaurantSettingsService } from '../services/restaurantSettingsService';
@@ -631,6 +633,7 @@ const StatusConfirmDialog = ({ statusDialog, onClose, onConfirm, actionId }) => 
 };
 
 const MenuManagement = () => {
+  const location = useLocation();
   const { user, restaurant } = useAuth();
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
@@ -729,6 +732,12 @@ const MenuManagement = () => {
   }[menuStatus];
 
   useEffect(() => { loadData(); }, []);
+
+  useEffect(() => {
+    if (location.search.includes('import=1')) {
+      window.setTimeout(() => document.getElementById('menu-import')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 250);
+    }
+  }, [location.search]);
 
   const showNotice = (message) => {
     setModalOpen(false);
@@ -925,6 +934,7 @@ const MenuManagement = () => {
           )}
           <section className="menu-customization-entry"><div className="menu-customization-entry__header"><div><p className="menu-publish-card__eyebrow">Tasarım</p><h3>Menü Özelleştirme</h3><p>Temanızı, tipografinizi ve ürün görünümünü beğeninize göre tasarlayın.</p></div></div><div className="menu-customization-entry__actions"><button type="button" className="menu-customization-entry__edit" onClick={() => setThemeSelectionOpen(true)} aria-label="Kayıtlı menü tasarımını seç" title="Kayıtlı menü tasarımını seç"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m4 16.5-.8 4.3 4.3-.8L19.2 8.3a2.4 2.4 0 0 0-3.4-3.4L4 16.5Z" /><path d="m14.5 6.5 3 3" /></svg></button><button type="button" onClick={handleOpenCustomization} className="menu-customization-entry__button"><span>✦</span> Özelleştir</button></div></section>
         </div>
+        <MenuImportPanel onImported={(message) => { setNotice(message); loadData(true); }} />
         {loading ? (
           <DashboardSkeleton variant="menu" />
         ) : (

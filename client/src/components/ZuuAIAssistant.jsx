@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   sendChatMessage,
   getAiQuota,
   sendAdminChatMessage,
   getAdminAiSettings,
 } from '../services/aiService';
+import { compressImageToWebp } from '../utils/imageOptimizer';
 import './ZuuAIAssistant.css';
 
 
@@ -45,6 +47,12 @@ const IconSend = ({ size = 16 }) => (
   >
     <line x1="12" y1="19" x2="12" y2="5" />
     <polyline points="5 12 12 5 19 12" />
+  </svg>
+);
+
+const IconPaperclip = ({ size = 16 }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
   </svg>
 );
 
@@ -209,6 +217,7 @@ const QUICK_ACTIONS = [
 ];
 
 const ZuuAIAssistant = ({ adminMode = false }) => {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -217,6 +226,11 @@ const ZuuAIAssistant = ({ adminMode = false }) => {
   const [quota, setQuota] = useState(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [countdownText, setCountdownText] = useState('');
+  const [attachments, setAttachments] = useState([]);
+  const [dragActive, setDragActive] = useState(false);
+  const [attachmentError, setAttachmentError] = useState('');
+  const [thinkingStatus, setThinkingStatus] = useState('İstek hazırlanıyor...');
+  const [imageRequestActive, setImageRequestActive] = useState(false);
 
   const widgetRef = useRef(null);
   const textareaRef = useRef(null);
@@ -224,6 +238,60 @@ const ZuuAIAssistant = ({ adminMode = false }) => {
   const popoverRef = useRef(null);
   const usageBtnRef = useRef(null);
   const idCounterRef = useRef(0);
+  const fileInputRef = useRef(null);
+  const canAttach = adminMode;
+
+  const addAttachments = useCallback((fileList) => {
+    if (!canAttach) return;
+    const files = Array.from(fileList || []);
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    const available = Math.max(0, 3 - attachments.length);
+    const nextFiles = files.slice(0, available);
+    const validFiles = nextFiles.filter((file) => allowedTypes.includes(file.type) && file.size <= 10 * 1024 * 1024);
+    const totalSize = attachments.reduce((sum, item) => sum + item.file.size, 0) + validFiles.reduce((sum, file) => sum + file.size, 0);
+    const hasInvalidFile = files.some((file) => !allowedTypes.includes(file.type) || file.size > 10 * 1024 * 1024);
+    if (totalSize > 8 * 1024 * 1024) {
+      setAttachmentError('Eklenen görsellerin toplam boyutu 8 MB değerinden küçük olmalıdır.');
+    } else if (hasInvalidFile) {
+      setAttachmentError('Yalnızca JPG, PNG veya WEBP ve 10 MB altındaki görseller eklenebilir.');
+    } else if (files.length > available) {
+      setAttachmentError('En fazla 3 görsel ekleyebilirsiniz.');
+    } else {
+      setAttachmentError('');
+    }
+
+    (totalSize <= 8 * 1024 * 1024 ? validFiles : []).forEach(async (file) => {
+      const optimized = await compressImageToWebp(file, { maxDimension: 1600, quality: 0.76 });
+      const optimizedFile = optimized.file || file;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = String(reader.result || '');
+        setAttachments((current) => current.length >= 3 || current.some((item) => item.file.name === optimizedFile.name && item.file.size === optimizedFile.size)
+          ? current
+          : [...current, { file: optimizedFile, dataUrl, previewUrl: dataUrl }]);
+      };
+      reader.readAsDataURL(optimizedFile);
+    });
+  }, [attachments.length, canAttach]);
+
+  useEffect(() => {
+    if (!loading) return undefined;
+    const statuses = imageRequestActive
+      ? ['Görseller hazırlanıyor...', 'Görseller modele gönderiliyor...', 'ZuuAI görselleri inceliyor...', 'Yanıt oluşturuluyor...']
+      : ['İstek hazırlanıyor...', 'ZuuAI düşünüyor...', 'Yanıt oluşturuluyor...'];
+    let index = 0;
+    setThinkingStatus(statuses[index]);
+    const timer = window.setInterval(() => {
+      index = (index + 1) % statuses.length;
+      setThinkingStatus(statuses[index]);
+    }, 2600);
+    return () => window.clearInterval(timer);
+  }, [loading, imageRequestActive]);
+
+  const removeAttachment = (index) => {
+    setAttachments((current) => current.filter((_, itemIndex) => itemIndex !== index));
+    setAttachmentError('');
+  };
 
   // Fetch the correct model and usage context when the assistant opens.
   const fetchQuota = useCallback(async () => {
@@ -384,10 +452,18 @@ const ZuuAIAssistant = ({ adminMode = false }) => {
   // Send message handler
   const handleSend = async (rawMessage) => {
     const textToSend = (typeof rawMessage === 'string' ? rawMessage : input).trim();
-    if (!textToSend || loading || isQuotaExhausted) return;
+    if ((!textToSend && attachments.length === 0) || loading || isInputBlocked) return;
+
+    const imagesToSend = attachments.map(({ dataUrl }) => {
+      const [header, data] = dataUrl.split(',');
+      return { mimeType: header.match(/data:(.*?);base64/)?.[1] || 'image/jpeg', data };
+    });
+    setImageRequestActive(imagesToSend.length > 0);
+    const attachmentsForMessage = attachments.map(({ previewUrl }) => previewUrl);
 
     // Reset input
     setInput('');
+    setAttachments([]);
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }
@@ -399,14 +475,15 @@ const ZuuAIAssistant = ({ adminMode = false }) => {
       id: `user-${msgId}`,
       role: 'user',
       text: textToSend,
+      images: attachmentsForMessage,
     };
     setMessages((prev) => [...prev, userMsg]);
     setLoading(true);
 
     try {
       const response = adminMode
-        ? await sendAdminChatMessage(textToSend)
-        : await sendChatMessage(textToSend);
+        ? await sendAdminChatMessage(textToSend, undefined, imagesToSend)
+        : await sendChatMessage(textToSend, undefined, imagesToSend);
 
       if (response && response.success === false) {
         throw new Error(response.error || 'ZuuAI şu anda yanıt veremiyor.');
@@ -431,6 +508,7 @@ const ZuuAIAssistant = ({ adminMode = false }) => {
         id: `assistant-${replyId}`,
         role: 'assistant',
         text: reply.trim(),
+        showMenuImportAction: !adminMode && /menu(y)?m(ü|u)?\s*(yukle|aktar)|menümü yüklemek|menü görsel/i.test(textToSend),
       };
       setMessages((prev) => [...prev, assistantMsg]);
     } catch (err) {
@@ -458,6 +536,7 @@ const ZuuAIAssistant = ({ adminMode = false }) => {
       setMessages((prev) => [...prev, assistantErrMsg]);
     } finally {
       setLoading(false);
+      setImageRequestActive(false);
     }
   };
 
@@ -561,7 +640,23 @@ const ZuuAIAssistant = ({ adminMode = false }) => {
                       : 'is-assistant'
                   }`}
                 >
-                  {msg.text}
+                  {msg.images?.length > 0 && (
+                    <div className="zuuai-message-images">
+                      {msg.images.map((image, imageIndex) => (
+                        <img key={`${msg.id}-image-${imageIndex}`} src={image} alt="Kullanıcı tarafından eklenen görsel" />
+                      ))}
+                    </div>
+                  )}
+                  {msg.text && <span>{msg.text}</span>}
+                  {msg.showMenuImportAction && (
+                    <button
+                      type="button"
+                      className="zuuai-menu-import-action"
+                      onClick={() => navigate('/dashboard/menu?import=1')}
+                    >
+                      Menü Yükleme Alanına Git
+                    </button>
+                  )}
                   {msg.isError && lastFailedText && (
                     <div>
                       <button
@@ -591,7 +686,7 @@ const ZuuAIAssistant = ({ adminMode = false }) => {
                   <span className="zuuai-typing__dot" />
                   <span className="zuuai-typing__dot" />
                 </div>
-                <span className="zuuai-typing__text">ZuuAI yazıyor...</span>
+                <span className="zuuai-typing__text">{thinkingStatus}</span>
               </div>
             </div>
           )}
@@ -601,7 +696,45 @@ const ZuuAIAssistant = ({ adminMode = false }) => {
 
         {/* Input Area */}
         <div className="zuuai-input-wrap">
-          <div className={`zuuai-input-box ${isInputBlocked ? 'is-disabled' : ''}`}>
+          <div
+            className={`zuuai-input-box ${isInputBlocked ? 'is-disabled' : ''} ${dragActive ? 'is-drag-active' : ''}`}
+            onDragOver={canAttach ? (event) => {
+              event.preventDefault();
+              if (!isInputBlocked) setDragActive(true);
+            } : undefined}
+            onDragLeave={canAttach ? () => setDragActive(false) : undefined}
+            onDrop={canAttach ? (event) => {
+              event.preventDefault();
+              setDragActive(false);
+              if (!isInputBlocked) addAttachments(event.dataTransfer.files);
+            } : undefined}
+          >
+            {canAttach && <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              multiple
+              className="zuuai-file-input"
+              onChange={(event) => {
+                addAttachments(event.target.files);
+                event.target.value = '';
+              }}
+              disabled={loading || isInputBlocked}
+              aria-label="Görsel ekle"
+            />}
+            <div className="zuuai-composer-main">
+              {attachments.length > 0 && (
+                <div className="zuuai-attachment-list">
+                  {attachments.map((attachment, index) => (
+                    <div className="zuuai-attachment-preview" key={`${attachment.file.name}-${attachment.file.size}`}>
+                      <img src={attachment.previewUrl} alt={attachment.file.name} />
+                      <button type="button" onClick={() => removeAttachment(index)} aria-label={`${attachment.file.name} görselini kaldır`}>
+                        <IconClose size={11} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             <textarea
               ref={textareaRef}
               rows={1}
@@ -621,8 +754,19 @@ const ZuuAIAssistant = ({ adminMode = false }) => {
               className="zuuai-textarea"
               aria-label="ZuuAI mesajı"
             />
+            </div>
 
             <div className="zuuai-input-actions">
+              {canAttach && <button
+                type="button"
+                className="zuuai-attach-btn"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={loading || isInputBlocked || attachments.length >= 3}
+                title="Görsel ekle (en fazla 3)"
+                aria-label="Görsel ekle (en fazla 3)"
+              >
+                <IconPaperclip size={16} />
+              </button>}
               {/* Compact Usage Limit Pill */}
               {quota && (
                 <div className="zuuai-usage-anchor">
@@ -753,13 +897,16 @@ const ZuuAIAssistant = ({ adminMode = false }) => {
                 type="button"
                 className="zuuai-send-btn"
                 onClick={() => handleSend()}
-                disabled={loading || isInputBlocked || !input.trim()}
+                disabled={loading || isInputBlocked || (!input.trim() && attachments.length === 0)}
                 aria-label="Mesaj Gönder"
               >
                 <IconSend size={15} />
               </button>
             </div>
           </div>
+
+          {attachmentError && <div className="zuuai-attachment-error">{attachmentError}</div>}
+          {dragActive && <div className="zuuai-drop-hint">Görselleri buraya bırakın</div>}
 
           {/* Countdown Helper below composer when exhausted */}
           {(isDailyExhausted || isMonthlyExhausted) && countdownText && (

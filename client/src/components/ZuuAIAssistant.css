@@ -556,6 +556,367 @@ body[data-dashboard-theme='dark'] .zuuai-msg-avatar {
   word-break: break-word;
 }
 
+.zuuai-message-images {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.3rem;
+  margin-bottom: 0.45rem;
+}
+
+.zuuai-message-images img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 0.55rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.zuuai-menu-import-action {
+  display: block;
+  margin-top: 0.65rem;
+  border: 0;
+  border-radius: 0.6rem;
+  padding: 0.5rem 0.7rem;
+  background: #deff36;
+  color: #0f172a;
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.zuuai-menu-import-action:hover {
+  background: #c7e82f;
+}
+
+.menu-import-spinner {
+  width: 2.35rem;
+  height: 2.35rem;
+  flex: 0 0 2.35rem;
+  border: 3px solid rgba(222, 255, 54, 0.22);
+  border-top-color: #deff36;
+  border-radius: 9999px;
+  animation: menu-import-spin 0.8s linear infinite;
+  box-shadow: 0 0 0 5px rgba(222, 255, 54, 0.08), 0 0 22px rgba(222, 255, 54, 0.2);
+}
+
+.menu-import-panel {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-color: transparent !important;
+  box-shadow: 0 18px 45px -30px rgba(15, 23, 42, 0.5);
+  --menu-border-a: #9eb922;
+  --menu-border-b: #deff36;
+  --menu-border-c: #6f8416;
+}
+
+.menu-import-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(110deg, var(--menu-border-a), var(--menu-border-b), var(--menu-border-c), var(--menu-border-b), var(--menu-border-a)) border-box;
+  background-size: 220% 100%;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  animation: menu-import-border-morph 7s ease-in-out infinite alternate;
+}
+
+.menu-import-panel > * {
+  position: relative;
+  z-index: 1;
+}
+
+.menu-import-panel.is-analyzing::after {
+  display: none;
+}
+
+.menu-import-panel__header,
+.menu-import-panel__header > div {
+  position: relative;
+  text-align: left;
+}
+
+.menu-import-panel__badge {
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.menu-import-panel__dropzone {
+  background: rgba(248, 250, 252, 0.82);
+  border-color: #cbd5e1;
+  transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+}
+
+.menu-import-panel__dropzone:hover,
+.menu-import-panel__dropzone.is-drag-active {
+  border-color: #0f172a;
+  background: #f1f5f9;
+  transform: translateY(-1px);
+}
+
+.menu-import-panel__upload-mark {
+  width: 2.5rem;
+  height: 2.5rem;
+  margin: 0 auto 0.65rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.85rem;
+  background: #deff36;
+  color: #0f172a;
+  font-size: 1.6rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.menu-import-panel__dropzone-title {
+  color: #0f172a;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+@keyframes menu-import-border-morph {
+  0% { background-position: 0% 50%; opacity: 0.82; }
+  50% { background-position: 55% 50%; opacity: 1; }
+  100% { background-position: 100% 50%; opacity: 0.86; }
+}
+
+body[data-dashboard-theme='dark'] .menu-import-panel {
+  --menu-border-a: #718517;
+  --menu-border-b: #b8d72a;
+  --menu-border-c: #536511;
+  background: linear-gradient(135deg, #0f172a 0%, #111827 100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-import-panel::before {
+    animation: none;
+  }
+}
+
+.menu-import-panel__select-button,
+.menu-import-panel__analyze {
+  border: 0;
+  border-radius: 0.7rem;
+  padding: 0.62rem 0.95rem;
+  background: #0f172a;
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 800;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.menu-import-panel__select-button:hover,
+.menu-import-panel__analyze:hover {
+  background: #1e293b;
+  transform: translateY(-1px);
+}
+
+.menu-import-panel__analyze {
+  background: #deff36;
+  color: #0f172a;
+  cursor: pointer;
+}
+
+.menu-import-panel__analyze:hover {
+  background: #c9eb2f;
+}
+
+.menu-import-panel__files {
+  padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.85rem;
+  background: #ffffff;
+}
+
+.menu-import-progress {
+  position: relative;
+  overflow: hidden;
+  min-height: 5.5rem;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  animation: menu-import-progress-in 0.35s ease-out both;
+}
+
+@keyframes menu-import-progress-in {
+  from { opacity: 0; transform: translateY(5px) scale(0.99); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes menu-import-spin {
+  to { transform: rotate(360deg); }
+}
+
+.menu-import-progress__steps {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 1rem auto 0;
+  max-width: 22rem;
+}
+
+.menu-import-thinking {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 5.5rem;
+  text-align: center;
+}
+
+.menu-import-thinking__copy {
+  display: none;
+}
+
+.menu-import-thinking__copy p {
+  margin: 0;
+  color: #f8fafc;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.menu-import-thinking__copy span {
+  display: block;
+  margin-top: 0.35rem;
+  color: #94a3b8;
+  font-size: 0.7rem;
+}
+
+.menu-import-aura {
+  position: absolute;
+  width: 10rem;
+  height: 4.5rem;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  filter: blur(14px);
+  opacity: 0.72;
+  pointer-events: none;
+}
+
+.menu-import-aura span {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 50%, rgba(222, 255, 54, 0.42), rgba(222, 255, 54, 0) 70%);
+  animation: menu-import-aura-breathe 4.8s ease-in-out infinite;
+}
+
+.menu-import-aura span:nth-child(2) {
+  transform: translateX(-1.2rem) scaleY(0.7);
+  opacity: 0.65;
+  animation-delay: -1.6s;
+}
+
+.menu-import-aura span:nth-child(3) {
+  transform: translateX(1.3rem) scaleY(0.68);
+  opacity: 0.5;
+  animation-delay: -3.1s;
+}
+
+@keyframes menu-import-aura-breathe {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(0.86, 0.74); opacity: 0.45; }
+  50% { transform: translate3d(0.35rem, -0.1rem, 0) scale(1.12, 0.92); opacity: 0.8; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-import-progress,
+  .menu-import-aura span,
+  .menu-import-spinner {
+    animation: none !important;
+  }
+}
+
+.menu-import-progress__step {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  color: #cbd5e1;
+}
+
+.menu-import-progress__step span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 9999px;
+  background: #cbd5e1;
+  color: transparent;
+  font-size: 0;
+  transition: width 0.3s ease, height 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.menu-import-progress__step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: calc(50% + 0.35rem);
+  right: calc(-50% + 0.35rem);
+  height: 2px;
+  background: #e2e8f0;
+  z-index: 0;
+}
+
+.menu-import-progress__step.is-active,
+.menu-import-progress__step.is-done {
+  color: #0f172a;
+}
+
+.menu-import-progress__step.is-active span {
+  width: 0.85rem;
+  height: 0.85rem;
+  background: #deff36;
+  box-shadow: 0 0 0 5px rgba(222, 255, 54, 0.2), 0 0 16px rgba(222, 255, 54, 0.65);
+  animation: menu-import-pulse 1.5s ease-in-out infinite;
+}
+
+.menu-import-progress__step.is-done span {
+  background: #deff36;
+}
+
+.menu-import-progress__step.is-done:not(:last-child)::after {
+  background: #deff36;
+}
+
+.menu-import-progress__step small {
+  position: absolute;
+  top: 1.2rem;
+  left: 50%;
+  width: max-content;
+  max-width: 10rem;
+  transform: translateX(-50%);
+  color: #94a3b8;
+  font-size: 0.62rem;
+  line-height: 1.2;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.25s ease, color 0.25s ease;
+}
+
+.menu-import-progress__step.is-active small {
+  color: #334155;
+  opacity: 1;
+}
+
+@keyframes menu-import-pulse {
+  0%, 100% { transform: scale(0.9); }
+  50% { transform: scale(1.12); }
+}
+
+@media (max-width: 640px) {
+  .menu-import-progress__steps {
+    max-width: 18rem;
+  }
+}
+
 /* User Bubble */
 .zuuai-bubble.is-user {
   background: #0f172a;
@@ -699,6 +1060,109 @@ body[data-dashboard-theme='dark'] .zuuai-input-wrap {
   border-radius: 1.25rem;
   padding: 0.35rem 0.4rem 0.35rem 0.85rem;
   transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+
+.zuuai-input-box.is-drag-active {
+  border-color: #0f172a;
+  background: #f1f5f9;
+  box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.12);
+}
+
+.zuuai-file-input {
+  display: none;
+}
+
+.zuuai-composer-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.zuuai-attachment-list {
+  display: flex;
+  gap: 0.35rem;
+  padding: 0.15rem 0 0.35rem;
+  overflow-x: auto;
+}
+
+.zuuai-attachment-preview {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+}
+
+.zuuai-attachment-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 0.45rem;
+  border: 1px solid #cbd5e1;
+}
+
+.zuuai-attachment-preview button {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 16px;
+  height: 16px;
+  border: 1px solid #ffffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: #0f172a;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.zuuai-attach-btn {
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.zuuai-attach-btn:hover:not(:disabled) {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.zuuai-attach-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.zuuai-attachment-error,
+.zuuai-drop-hint {
+  margin: 0.35rem 0.25rem 0;
+  font-size: 0.7rem;
+  color: #b91c1c;
+}
+
+.zuuai-drop-hint {
+  color: #475569;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-input-box.is-drag-active {
+  background: #162033;
+  border-color: rgba(222, 255, 54, 0.65);
+}
+
+body[data-dashboard-theme='dark'] .zuuai-attach-btn {
+  color: #94a3b8;
+}
+
+body[data-dashboard-theme='dark'] .zuuai-attach-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
 }
 
 .zuuai-input-box:focus-within {

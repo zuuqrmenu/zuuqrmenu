@@ -41,7 +41,7 @@ export const cleanPlainText = (text) => {
  * @param {string} [options.model] - Optional override for Gemini model
  * @returns {Promise<string>} The generated text response
  */
-export const generateText = async ({ prompt, systemInstruction, restaurantContext, model }) => {
+export const generateText = async ({ prompt, systemInstruction, restaurantContext, model, images = [], responseMimeType, providerTimeoutMs }) => {
   // Ensure fresh environment variables are available
   dotenv.config({ override: true });
   const apiKey = process.env.GEMINI_API_KEY;
@@ -53,21 +53,34 @@ export const generateText = async ({ prompt, systemInstruction, restaurantContex
   }
 
   const modelName = model || process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite';
-  const ai = new GoogleGenAI({ apiKey });
+  const ai = new GoogleGenAI({
+    apiKey,
+    httpOptions: { timeout: providerTimeoutMs || (images.length > 0 ? 180000 : 90000) },
+  });
 
   const config = {};
   if (systemInstruction) {
     config.systemInstruction = systemInstruction;
   }
+  if (responseMimeType) {
+    config.responseMimeType = responseMimeType;
+  }
 
   // Construct cleanly separated contents when restaurant context is available
-  let contents = prompt;
+  const imageParts = images.map((image) => ({
+    inlineData: {
+      mimeType: image.mimeType,
+      data: image.data,
+    },
+  }));
+  let contents = imageParts.length > 0 ? [{ role: 'user', parts: [...imageParts, { text: prompt }] }] : prompt;
   if (restaurantContext && typeof restaurantContext === 'string' && restaurantContext.trim()) {
     contents = [
       {
         role: 'user',
         parts: [
           { text: `[RESTORAN VE MENÜ BİLGİLERİ]:\n${restaurantContext.trim()}` },
+          ...imageParts,
           { text: `[KULLANICI MESAJI]:\n${prompt}` },
         ],
       },
@@ -77,7 +90,8 @@ export const generateText = async ({ prompt, systemInstruction, restaurantContex
   let attempts = 0;
   let lastError = null;
 
-  while (attempts < 3) {
+  const maxAttempts = responseMimeType ? 1 : 2;
+  while (attempts < maxAttempts) {
     attempts++;
     try {
       const response = await ai.models.generateContent({
@@ -110,7 +124,7 @@ export const generateText = async ({ prompt, systemInstruction, restaurantContex
         error?.message?.includes('high demand') ||
         error?.message?.includes('UNAVAILABLE');
 
-      if (attempts < 3 && isTransientSpike) {
+      if (attempts < maxAttempts && isTransientSpike) {
         // Exponential backoff: wait 1s on 1st retry, 2s on 2nd retry
         await new Promise((resolve) => setTimeout(resolve, attempts * 1000));
         continue;

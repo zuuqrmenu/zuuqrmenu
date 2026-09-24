@@ -85,7 +85,7 @@ export const getQuotaStatus = async (req, res, next) => {
  * POST /api/ai/chat
  */
 export const handleChat = async (req, res) => {
-  const { message, context } = req.body || {};
+  const { message, context, images = [] } = req.body || {};
   const restaurantId = req.restaurant?._id || req.user?.restaurantId;
   const userId = req.user?.userId;
   const isAdmin = req.user?.role === 'ADMIN';
@@ -148,6 +148,7 @@ export const handleChat = async (req, res) => {
     // 4. Generate response via AI service
     const result = await aiService.generateResponse({
       message,
+      images,
       restaurantContext,
       context,
       restaurantId,
@@ -174,8 +175,21 @@ export const handleChat = async (req, res) => {
 
     return res.status(statusCode).json({
       success: false,
-      error: isClientError ? error.message : 'ZuuAI şu anda yanıt veremiyor. Lütfen tekrar deneyin.',
+      error: isClientError || statusCode === 502 || statusCode === 504
+        ? error.message
+        : 'ZuuAI şu anda yanıt veremiyor. Lütfen tekrar deneyin.',
       ...(isClientError ? {} : { details: error.message }),
     });
+  }
+};
+
+export const analyzeMenuImages = async (req, res, next) => {
+  const { images = [] } = req.body || {};
+  try {
+    const restaurantId = req.restaurant?._id || req.user?.restaurantId;
+    const draft = await aiService.generateMenuImportDraft({ images, restaurantId, userId: req.user?.userId });
+    return res.status(200).json({ success: true, data: draft });
+  } catch (error) {
+    return next(error);
   }
 };

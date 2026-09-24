@@ -166,7 +166,7 @@ export default function SystemLimitsTab() {
   const [modelErrorMsg, setModelErrorMsg] = useState('');
   const [showGeminiDetails, setShowGeminiDetails] = useState(false);
   const [selectedPlanTier, setSelectedPlanTier] = useState('standard');
-  const isNvidiaModel = selectedModel === 'google/gemma-4-31b-it';
+  const isNvidiaModel = selectedModel === 'google/gemma-4-31b-it' || selectedModel === 'z-ai/glm-5.3-flash' || selectedModel === 'deepseek-ai/deepseek-v4.1-flash';
   const activeProviderLabel = isNvidiaModel ? 'NVIDIA API' : 'Google Gemini';
 
   const loadAiData = async (isManualRefresh = false) => {
@@ -822,6 +822,8 @@ export default function SystemLimitsTab() {
                     { id: 'gemini-3.1-flash-lite', name: 'Gemini 3.1 Flash-Lite', isDefault: true },
                     { id: 'gemini-3.6-flash', name: 'Gemini 3.6 Flash', isDefault: false },
                     { id: 'google/gemma-4-31b-it', name: 'NVIDIA Gemma 4 31B', isDefault: false },
+                    { id: 'z-ai/glm-5.3-flash', name: 'NVIDIA GLM 5.3 Flash', isDefault: false },
+                    { id: 'deepseek-ai/deepseek-v4.1-flash', name: 'NVIDIA DeepSeek V4.1 Flash', isDefault: false },
                   ]).map((m) => (
                     <option key={m.id} value={m.id}>
                       {m.name} {m.isDefault ? '(Varsayılan)' : ''}
@@ -1238,7 +1240,7 @@ export default function SystemLimitsTab() {
           {/* Clean minimal footer */}
           <div className="pt-3 border-t border-slate-200/25 dark:border-white/[0.04] flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
             <span>Sağlayıcı: <strong className="font-bold text-slate-700 dark:text-slate-300">{activeProviderLabel}</strong></span>
-            <span>Desteklenen Modeller: <strong className="font-mono text-slate-600 dark:text-slate-400">gemini-3.1-flash-lite, gemini-3.6-flash, google/gemma-4-31b-it</strong></span>
+            <span>Desteklenen Modeller: <strong className="font-mono text-slate-600 dark:text-slate-400">gemini-3.1-flash-lite, gemini-3.6-flash, google/gemma-4-31b-it, z-ai/glm-5.3-flash, deepseek-ai/deepseek-v4.1-flash</strong></span>
             <span className="inline-flex items-center gap-1.5 font-medium text-emerald-500">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
               Hazır & Canlı

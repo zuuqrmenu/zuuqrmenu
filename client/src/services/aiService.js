@@ -6,11 +6,11 @@ import api from './api';
  * @param {Object} [context] - Optional context
  * @returns {Promise<{ success: boolean, message: string }>}
  */
-export const sendChatMessage = async (message, context) => {
+export const sendChatMessage = async (message, context, images = []) => {
   const response = await api.post(
     '/ai/chat',
-    { message, context },
-    { timeout: 35000 }
+    { message, context, images },
+    { timeout: 270000 }
   );
   return response.data;
 };
@@ -24,11 +24,11 @@ export const getAiQuota = async () => {
   return response.data;
 };
 
-export const sendAdminChatMessage = async (message, context) => {
+export const sendAdminChatMessage = async (message, context, images = []) => {
   const response = await api.post(
     '/admin/ai/chat',
-    { message, context },
-    { timeout: 35000 }
+    { message, context, images },
+    { timeout: 270000 }
   );
   return response.data;
 };
@@ -38,9 +38,15 @@ export const getAdminAiSettings = async () => {
   return response.data;
 };
 
+export const analyzeMenuImages = async (images) => {
+  const response = await api.post('/ai/menu-analyze', { images }, { timeout: 600000 });
+  return response.data;
+};
+
 export default {
   sendChatMessage,
   getAiQuota,
   sendAdminChatMessage,
   getAdminAiSettings,
+  analyzeMenuImages,
 };
