@@ -443,6 +443,8 @@ const ZuuAIAssistant = ({ adminMode = false }) => {
       const isQuotaCode = errData?.code === 'DAILY_LIMIT_REACHED' || errData?.code === 'MONTHLY_LIMIT_REACHED';
       const errorText = isQuotaCode
         ? (errData.error || 'Mesaj limitinize ulaştınız.')
+        : adminMode && errData?.error
+        ? errData.error
         : 'ZuuAI şu anda yanıt veremiyor. Lütfen kısa bir süre sonra tekrar deneyin.';
 
       const errId = ++idCounterRef.current;

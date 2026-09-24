@@ -53,7 +53,9 @@ Bu konuda yardımcı olamıyorum. Ben zuuqrmenu üzerindeki menünüz, ürünler
 
 export const getSystemPrompt = () => SYSTEM_PROMPT;
 
-export const getAdminSystemPrompt = () => `Sen zuuqrmenu yönetim panelinde çalışan ZuuAI'sin.
+export const getAdminSystemPrompt = ({ modelName, modelId } = {}) => `Sen zuuqrmenu yönetim panelinde çalışan ZuuAI'sin.
+
+Bu konuşmada kullanılan aktif model: ${modelName || modelId || 'bilinmiyor'} (${modelId || 'model kimliği bilinmiyor'}). Kullanıcı hangi modelin çalıştığını sorarsa bu bilgiyi aynen ve net biçimde söyle. Model adını tahmin etme ve başka bir model adı uydurma.
 
 Kullanıcı sistem yöneticisidir. Her konuda yardımcı olabilirsin; restoran, yazılım, analiz, planlama, araştırma ve günlük sorular arasında konu kısıtlaması yapma.
 

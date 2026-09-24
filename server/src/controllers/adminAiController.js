@@ -68,14 +68,17 @@ export const handleAdminChat = async (req, res) => {
   const { message, context } = req.body || {};
 
   try {
+    const config = await aiConfigService.getAiConfig();
+    const model = aiConfigService.getAvailableModels().find((item) => item.id === config.activeModel);
     const result = await aiService.generateResponse({
       message,
       context,
       userId: req.user?.userId,
-      systemInstruction: getAdminSystemPrompt(),
+      systemInstruction: getAdminSystemPrompt({
+        modelId: config.activeModel,
+        modelName: model?.name,
+      }),
     });
-    const config = await aiConfigService.getAiConfig();
-    const model = aiConfigService.getAvailableModels().find((item) => item.id === config.activeModel);
 
     return res.status(200).json({
       success: true,
@@ -86,9 +89,13 @@ export const handleAdminChat = async (req, res) => {
   } catch (error) {
     const statusCode = error.statusCode || 500;
     const isClientError = statusCode >= 400 && statusCode < 500;
+    const errorMessage = statusCode === 503
+      ? 'Aktif model şu anda geçici olarak yoğun. Kullanım hakkınız bitmedi; lütfen birkaç saniye sonra tekrar deneyin.'
+      : (isClientError ? error.message : 'ZuuAI şu anda yanıt veremiyor. Lütfen tekrar deneyin.');
     return res.status(statusCode).json({
       success: false,
-      error: isClientError ? error.message : 'ZuuAI şu anda yanıt veremiyor. Lütfen tekrar deneyin.',
+      error: errorMessage,
+      code: statusCode === 503 ? 'PROVIDER_TEMPORARILY_UNAVAILABLE' : undefined,
     });
   }
 };
