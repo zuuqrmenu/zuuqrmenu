@@ -82,9 +82,9 @@ const logAiUsage = async ({ restaurantId, userId, model, provider, success, toke
  * @param {string} [params.userId] - Optional user ObjectId
  * @returns {Promise<{ text: string }>} Normalized response object
  */
-export const generateResponse = async ({ message, restaurantContext, context, restaurantId, userId }) => {
+export const generateResponse = async ({ message, restaurantContext, context, restaurantId, userId, systemInstruction: customSystemInstruction }) => {
   const cleanMessage = validateMessage(message);
-  const systemInstruction = getSystemPrompt();
+  const systemInstruction = customSystemInstruction || getSystemPrompt();
 
   let resolvedContext = restaurantContext;
   if (!resolvedContext && typeof context === 'string') {

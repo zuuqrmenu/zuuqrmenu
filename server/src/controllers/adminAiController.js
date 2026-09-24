@@ -1,4 +1,6 @@
 import aiConfigService from '../services/ai/aiConfigService.js';
+import aiService from '../services/ai/aiService.js';
+import { getAdminSystemPrompt } from '../services/ai/prompts/systemPrompt.js';
 
 /**
  * GET /api/admin/ai/settings
@@ -58,7 +60,41 @@ export const updateAiSettings = async (req, res, next) => {
   }
 };
 
+/**
+ * POST /api/admin/ai/chat
+ * Admin-only ZuuAI chat without restaurant topic scope or user quotas.
+ */
+export const handleAdminChat = async (req, res) => {
+  const { message, context } = req.body || {};
+
+  try {
+    const result = await aiService.generateResponse({
+      message,
+      context,
+      userId: req.user?.userId,
+      systemInstruction: getAdminSystemPrompt(),
+    });
+    const config = await aiConfigService.getAiConfig();
+    const model = aiConfigService.getAvailableModels().find((item) => item.id === config.activeModel);
+
+    return res.status(200).json({
+      success: true,
+      message: result.text,
+      activeModel: config.activeModel,
+      activeModelName: model?.name || config.activeModel,
+    });
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    const isClientError = statusCode >= 400 && statusCode < 500;
+    return res.status(statusCode).json({
+      success: false,
+      error: isClientError ? error.message : 'ZuuAI şu anda yanıt veremiyor. Lütfen tekrar deneyin.',
+    });
+  }
+};
+
 export default {
   getAiSettings,
   updateAiSettings,
+  handleAdminChat,
 };

@@ -24,7 +24,23 @@ export const getAiQuota = async () => {
   return response.data;
 };
 
+export const sendAdminChatMessage = async (message, context) => {
+  const response = await api.post(
+    '/admin/ai/chat',
+    { message, context },
+    { timeout: 35000 }
+  );
+  return response.data;
+};
+
+export const getAdminAiSettings = async () => {
+  const response = await api.get('/admin/ai/settings');
+  return response.data;
+};
+
 export default {
   sendChatMessage,
   getAiQuota,
+  sendAdminChatMessage,
+  getAdminAiSettings,
 };

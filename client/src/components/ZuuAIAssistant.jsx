@@ -1,5 +1,10 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { sendChatMessage, getAiQuota } from '../services/aiService';
+import {
+  sendChatMessage,
+  getAiQuota,
+  sendAdminChatMessage,
+  getAdminAiSettings,
+} from '../services/aiService';
 import './ZuuAIAssistant.css';
 
 
@@ -203,7 +208,7 @@ const QUICK_ACTIONS = [
   },
 ];
 
-const ZuuAIAssistant = () => {
+const ZuuAIAssistant = ({ adminMode = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -220,17 +225,31 @@ const ZuuAIAssistant = () => {
   const usageBtnRef = useRef(null);
   const idCounterRef = useRef(0);
 
-  // Fetch current user quota on open
+  // Fetch the correct model and usage context when the assistant opens.
   const fetchQuota = useCallback(async () => {
     try {
-      const res = await getAiQuota();
-      if (res?.data) {
-        setQuota(res.data);
+      if (adminMode) {
+        const res = await getAdminAiSettings();
+        const activeModel = res?.data?.activeModel;
+        const activeModelName = res?.data?.availableModels?.find((model) => model.id === activeModel)?.name || activeModel;
+        setQuota({ isAdmin: true });
+        if (activeModel) {
+          setMessages((previous) => [...previous, {
+            id: `assistant-${++idCounterRef.current}`,
+            role: 'assistant',
+            text: `Şu anda aktif model: ${activeModelName} (${activeModel}). Bu admin sohbetinde günlük ve aylık kullanım kotası yoktur; her konuda konuşabiliriz.`,
+          }]);
+        }
+      } else {
+        const res = await getAiQuota();
+        if (res?.data) {
+          setQuota(res.data);
+        }
       }
     } catch (err) {
       console.error('Failed to fetch ZuuAI quota:', err);
     }
-  }, []);
+  }, [adminMode]);
 
   useEffect(() => {
     if (isOpen) {
@@ -238,11 +257,11 @@ const ZuuAIAssistant = () => {
     }
   }, [isOpen, fetchQuota]);
 
-  const isZuuAiDisabled = Boolean(!quota?.isAdmin && quota?.disabled);
+  const isZuuAiDisabled = Boolean(!adminMode && !quota?.isAdmin && quota?.disabled);
   const isDailyExhausted = Boolean(!quota?.isAdmin && !isZuuAiDisabled && quota?.dailyRemaining !== null && quota?.dailyRemaining !== undefined && quota.dailyRemaining <= 0);
   const isMonthlyExhausted = Boolean(!quota?.isAdmin && !isZuuAiDisabled && quota?.monthlyRemaining !== null && quota?.monthlyRemaining !== undefined && quota.monthlyRemaining <= 0);
   const isQuotaExhausted = isDailyExhausted || isMonthlyExhausted;
-  const isInputBlocked = isZuuAiDisabled || isQuotaExhausted;
+  const isInputBlocked = !adminMode && (isZuuAiDisabled || isQuotaExhausted);
   const isCritical = Boolean(!quota?.isAdmin && !isZuuAiDisabled && quota?.dailyRemaining !== null && quota?.dailyRemaining > 0 && quota?.dailyRemaining <= 2);
   const isLow = Boolean(!quota?.isAdmin && !isZuuAiDisabled && quota?.dailyRemaining !== null && quota?.dailyRemaining > 2 && quota?.dailyRemaining <= 5);
 
@@ -385,7 +404,9 @@ const ZuuAIAssistant = () => {
     setLoading(true);
 
     try {
-      const response = await sendChatMessage(textToSend);
+      const response = adminMode
+        ? await sendAdminChatMessage(textToSend)
+        : await sendChatMessage(textToSend);
 
       if (response && response.success === false) {
         throw new Error(response.error || 'ZuuAI şu anda yanıt veremiyor.');
@@ -480,7 +501,7 @@ const ZuuAIAssistant = () => {
                 <span className="zuuai-header__title">ZuuAI</span>
                 <span className="zuuai-header__live-dot" title="Çevrim içi" aria-label="Çevrim içi" />
               </div>
-              <span className="zuuai-header__subtitle">Size nasıl yardımcı olabilirim?</span>
+              <span className="zuuai-header__subtitle">{adminMode ? 'Yönetici asistanı' : 'Size nasıl yardımcı olabilirim?'}</span>
             </div>
           </div>
           <button
@@ -502,7 +523,7 @@ const ZuuAIAssistant = () => {
               </div>
               <h3 className="zuuai-welcome__title">Merhaba! Ben ZuuAI 👋</h3>
               <p className="zuuai-welcome__desc">
-                Menünüz ve işletmeniz hakkında size yardımcı olabilirim.
+                {adminMode ? 'Yönetim, yazılım, analiz ve diğer tüm konularda yardımcı olabilirim.' : 'Menünüz ve işletmeniz hakkında size yardımcı olabilirim.'}
               </p>
               <div className="zuuai-suggestions">
                 {QUICK_ACTIONS.map((qa) => (
@@ -622,7 +643,7 @@ const ZuuAIAssistant = () => {
                   >
                     <IconBolt size={11} className="zuuai-usage-pill__icon" />
                     <span className="zuuai-usage-pill__count">
-                      {quota.isAdmin
+                      {adminMode || quota.isAdmin
                         ? '∞'
                         : isZuuAiDisabled
                         ? '0'
@@ -643,12 +664,12 @@ const ZuuAIAssistant = () => {
                           <IconBolt size={13} className="zuuai-usage-popover__bolt" />
                           <span className="zuuai-usage-popover__title">ZuuAI Kullanımı</span>
                         </div>
-                        {quota.isAdmin && (
+                        {(adminMode || quota.isAdmin) && (
                           <span className="zuuai-usage-popover__admin-badge">Yönetici</span>
                         )}
                       </div>
 
-                      {quota.isAdmin ? (
+                      {adminMode || quota.isAdmin ? (
                         <div className="zuuai-usage-popover__admin-info">
                           <p className="zuuai-usage-popover__admin-text">
                             Yönetici hesabınız için ZuuAI mesaj hakkı tamamen <strong>sınırsızdır</strong>.

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import SeoHead from './SeoHead';
+import ZuuAIAssistant from './ZuuAIAssistant';
 
 const AdminLayout = ({ children, title = 'Yönetim Paneli | zuuqrmenu' }) => {
   const { user, logout } = useAuth();
@@ -239,6 +240,7 @@ const AdminLayout = ({ children, title = 'Yönetim Paneli | zuuqrmenu' }) => {
 
         {children}
       </main>
+      <ZuuAIAssistant adminMode />
     </div>
   );
 };
