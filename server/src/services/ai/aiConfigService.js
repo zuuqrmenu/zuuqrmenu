@@ -19,6 +19,12 @@ export const AVAILABLE_MODELS = [
     description: 'Gelişmiş anlama ve zengin yanıt kabiliyeti',
     isDefault: false,
   },
+  {
+    id: 'google/gemma-4-31b-it',
+    name: 'NVIDIA Gemma 4 31B',
+    description: 'NVIDIA API üzerinden Google Gemma 4 31B Instruct',
+    isDefault: false,
+  },
 ];
 
 export const MODEL_PROVIDER_LIMITS = {
@@ -39,6 +45,15 @@ export const MODEL_PROVIDER_LIMITS = {
     rpmResetText: '1 dakikalık kayan pencere',
     tpmResetText: '1 dakikalık kayan pencere',
     rpdResetText: 'Sağlayıcının günlük kota penceresine göre (Pasifik Saati)',
+  },
+  'google/gemma-4-31b-it': {
+    name: 'NVIDIA Gemma 4 31B',
+    rpm: 40,
+    tpm: 1000000,
+    rpd: 1500,
+    rpmResetText: '1 dakikalık kayan pencere',
+    tpmResetText: '1 dakikalık kayan pencere',
+    rpdResetText: 'Sağlayıcının günlük kota penceresine göre',
   },
 };
 

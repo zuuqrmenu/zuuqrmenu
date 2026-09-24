@@ -166,6 +166,8 @@ export default function SystemLimitsTab() {
   const [modelErrorMsg, setModelErrorMsg] = useState('');
   const [showGeminiDetails, setShowGeminiDetails] = useState(false);
   const [selectedPlanTier, setSelectedPlanTier] = useState('standard');
+  const isNvidiaModel = selectedModel === 'google/gemma-4-31b-it';
+  const activeProviderLabel = isNvidiaModel ? 'NVIDIA API' : 'Google Gemini';
 
   const loadAiData = async (isManualRefresh = false) => {
     if (isManualRefresh) {
@@ -819,6 +821,7 @@ export default function SystemLimitsTab() {
                   {(aiData?.availableModels || [
                     { id: 'gemini-3.1-flash-lite', name: 'Gemini 3.1 Flash-Lite', isDefault: true },
                     { id: 'gemini-3.6-flash', name: 'Gemini 3.6 Flash', isDefault: false },
+                    { id: 'google/gemma-4-31b-it', name: 'NVIDIA Gemma 4 31B', isDefault: false },
                   ]).map((m) => (
                     <option key={m.id} value={m.id}>
                       {m.name} {m.isDefault ? '(Varsayılan)' : ''}
@@ -860,7 +863,7 @@ export default function SystemLimitsTab() {
               <div>
                 <div className="flex items-center gap-2">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                    Google Gemini Model Token Kapasitesi
+                    {activeProviderLabel} Model Token Kapasitesi
                   </h4>
                   <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-white dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10">
                     {aiData?.providerLimits?.modelName || 'Gemini 3.1 Flash-Lite'}
@@ -938,7 +941,7 @@ export default function SystemLimitsTab() {
               <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                 <RefreshIcon className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                 <span>
-                  <strong>Google Token Sıfırlanması:</strong> Her <strong>1 dakikada bir</strong> (kayan pencerede) otomatik sıfırlanır; <strong>{(aiData?.providerLimits?.tpm?.limit ?? 250000).toLocaleString('tr-TR')} tokenlik</strong> kapasite anında yeniden açılır.
+                  <strong>{activeProviderLabel} Token Sıfırlanması:</strong> Her <strong>1 dakikada bir</strong> (kayan pencerede) otomatik sıfırlanır; <strong>{(aiData?.providerLimits?.tpm?.limit ?? 250000).toLocaleString('tr-TR')} tokenlik</strong> kapasite anında yeniden açılır.
                 </span>
               </div>
 
@@ -960,7 +963,7 @@ export default function SystemLimitsTab() {
                     Sağlayıcı İstek Kotaları & Model Detayları
                   </span>
                   <span className="text-[11px] text-slate-400">
-                    Google AI Studio Free Tier
+                    {isNvidiaModel ? 'NVIDIA API' : 'Google AI Studio Free Tier'}
                   </span>
                 </div>
 
@@ -999,7 +1002,7 @@ export default function SystemLimitsTab() {
                       </span>
                     </div>
                     <p className="mt-2 text-[10px] text-slate-400">
-                      Sıfırlanma: 1 dakikalık kayan pencere. Aşılırsa Google anlık daralma (429) döndürür.
+                      Sıfırlanma: 1 dakikalık kayan pencere. Aşılırsa sağlayıcı anlık daralma (429) döndürür.
                     </p>
                   </div>
 
@@ -1234,8 +1237,8 @@ export default function SystemLimitsTab() {
 
           {/* Clean minimal footer */}
           <div className="pt-3 border-t border-slate-200/25 dark:border-white/[0.04] flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
-            <span>Sağlayıcı: <strong className="font-bold text-slate-700 dark:text-slate-300">Google Gemini API</strong></span>
-            <span>Desteklenen Modeller: <strong className="font-mono text-slate-600 dark:text-slate-400">gemini-3.1-flash-lite, gemini-3.6-flash</strong></span>
+            <span>Sağlayıcı: <strong className="font-bold text-slate-700 dark:text-slate-300">{activeProviderLabel}</strong></span>
+            <span>Desteklenen Modeller: <strong className="font-mono text-slate-600 dark:text-slate-400">gemini-3.1-flash-lite, gemini-3.6-flash, google/gemma-4-31b-it</strong></span>
             <span className="inline-flex items-center gap-1.5 font-medium text-emerald-500">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
               Hazır & Canlı

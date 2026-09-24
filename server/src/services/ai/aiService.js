@@ -1,10 +1,16 @@
 import geminiProvider from './providers/geminiProvider.js';
+import nvidiaProvider from './providers/nvidiaProvider.js';
 import { getSystemPrompt } from './prompts/systemPrompt.js';
 import aiConfigService from './aiConfigService.js';
 import AiUsageLog from '../../models/AiUsageLog.js';
 
-// Currently active provider (can be switched or configured dynamically)
-const activeProvider = geminiProvider;
+const getProviderForModel = (model) => (
+  model === 'google/gemma-4-31b-it' ? nvidiaProvider : geminiProvider
+);
+
+const getProviderName = (model) => (
+  model === 'google/gemma-4-31b-it' ? 'nvidia' : 'gemini'
+);
 
 const MAX_MESSAGE_LENGTH = 4000;
 
@@ -88,6 +94,8 @@ export const generateResponse = async ({ message, restaurantContext, context, re
   }
 
   const activeModel = await aiConfigService.getActiveModel();
+  const activeProvider = getProviderForModel(activeModel);
+  const providerName = getProviderName(activeModel);
   const startTime = Date.now();
 
   try {
@@ -107,7 +115,7 @@ export const generateResponse = async ({ message, restaurantContext, context, re
       restaurantId,
       userId,
       model: activeModel,
-      provider: 'gemini',
+      provider: providerName,
       success: true,
       tokens: usage,
       durationMs,
@@ -122,7 +130,7 @@ export const generateResponse = async ({ message, restaurantContext, context, re
       restaurantId,
       userId,
       model: activeModel,
-      provider: 'gemini',
+      provider: providerName,
       success: false,
       durationMs,
       errorMessage: error.message,
