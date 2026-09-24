@@ -194,6 +194,13 @@ const getMonthlyResetCountdown = () => {
   }
 };
 
+const MENU_UPLOAD_REPLY = [
+  'Menü fotoğraflarınızı yüklemek için Menü Yönetimi sayfasındaki "Menünü Yükle" bölümüne gidebilirsiniz.',
+  'Aşağıdaki butona tıklayarak oraya gidebilirsiniz.',
+  '',
+  'Günde bir kez menü analizi yapabilirsiniz. Görsel yükledikten sonra ZuuAI ürün adlarını, fiyatları ve kategorileri otomatik çıkarır — tek tıkla menünüze aktarabilirsiniz.',
+].join('\n');
+
 const QUICK_ACTIONS = [
   {
     label: 'Menümü analiz et',
@@ -204,6 +211,13 @@ const QUICK_ACTIONS = [
     label: 'Ürün açıklaması oluştur',
     action: 'send',
     text: 'Ürün açıklaması oluşturmama yardımcı olur musun?',
+  },
+  {
+    label: 'Menümü nasıl yüklerim?',
+    action: 'navigate_and_reply',
+    text: 'Menümü nasıl yüklerim?',
+    reply: MENU_UPLOAD_REPLY,
+    navigateTo: '/dashboard/menu?import=1',
   },
   {
     label: 'Menümü nasıl geliştirebilirim?',
@@ -552,6 +566,21 @@ const ZuuAIAssistant = ({ adminMode = false }) => {
       textareaRef.current?.focus();
     } else if (qa.action === 'send' && qa.text) {
       handleSend(qa.text);
+    } else if (qa.action === 'navigate_and_reply' && qa.reply) {
+      // Show user message + AI reply with navigation button, then navigate
+      const userId = `msg-${++idCounterRef.current}`;
+      const aiId = `msg-${++idCounterRef.current}`;
+      setMessages((prev) => [
+        ...prev,
+        { id: userId, role: 'user', text: qa.text },
+        { id: aiId, role: 'assistant', text: qa.reply, showMenuImportAction: true },
+      ]);
+      // Navigate after short delay so user sees the message
+      if (qa.navigateTo) {
+        window.setTimeout(() => {
+          navigate(qa.navigateTo);
+        }, 600);
+      }
     }
   };
 

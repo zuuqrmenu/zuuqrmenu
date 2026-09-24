@@ -74,6 +74,10 @@ const restaurantSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  lastMenuAnalysisAt: {
+    type: Date,
+    default: null,
+  },
   zuuai: {
     enabled: {
       type: Boolean,

@@ -1,13 +1,37 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { menuService } from '../services/menuService';
 import { analyzeMenuImages } from '../services/aiService';
 import { compressImageToWebp } from '../utils/imageOptimizer';
+import './ZuuAIAssistant.css';
 
 const MAX_IMAGES = 3;
 const MAX_TOTAL_SIZE = 8 * 1024 * 1024;
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const DAILY_LIMIT_KEY = 'zuu_menu_analysis_last_date';
 
 const wait = (duration) => new Promise((resolve) => window.setTimeout(resolve, duration));
+
+/** Returns today's date as YYYY-MM-DD in local time */
+const getTodayKey = () => {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+};
+
+/** Seconds remaining until next local midnight */
+const secondsUntilMidnight = () => {
+  const now = new Date();
+  const midnight = new Date(now);
+  midnight.setHours(24, 0, 0, 0);
+  return Math.ceil((midnight - now) / 1000);
+};
+
+/** Format seconds as HH:MM:SS */
+const formatCountdown = (totalSeconds) => {
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+};
 
 const readImage = (file) => new Promise((resolve, reject) => {
   const reader = new FileReader();
@@ -16,6 +40,13 @@ const readImage = (file) => new Promise((resolve, reject) => {
   reader.readAsDataURL(file);
 });
 
+const ANALYSIS_STAGES = [
+  { title: 'Görseller', desc: 'Görseller optimize ediliyor...', percent: 25 },
+  { title: 'AI İletimi', desc: 'ZuuAI modeline iletiliyor...', percent: 50 },
+  { title: 'Metin & Fiyat', desc: 'Menü metinleri ve fiyatları okunuyor...', percent: 78 },
+  { title: 'Taslak', desc: 'Kategori ve ürün taslağı hazırlanıyor...', percent: 98 },
+];
+
 const MenuImportPanel = ({ onImported }) => {
   const [files, setFiles] = useState([]);
   const [draft, setDraft] = useState(null);
@@ -23,16 +54,31 @@ const MenuImportPanel = ({ onImported }) => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [loadingStatus, setLoadingStatus] = useState('Görseller hazırlanıyor...');
+  const [loadingStatus, setLoadingStatus] = useState('Görseller analiz için hazırlanıyor...');
   const [analysisStage, setAnalysisStage] = useState(0);
-  const analysisStages = [
-    'Görseller sıkıştırılıyor',
-    'Görseller AI sağlayıcısına gönderiliyor',
-    'Model menü metinlerini ve fiyatlarını okuyor',
-    'Kategori ve ürün taslağı oluşturuluyor',
-  ];
+
+  // Daily limit state
+  const [limitUsed, setLimitUsed] = useState(() => localStorage.getItem(DAILY_LIMIT_KEY) === getTodayKey());
+  const [countdown, setCountdown] = useState(() => localStorage.getItem(DAILY_LIMIT_KEY) === getTodayKey() ? secondsUntilMidnight() : 0);
+
+  // Countdown timer when daily limit is reached
+  useEffect(() => {
+    if (!limitUsed) return;
+    setCountdown(secondsUntilMidnight());
+    const timer = setInterval(() => {
+      const secs = secondsUntilMidnight();
+      setCountdown(secs);
+      // Reset at midnight
+      if (localStorage.getItem(DAILY_LIMIT_KEY) !== getTodayKey()) {
+        setLimitUsed(false);
+        clearInterval(timer);
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [limitUsed]);
 
   const addFiles = async (fileList) => {
+    if (limitUsed) return; // guard: no uploads when limit reached
     const incoming = Array.from(fileList || []);
     const next = [...files, ...incoming].slice(0, MAX_IMAGES);
     if (incoming.length + files.length > MAX_IMAGES) return setError('En fazla 3 menü görseli yükleyebilirsiniz.');
@@ -50,10 +96,10 @@ const MenuImportPanel = ({ onImported }) => {
   const removeFile = (index) => setFiles((current) => current.filter((_, itemIndex) => itemIndex !== index));
 
   const startAnalysis = async () => {
-    if (!files.length || loading) return;
+    if (!files.length || loading || limitUsed) return;
     setLoading(true);
     setAnalysisStage(0);
-    setLoadingStatus('Görseller hazırlanıyor...');
+    setLoadingStatus('Görseller optimize ediliyor...');
     setError('');
     try {
       const images = files.map(({ dataUrl }) => {
@@ -61,13 +107,17 @@ const MenuImportPanel = ({ onImported }) => {
         return { mimeType: header.match(/data:(.*?);base64/)?.[1] || 'image/jpeg', data };
       });
       setAnalysisStage(1);
-      setLoadingStatus('Görseller AI sağlayıcısına gönderiliyor...');
-      await wait(550);
+      setLoadingStatus('Görseller ZuuAI modeline aktarılıyor...');
+      await wait(700);
       setAnalysisStage(2);
-      setLoadingStatus('Model menü metinlerini ve fiyatlarını okuyor...');
+      setLoadingStatus('Menü metinleri ve fiyatları taranıyor...');
       const result = await analyzeMenuImages(images);
       setAnalysisStage(3);
-      setLoadingStatus('Kategori ve ürün listesi düzenleniyor...');
+      setLoadingStatus('Kategori ve ürün taslağı yapılandırılıyor...');
+      await wait(550);
+      // Mark daily limit as used
+      localStorage.setItem(DAILY_LIMIT_KEY, getTodayKey());
+      setLimitUsed(true);
       setDraft(result?.data || { categories: [] });
     } catch (err) {
       setError(err.response?.data?.error || 'Menü analiz edilemedi. Görselleri daha net yükleyip tekrar deneyin.');
@@ -121,48 +171,234 @@ const MenuImportPanel = ({ onImported }) => {
     }
   };
 
+  const currentPercent = ANALYSIS_STAGES[analysisStage]?.percent || 25;
+
   return (
-    <section id="menu-import" className={`menu-import-panel rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ${loading ? 'is-analyzing' : ''}`}>
-      <div className="menu-import-panel__header flex flex-wrap items-start justify-between gap-3">
+    <section id="menu-import" className={`menu-import-panel ${loading ? 'is-analyzing' : ''}`}>
+      <div className="menu-import-panel__header">
         <div>
-          <p className="menu-publish-card__eyebrow">MENÜ İÇE AKTARMA</p>
-          <h3 className="mt-1 text-lg font-bold text-slate-900">Menünü Yükle</h3>
-          <p className="mt-1 max-w-2xl text-sm text-slate-500">Menü görsellerini yükleyin. ZuuAI kategori, ürün, fiyat ve açıklamaları çıkarır; siz onaylamadan menünüze hiçbir kayıt eklenmez.</p>
+          <p className="menu-import-panel__eyebrow">MENÜ İÇE AKTARMA</p>
+          <h3 className="menu-import-panel__header-title">Menünü Yükle</h3>
+          <p className="menu-import-panel__header-desc">
+            Menü fotoğraflarınızı yükleyin. ZuuAI ürünleri, fiyatları ve kategorileri otomatik ayıklar.
+          </p>
         </div>
-        <span className="menu-import-panel__badge rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">En fazla 3 görsel</span>
+        <span className={`menu-import-panel__badge ${limitUsed ? 'is-limit-used' : ''}`}>
+          {limitUsed ? 'Günlük hak kullanıldı' : 'Günde 1 kez · En fazla 3 görsel'}
+        </span>
       </div>
 
-      <div
-        className={`menu-import-panel__dropzone mt-4 rounded-xl border-2 border-dashed p-5 text-center transition-colors ${dragActive ? 'is-drag-active' : ''}`}
-        onDragOver={(event) => { event.preventDefault(); setDragActive(true); }}
-        onDragLeave={() => setDragActive(false)}
-        onDrop={(event) => { event.preventDefault(); setDragActive(false); addFiles(event.dataTransfer.files); }}
-      >
-        <input id="menu-import-files" className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={(event) => { addFiles(event.target.files); event.target.value = ''; }} />
-        <div className="menu-import-panel__upload-mark" aria-hidden="true">↑</div>
-        <p className="menu-import-panel__dropzone-title">Menü görsellerini buraya bırakın</p>
-        <p className="mt-1 text-xs text-slate-400">JPG, PNG veya WEBP · En fazla 3 görsel</p>
-        <label htmlFor="menu-import-files" className="menu-import-panel__select-button mt-3 inline-flex cursor-pointer items-center">Görselleri Seç</label>
-      </div>
-
-      {files.length > 0 && !draft && (
-        <div className="menu-import-panel__files mt-4 flex flex-wrap gap-3">
-          {files.map((item, index) => <div key={`${item.file.name}-${item.file.size}`} className="relative h-20 w-20"><img src={item.dataUrl} alt={item.file.name} className="h-full w-full rounded-lg object-cover" /><button type="button" onClick={() => removeFile(index)} className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-slate-900 text-xs text-white" aria-label="Görseli kaldır">×</button></div>)}
+      {/* Locked state with countdown */}
+      {limitUsed ? (
+        <div className="menu-import-limit-card" aria-live="polite">
+          <div className="menu-import-limit-card__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+          </div>
+          <div className="menu-import-limit-card__body">
+            <p className="menu-import-limit-card__title">Bugünkü analiz hakkınızı kullandınız</p>
+            <p className="menu-import-limit-card__desc">Yeni hak günlük sıfırlama için gece yarısını bekleyin.</p>
+          </div>
+          <div className="menu-import-limit-card__countdown" aria-label="Kalan süre">
+            <span className="menu-import-limit-card__countdown-label">Yeni hak</span>
+            <span className="menu-import-limit-card__countdown-time">{formatCountdown(countdown)}</span>
+          </div>
+        </div>
+      ) : (
+        <div
+          className={`menu-import-panel__dropzone ${dragActive ? 'is-drag-active' : ''}`}
+          onDragOver={(event) => { event.preventDefault(); setDragActive(true); }}
+          onDragLeave={() => setDragActive(false)}
+          onDrop={(event) => { event.preventDefault(); setDragActive(false); addFiles(event.dataTransfer.files); }}
+        >
+          <input
+            id="menu-import-files"
+            className="sr-only"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            multiple
+            onChange={(event) => { addFiles(event.target.files); event.target.value = ''; }}
+          />
+          <div className="menu-import-panel__upload-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+              <line x1="12" y1="19" x2="12" y2="5" />
+              <polyline points="5 12 12 5 19 12" />
+            </svg>
+          </div>
+          <p className="menu-import-panel__dropzone-title">Menü fotoğraflarını buraya bırakın</p>
+          <p className="menu-import-panel__dropzone-desc">JPG, PNG veya WEBP · En fazla 3 görsel</p>
+          <label htmlFor="menu-import-files" className="menu-import-panel__select-button">
+            Görselleri Seç
+          </label>
         </div>
       )}
 
-      {loading && <div className="menu-import-progress mt-4" aria-label="Menü analizi devam ediyor"><div className="menu-import-thinking"><div className="menu-import-aura" aria-hidden="true"><span /><span /><span /></div></div></div>}
-      {error && <p className="mt-3 text-sm font-semibold text-rose-600" role="alert">{error}</p>}
+      {error && <p className="menu-import-panel__error" role="alert">{error}</p>}
 
-      {files.length > 0 && !draft && !loading && <button type="button" onClick={startAnalysis} className="menu-import-panel__analyze mt-4">Menüyü Analiz Et</button>}
+      {/* Smoothly expanding Selected Files Section */}
+      <div className={`menu-import-expand ${files.length > 0 && !draft && !loading ? 'is-expanded' : ''}`}>
+        <div className="menu-import-expand__inner">
+          <div className="menu-import-panel__files">
+            {files.map((item, index) => (
+              <div key={`${item.file.name}-${item.file.size}`} className="menu-import-panel__file-preview">
+                <img src={item.dataUrl} alt={item.file.name} className="menu-import-panel__file-thumb" />
+                <button
+                  type="button"
+                  onClick={() => removeFile(index)}
+                  className="menu-import-panel__file-remove"
+                  aria-label="Görseli kaldır"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
 
-      {draft && (
-        <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50/40 p-4">
-          <div className="flex flex-wrap items-center justify-between gap-2"><div><h4 className="font-bold text-slate-900">Analiz sonucu</h4><p className="text-xs text-slate-500">Bilgileri kontrol edin. Onayladığınızda menünüze eklenecek.</p></div><button type="button" onClick={() => setDraft(null)} className="text-xs font-bold text-slate-500 hover:text-slate-900">İptal</button></div>
-          <div className="mt-4 space-y-3">{draft.categories.map((category, categoryIndex) => <div key={`${category.name}-${categoryIndex}`} className="rounded-xl bg-white p-3"><p className="font-bold text-slate-800">{category.name}</p><div className="mt-2 space-y-2">{(category.products || []).map((product, productIndex) => <div key={`${product.name}-${productIndex}`} className="grid grid-cols-[1fr_90px] gap-2"><input value={product.name} onChange={(event) => updateProduct(categoryIndex, productIndex, 'name', event.target.value)} className="rounded-lg border border-slate-200 px-2 py-1.5 text-xs" aria-label="Ürün adı" /><input value={product.price} onChange={(event) => updateProduct(categoryIndex, productIndex, 'price', event.target.value)} type="number" min="0" className="rounded-lg border border-slate-200 px-2 py-1.5 text-xs" aria-label="Ürün fiyatı" /></div>)}</div></div>)}</div>
-          <button type="button" disabled={saving || !draft.categories.length} onClick={confirmImport} className="mt-4 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50">{saving ? 'Menüye ekleniyor...' : 'Onayla ve Menüye Ekle'}</button>
+          <div className="menu-import-panel__actions">
+            <button
+              type="button"
+              onClick={startAnalysis}
+              className="menu-import-panel__analyze"
+            >
+              <span>Menüyü Analiz Et</span>
+              <span className="menu-import-panel__analyze-arrow" aria-hidden="true">→</span>
+            </button>
+          </div>
         </div>
-      )}
+      </div>
+
+      {/* Smoothly expanding Minimal AI Processing Card */}
+      <div className={`menu-import-expand ${loading ? 'is-expanded' : ''}`}>
+        <div className="menu-import-expand__inner">
+          <div className="menu-import-ai-card" aria-label="Menü analizi devam ediyor">
+            <div className="menu-import-ai-card__top">
+              {/* Soft rotating loader */}
+              <div className="menu-import-ai-spinner-wrap" aria-hidden="true">
+                <div className="menu-import-ai-soft-spinner" />
+              </div>
+
+              {/* Status info */}
+              <div className="menu-import-ai-info">
+                <div className="menu-import-ai-badge">
+                  <span className="menu-import-ai-badge-dot" />
+                  <span>Menü Analiz Ediliyor</span>
+                </div>
+                <h4 className="menu-import-ai-title">{loadingStatus}</h4>
+              </div>
+            </div>
+
+            {/* Slim 3px Progress Bar */}
+            <div className="menu-import-ai-track">
+              <div
+                className="menu-import-ai-fill"
+                style={{ width: `${currentPercent}%` }}
+              />
+            </div>
+
+            {/* Minimalist Stage Breadcrumbs */}
+            <div className="menu-import-ai-stages">
+              {ANALYSIS_STAGES.map((stage, idx) => {
+                const isDone = idx < analysisStage;
+                const isActive = idx === analysisStage;
+                return (
+                  <div
+                    key={stage.title}
+                    className={`menu-import-ai-stage-item ${isDone ? 'is-done' : ''} ${isActive ? 'is-active' : ''}`}
+                  >
+                    <span className="menu-import-ai-stage-dot">
+                      {isDone ? '✓' : ''}
+                    </span>
+                    <span className="menu-import-ai-stage-text">{stage.title}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Smoothly expanding Result Draft */}
+      <div className={`menu-import-expand ${draft ? 'is-expanded' : ''}`}>
+        <div className="menu-import-expand__inner">
+          {draft && (
+            <div className="menu-import-result">
+              <div className="menu-import-result__header">
+                <div>
+                  <div className="menu-import-result__title-wrap">
+                    <h4 className="menu-import-result__title">Analiz Sonucu</h4>
+                    <span className="menu-import-result__count-badge">
+                      {draft.categories?.length || 0} Kategori · {draft.categories?.reduce((acc, c) => acc + (c.products?.length || 0), 0) || 0} Ürün
+                    </span>
+                  </div>
+                  <p className="menu-import-result__desc">
+                    Bilgileri kontrol edin. Onayladığınızda menünüze aktarılacaktır.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setDraft(null)}
+                  className="menu-import-result__cancel-btn"
+                >
+                  İptal
+                </button>
+              </div>
+
+              <div className="menu-import-result__categories">
+                {draft.categories.map((category, categoryIndex) => (
+                  <div key={`${category.name}-${categoryIndex}`} className="menu-import-result__category-card">
+                    <p className="menu-import-result__category-name">{category.name}</p>
+                    <div className="menu-import-result__products">
+                      {(category.products || []).map((product, productIndex) => (
+                        <div key={`${product.name}-${productIndex}`} className="menu-import-result__product-row">
+                          <input
+                            value={product.name}
+                            onChange={(event) => updateProduct(categoryIndex, productIndex, 'name', event.target.value)}
+                            className="menu-import-result__input menu-import-result__input--name"
+                            aria-label="Ürün adı"
+                            placeholder="Ürün adı"
+                          />
+                          <div className="menu-import-result__price-input-wrap">
+                            <input
+                              value={product.price}
+                              onChange={(event) => updateProduct(categoryIndex, productIndex, 'price', event.target.value)}
+                              type="number"
+                              min="0"
+                              className="menu-import-result__input menu-import-result__input--price"
+                              aria-label="Ürün fiyatı"
+                              placeholder="Fiyat"
+                            />
+                            <span className="menu-import-result__currency">₺</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="menu-import-result__actions">
+                <button
+                  type="button"
+                  disabled={saving || !draft.categories?.length}
+                  onClick={confirmImport}
+                  className="menu-import-result__confirm-btn"
+                >
+                  {saving ? (
+                    <>
+                      <span className="menu-import-btn-spinner" />
+                      <span>Menüye Ekleniyor...</span>
+                    </>
+                  ) : (
+                    <span>Onayla ve Menüye Ekle</span>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </section>
   );
 };
