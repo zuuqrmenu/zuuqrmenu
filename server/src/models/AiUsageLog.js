@@ -23,6 +23,12 @@ const aiUsageLogSchema = new mongoose.Schema({
     default: 'gemini',
     trim: true,
   },
+  feature: {
+    type: String,
+    default: 'chatAssistant',
+    trim: true,
+    index: true,
+  },
   success: {
     type: Boolean,
     default: true,

@@ -54,7 +54,7 @@ export const generateText = async ({ prompt, systemInstruction, restaurantContex
       },
       body: JSON.stringify({
         model: model || process.env.NVIDIA_MODEL || 'google/gemma-4-31b-it',
-        max_tokens: 1024,
+        max_tokens: images.length > 0 ? 4096 : 2048,
         stream: true,
         temperature: 0.5,
         top_p: 1,

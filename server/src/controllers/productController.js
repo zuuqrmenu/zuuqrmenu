@@ -30,7 +30,7 @@ const getCloudinaryPublicId = (imageUrl) => {
   }
 };
 
-const removeFromCloudinary = async (imageUrl) => {
+export const removeFromCloudinary = async (imageUrl) => {
   const publicId = getCloudinaryPublicId(imageUrl);
   if (!publicId || !cloudinaryConfigured) return;
   await cloudinary.uploader.destroy(publicId, { resource_type: 'image', invalidate: true });
@@ -282,3 +282,86 @@ export const removeProductImage = async (req, res, next) => {
     next(error);
   }
 };
+
+/**
+ * Bulk delete products (all or by category)
+ */
+export const bulkDeleteProducts = async (req, res, next) => {
+  try {
+    const restaurantId = getRestaurantId(req);
+    const { categoryId, all } = req.body || {};
+
+    const filter = { restaurantId };
+
+    if (!all) {
+      if (!categoryId || !isValidId(categoryId)) {
+        return res.status(400).json({ error: 'Geçerli bir kategori seçilmeli veya tümü seçeneği belirtilmelidir.' });
+      }
+      const category = await verifyCategoryOwnership(categoryId, restaurantId);
+      if (!category) {
+        return res.status(404).json({ error: 'Kategori bulunamadı.' });
+      }
+      filter.categoryId = category._id;
+    }
+
+    // Optional background Cloudinary image removal
+    if (cloudinaryConfigured) {
+      Product.find(filter).select('image').lean().then((products) => {
+        products.forEach((p) => {
+          if (p.image) removeFromCloudinary(p.image).catch(() => {});
+        });
+      }).catch(() => {});
+    }
+
+    const result = await Product.deleteMany(filter);
+    const count = result.deletedCount || 0;
+
+    res.json({
+      success: true,
+      message: count > 0 ? `${count} ürün başarıyla silindi.` : 'Silinecek ürün bulunamadı.',
+      count,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Bulk clear product descriptions (all or by category)
+ */
+export const bulkClearDescriptions = async (req, res, next) => {
+  try {
+    const restaurantId = getRestaurantId(req);
+    const { categoryId, all } = req.body || {};
+
+    const filter = { restaurantId };
+
+    if (!all) {
+      if (!categoryId || !isValidId(categoryId)) {
+        return res.status(400).json({ error: 'Geçerli bir kategori seçilmeli veya tümü seçeneği belirtilmelidir.' });
+      }
+      const category = await verifyCategoryOwnership(categoryId, restaurantId);
+      if (!category) {
+        return res.status(404).json({ error: 'Kategori bulunamadı.' });
+      }
+      filter.categoryId = category._id;
+    }
+
+    const result = await Product.updateMany(filter, {
+      $set: {
+        description: '',
+        shortDescription: '',
+      },
+    });
+
+    const count = result.modifiedCount || 0;
+
+    res.json({
+      success: true,
+      message: count > 0 ? `${count} ürünün açıklaması temizlendi.` : 'Açıklaması güncellenecek ürün bulunamadı.',
+      count,
+    });
+  } catch (error) {
+    next(error);
+  }
+};

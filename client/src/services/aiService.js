@@ -43,10 +43,32 @@ export const analyzeMenuImages = async (images) => {
   return response.data;
 };
 
+export const getMenuAnalysisStatus = async () => {
+  const response = await api.get('/ai/menu-analyze/status');
+  return response.data;
+};
+
+export const suggestProductDetails = async (payload) => {
+  const response = await api.post('/ai/product-suggest', payload, { timeout: 90000 });
+  return response.data;
+};
+
+export const batchGenerateProductDescriptions = async (categories) => {
+  const response = await api.post(
+    '/ai/batch-product-descriptions',
+    { categories },
+    { timeout: 300000 }
+  );
+  return response.data;
+};
+
 export default {
   sendChatMessage,
   getAiQuota,
   sendAdminChatMessage,
   getAdminAiSettings,
   analyzeMenuImages,
+  getMenuAnalysisStatus,
+  suggestProductDetails,
+  batchGenerateProductDescriptions,
 };

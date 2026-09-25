@@ -55,6 +55,10 @@ export const adminAuth = async (req, res, next) => {
 
 export const restaurantAuth = async (req, res, next) => {
   try {
+    if (req.user.role === 'ADMIN') {
+      return next();
+    }
+
     if (req.user.role !== 'RESTAURANT_USER') {
       return res.status(403).json({ error: 'Restaurant access required' });
     }

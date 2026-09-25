@@ -7,6 +7,7 @@ import {
   listCategories,
   toggleCategory,
   updateCategory,
+  bulkDeleteCategories,
 } from '../controllers/menuController.js';
 import { restaurantAuth } from '../middleware/auth.js';
 import { authDual } from '../middleware/authDual.js';
@@ -20,6 +21,8 @@ import {
   updateProduct,
   uploadProductImage,
   removeProductImage,
+  bulkDeleteProducts,
+  bulkClearDescriptions,
 } from '../controllers/productController.js';
 import { productImageUpload } from '../middleware/upload.js';
 
@@ -42,5 +45,10 @@ router.patch('/products/:id/toggle-featured', toggleFeatured);
 router.delete('/products/:id', deleteProduct);
 router.post('/products/:id/image', productImageUpload, uploadProductImage);
 router.delete('/products/:id/image', removeProductImage);
+
+// Bulk operations
+router.post('/bulk-delete-categories', bulkDeleteCategories);
+router.post('/bulk-delete-products', bulkDeleteProducts);
+router.post('/bulk-clear-descriptions', bulkClearDescriptions);
 
 export default router;

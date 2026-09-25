@@ -4,6 +4,7 @@ import aiService from '../services/ai/aiService.js';
 import restaurantContextService from '../services/ai/restaurantContextService.js';
 import { checkTopicScope } from '../services/ai/scopeGuard.js';
 import aiConfigService from '../services/ai/aiConfigService.js';
+import Restaurant from '../models/Restaurant.js';
 
 /**
  * Strips sensitive values like the Gemini API key from error messages
@@ -183,13 +184,164 @@ export const handleChat = async (req, res) => {
   }
 };
 
+export const getMenuAnalysisStatus = async (req, res, next) => {
+  try {
+    const restaurantId = req.restaurant?._id || req.user?.restaurantId;
+    const isAdmin = req.user?.role === 'ADMIN';
+    const isPromo = aiConfigService.isMenuImportUnlimitedPromo();
+
+    if (isAdmin || isPromo) {
+      return res.status(200).json({
+        success: true,
+        data: {
+          canAnalyze: true,
+          limitUsed: false,
+          remainingSeconds: 0,
+          isAdmin: Boolean(isAdmin),
+          isPromo: Boolean(isPromo),
+          promoEndsAt: '2026-10-01T00:00:00.000+03:00',
+        },
+      });
+    }
+
+    if (!restaurantId) {
+      return res.status(400).json({ success: false, error: 'Restoran bulunamadı.' });
+    }
+
+    const restaurant = req.restaurant || await Restaurant.findById(restaurantId).select('lastMenuAnalysisAt').lean();
+    const { startOfToday } = aiConfigService.getIstanbulDateBoundaries();
+
+    const lastUsed = restaurant?.lastMenuAnalysisAt ? new Date(restaurant.lastMenuAnalysisAt) : null;
+    const isUsedToday = Boolean(lastUsed && lastUsed >= startOfToday);
+
+    let remainingSeconds = 0;
+    if (isUsedToday) {
+      const now = new Date();
+      const nextMidnight = new Date(startOfToday.getTime() + 24 * 60 * 60 * 1000);
+      remainingSeconds = Math.max(0, Math.ceil((nextMidnight - now) / 1000));
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        canAnalyze: !isUsedToday,
+        limitUsed: isUsedToday,
+        remainingSeconds,
+        lastAnalysisAt: lastUsed,
+        isAdmin: false,
+        isPromo: false,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const analyzeMenuImages = async (req, res, next) => {
   const { images = [] } = req.body || {};
   try {
     const restaurantId = req.restaurant?._id || req.user?.restaurantId;
-    const draft = await aiService.generateMenuImportDraft({ images, restaurantId, userId: req.user?.userId });
+    const userId = req.user?.userId;
+    const isAdmin = req.user?.role === 'ADMIN';
+    const isPromo = aiConfigService.isMenuImportUnlimitedPromo();
+
+    if (!isAdmin && !isPromo && restaurantId) {
+      const restaurant = req.restaurant || await Restaurant.findById(restaurantId).select('lastMenuAnalysisAt').lean();
+      const { startOfToday } = aiConfigService.getIstanbulDateBoundaries();
+      const lastUsed = restaurant?.lastMenuAnalysisAt ? new Date(restaurant.lastMenuAnalysisAt) : null;
+
+      if (lastUsed && lastUsed >= startOfToday) {
+        const now = new Date();
+        const nextMidnight = new Date(startOfToday.getTime() + 24 * 60 * 60 * 1000);
+        const remainingSeconds = Math.max(0, Math.ceil((nextMidnight - now) / 1000));
+        return res.status(429).json({
+          success: false,
+          code: 'DAILY_MENU_ANALYSIS_LIMIT_REACHED',
+          error: 'Günlük menü analiz limitinize ulaştınız. Normal hesaplar için günde 1 menü analizi yapılabilir.',
+          remainingSeconds,
+        });
+      }
+    }
+
+    const draft = await aiService.generateMenuImportDraft({ images, restaurantId, userId });
+
+    if (!isAdmin && restaurantId) {
+      await Restaurant.findByIdAndUpdate(restaurantId, {
+        lastMenuAnalysisAt: new Date(),
+      });
+    }
+
     return res.status(200).json({ success: true, data: draft });
   } catch (error) {
     return next(error);
+  }
+};
+
+export const suggestProductDetails = async (req, res, next) => {
+  try {
+    const restaurantId = req.restaurant?._id || req.user?.restaurantId;
+    const userId = req.user?.userId;
+    const { name, categoryName, currentDescription, ingredients, allergens, dietaryTags } = req.body || {};
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ success: false, error: 'Ürün adı gereklidir.' });
+    }
+
+    const suggestion = await aiService.suggestProductDetails({
+      name,
+      categoryName,
+      currentDescription,
+      ingredients,
+      allergens,
+      dietaryTags,
+      restaurantId,
+      userId,
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: suggestion,
+    });
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    const isClientError = statusCode >= 400 && statusCode < 500;
+    return res.status(statusCode).json({
+      success: false,
+      error: isClientError || statusCode === 502 || statusCode === 504
+        ? error.message
+        : 'ZuuAI ürün açıklaması oluşturamadı. Lütfen manuel olarak devam edin veya tekrar deneyin.',
+    });
+  }
+};
+
+export const batchGenerateProductDescriptions = async (req, res, next) => {
+  try {
+    const restaurantId = req.restaurant?._id || req.user?.restaurantId;
+    const userId = req.user?.userId;
+    const { categories = [] } = req.body || {};
+
+    if (!Array.isArray(categories) || categories.length === 0) {
+      return res.status(400).json({ success: false, error: 'Kategori ve ürün listesi gereklidir.' });
+    }
+
+    const result = await aiService.batchGenerateProductDescriptions({
+      categories,
+      restaurantId,
+      userId,
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    const isClientError = statusCode >= 400 && statusCode < 500;
+    return res.status(statusCode).json({
+      success: false,
+      error: isClientError || statusCode === 502 || statusCode === 504
+        ? error.message
+        : 'ZuuAI toplu açıklamaları oluşturamadı.',
+    });
   }
 };

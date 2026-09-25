@@ -111,10 +111,11 @@ const IconBolt = ({ size = 11, className = '' }) => (
 );
 
 /**
- * Calculates remaining time until next 00:00 Europe/Istanbul (Daily reset)
- * @returns {string} e.g. "7s 24dk", "42dk"
+ * Calculates remaining time info until next reset in Europe/Istanbul
+ * @param {boolean} isMonthly
+ * @returns {{ remainingSeconds: number, totalWindowSeconds: number, ratio: number, formattedText: string }}
  */
-const getDailyResetCountdown = () => {
+const getResetInfo = (isMonthly = false) => {
   try {
     const now = new Date();
     const formatter = new Intl.DateTimeFormat('en-US', {
@@ -132,67 +133,56 @@ const getDailyResetCountdown = () => {
     parts.forEach((item) => { p[item.type] = parseInt(item.value, 10); });
 
     const istanbulNow = new Date(p.year, p.month - 1, p.day, p.hour, p.minute, p.second || 0);
-    const nextMidnight = new Date(p.year, p.month - 1, p.day + 1, 0, 0, 0, 0);
 
-    const diffMs = nextMidnight.getTime() - istanbulNow.getTime();
-    if (diffMs <= 0) return '0dk';
+    if (isMonthly) {
+      const nextMonthFirst = new Date(p.year, p.month, 1, 0, 0, 0, 0);
+      const daysInCurrentMonth = new Date(p.year, p.month, 0).getDate();
+      const totalWindowSeconds = daysInCurrentMonth * 24 * 3600;
+      const diffMs = nextMonthFirst.getTime() - istanbulNow.getTime();
+      const remainingSeconds = Math.max(0, Math.floor(diffMs / 1000));
+      const totalMinutes = Math.floor(remainingSeconds / 60);
+      const totalHours = Math.floor(totalMinutes / 60);
+      const days = Math.floor(totalHours / 24);
+      const remHours = totalHours % 24;
+      const remMins = totalMinutes % 60;
 
-    const totalMinutes = Math.floor(diffMs / (1000 * 60));
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
+      let formattedText = '';
+      if (days > 0) {
+        formattedText = remHours > 0 ? `${days} gün ${remHours} saat` : `${days} gün`;
+      } else if (totalHours > 0) {
+        formattedText = remMins > 0 ? `${totalHours} saat ${remMins} dakika` : `${totalHours} saat`;
+      } else {
+        formattedText = `${Math.max(1, remMins)} dakika`;
+      }
 
-    if (hours > 0 && minutes > 0) return `${hours}s ${minutes}dk`;
-    if (hours > 0) return `${hours}s`;
-    return `${Math.max(1, minutes)}dk`;
+      const ratio = totalWindowSeconds > 0 ? Math.min(1, Math.max(0, remainingSeconds / totalWindowSeconds)) : 0;
+      return { remainingSeconds, totalWindowSeconds, ratio, formattedText };
+    } else {
+      const nextMidnight = new Date(p.year, p.month - 1, p.day + 1, 0, 0, 0, 0);
+      const totalWindowSeconds = 24 * 3600;
+      const diffMs = nextMidnight.getTime() - istanbulNow.getTime();
+      const remainingSeconds = Math.max(0, Math.floor(diffMs / 1000));
+      const totalMinutes = Math.floor(remainingSeconds / 60);
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+
+      let formattedText = '';
+      if (hours > 0) {
+        formattedText = minutes > 0 ? `${hours} saat ${minutes} dakika` : `${hours} saat`;
+      } else {
+        formattedText = `${Math.max(1, minutes)} dakika`;
+      }
+
+      const ratio = Math.min(1, Math.max(0, remainingSeconds / totalWindowSeconds));
+      return { remainingSeconds, totalWindowSeconds, ratio, formattedText };
+    }
   } catch {
-    return '00:00';
+    return { remainingSeconds: 0, totalWindowSeconds: 86400, ratio: 0, formattedText: 'kısa süre' };
   }
 };
 
-/**
- * Calculates remaining time until the 1st of next month in Europe/Istanbul (Monthly reset)
- * @returns {string} e.g. "9g 4s", "1g 12s", "18s"
- */
-const getMonthlyResetCountdown = () => {
-  try {
-    const now = new Date();
-    const formatter = new Intl.DateTimeFormat('en-US', {
-      timeZone: 'Europe/Istanbul',
-      year: 'numeric',
-      month: 'numeric',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: 'numeric',
-      second: 'numeric',
-      hour12: false,
-    });
-    const parts = formatter.formatToParts(now);
-    const p = {};
-    parts.forEach((item) => { p[item.type] = parseInt(item.value, 10); });
-
-    const istanbulNow = new Date(p.year, p.month - 1, p.day, p.hour, p.minute, p.second || 0);
-    const nextMonthFirst = new Date(p.year, p.month, 1, 0, 0, 0, 0);
-
-    const diffMs = nextMonthFirst.getTime() - istanbulNow.getTime();
-    if (diffMs <= 0) return '0dk';
-
-    const totalMinutes = Math.floor(diffMs / (1000 * 60));
-    const totalHours = Math.floor(totalMinutes / 60);
-    const days = Math.floor(totalHours / 24);
-    const remainingHours = totalHours % 24;
-    const remainingMinutes = totalMinutes % 60;
-
-    if (days > 0) {
-      return remainingHours > 0 ? `${days}g ${remainingHours}s` : `${days}g`;
-    }
-    if (totalHours > 0) {
-      return remainingMinutes > 0 ? `${totalHours}s ${remainingMinutes}dk` : `${totalHours}s`;
-    }
-    return `${Math.max(1, remainingMinutes)}dk`;
-  } catch {
-    return 'Ay başında';
-  }
-};
+const getDailyResetCountdown = () => getResetInfo(false).formattedText;
+const getMonthlyResetCountdown = () => getResetInfo(true).formattedText;
 
 const MENU_UPLOAD_REPLY = [
   'Menü fotoğraflarınızı yüklemek için Menü Yönetimi sayfasındaki "Menünü Yükle" bölümüne gidebilirsiniz.',
@@ -214,10 +204,9 @@ const QUICK_ACTIONS = [
   },
   {
     label: 'Menümü nasıl yüklerim?',
-    action: 'navigate_and_reply',
+    action: 'reply',
     text: 'Menümü nasıl yüklerim?',
     reply: MENU_UPLOAD_REPLY,
-    navigateTo: '/dashboard/menu?import=1',
   },
   {
     label: 'Menümü nasıl geliştirebilirim?',
@@ -240,6 +229,9 @@ const ZuuAIAssistant = ({ adminMode = false }) => {
   const [quota, setQuota] = useState(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [countdownText, setCountdownText] = useState('');
+  const [resetRatio, setResetRatio] = useState(1);
+  const [isShaking, setIsShaking] = useState(false);
+  const [quotaToast, setQuotaToast] = useState({ visible: false, text: '' });
   const [attachments, setAttachments] = useState([]);
   const [dragActive, setDragActive] = useState(false);
   const [attachmentError, setAttachmentError] = useState('');
@@ -251,6 +243,7 @@ const ZuuAIAssistant = ({ adminMode = false }) => {
   const messagesEndRef = useRef(null);
   const popoverRef = useRef(null);
   const usageBtnRef = useRef(null);
+  const toastTimeoutRef = useRef(null);
   const idCounterRef = useRef(0);
   const fileInputRef = useRef(null);
   const canAttach = adminMode;
@@ -312,7 +305,7 @@ const ZuuAIAssistant = ({ adminMode = false }) => {
     try {
       if (adminMode) {
         const res = await getAdminAiSettings();
-        const activeModel = res?.data?.activeModel;
+        const activeModel = res?.data?.chatAssistantModel || res?.data?.activeModel;
         const activeModelName = res?.data?.availableModels?.find((model) => model.id === activeModel)?.name || activeModel;
         setQuota({ isAdmin: true });
         if (activeModel) {
@@ -333,6 +326,11 @@ const ZuuAIAssistant = ({ adminMode = false }) => {
     }
   }, [adminMode]);
 
+  // Fetch quota on initial mount & when assistant opens or periodically
+  useEffect(() => {
+    fetchQuota();
+  }, [fetchQuota]);
+
   useEffect(() => {
     if (isOpen) {
       fetchQuota();
@@ -347,22 +345,27 @@ const ZuuAIAssistant = ({ adminMode = false }) => {
   const isCritical = Boolean(!quota?.isAdmin && !isZuuAiDisabled && quota?.dailyRemaining !== null && quota?.dailyRemaining > 0 && quota?.dailyRemaining <= 2);
   const isLow = Boolean(!quota?.isAdmin && !isZuuAiDisabled && quota?.dailyRemaining !== null && quota?.dailyRemaining > 2 && quota?.dailyRemaining <= 5);
 
-  // Auto-updating countdown calculation (Europe/Istanbul)
+  // Auto-updating countdown and progress ratio calculation (Europe/Istanbul)
   useEffect(() => {
-    if (!isOpen) return;
-
     const updateCountdown = () => {
-      if (isMonthlyExhausted) {
-        setCountdownText(getMonthlyResetCountdown());
-      } else {
-        setCountdownText(getDailyResetCountdown());
-      }
+      const info = getResetInfo(isMonthlyExhausted);
+      setCountdownText(info.formattedText);
+      setResetRatio(info.ratio);
     };
 
     updateCountdown();
-    const timer = setInterval(updateCountdown, 30000);
+    const timer = setInterval(updateCountdown, 15000);
     return () => clearInterval(timer);
-  }, [isOpen, isDailyExhausted, isMonthlyExhausted]);
+  }, [isDailyExhausted, isMonthlyExhausted]);
+
+  // Clean up toast timer on unmount
+  useEffect(() => {
+    return () => {
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Click outside and Escape handler for floating popover
   useEffect(() => {
@@ -566,8 +569,8 @@ const ZuuAIAssistant = ({ adminMode = false }) => {
       textareaRef.current?.focus();
     } else if (qa.action === 'send' && qa.text) {
       handleSend(qa.text);
-    } else if (qa.action === 'navigate_and_reply' && qa.reply) {
-      // Show user message + AI reply with navigation button, then navigate
+    } else if ((qa.action === 'reply' || qa.action === 'navigate_and_reply') && qa.reply) {
+      // Show user message + AI reply with navigation button inside chat (no auto-navigation)
       const userId = `msg-${++idCounterRef.current}`;
       const aiId = `msg-${++idCounterRef.current}`;
       setMessages((prev) => [
@@ -575,20 +578,40 @@ const ZuuAIAssistant = ({ adminMode = false }) => {
         { id: userId, role: 'user', text: qa.text },
         { id: aiId, role: 'assistant', text: qa.reply, showMenuImportAction: true },
       ]);
-      // Navigate after short delay so user sees the message
-      if (qa.navigateTo) {
-        window.setTimeout(() => {
-          navigate(qa.navigateTo);
-        }, 600);
-      }
     }
   };
 
-  const handleRetry = () => {
-    if (lastFailedText) {
-      handleSend(lastFailedText);
+  const handleTriggerClick = () => {
+    if (isInputBlocked && !isOpen) {
+      // Trigger rejection shake animation
+      setIsShaking(true);
+      setTimeout(() => {
+        setIsShaking(false);
+      }, 550);
+
+      // Toast notification with remaining time
+      const info = getResetInfo(isMonthlyExhausted);
+      const timeText = info.formattedText;
+      const toastMsg = isZuuAiDisabled
+        ? 'ZuuAI bu restoran için devre dışı bırakılmıştır.'
+        : `Mesaj limitiniz doldu. ${timeText} sonra tekrar kullanabilirsiniz.`;
+
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+      }
+      setQuotaToast({ visible: true, text: toastMsg });
+      toastTimeoutRef.current = setTimeout(() => {
+        setQuotaToast({ visible: false, text: '' });
+      }, 4000);
+      return;
     }
+
+    setIsOpen((prev) => !prev);
   };
+
+  const ringRadius = 27;
+  const ringCircumference = 2 * Math.PI * ringRadius;
+  const strokeOffset = ringCircumference * (1 - Math.min(1, Math.max(0.02, resetRatio)));
 
   return (
     <div className="zuuai-widget" ref={widgetRef}>
@@ -936,33 +959,59 @@ const ZuuAIAssistant = ({ adminMode = false }) => {
 
           {attachmentError && <div className="zuuai-attachment-error">{attachmentError}</div>}
           {dragActive && <div className="zuuai-drop-hint">Görselleri buraya bırakın</div>}
-
-          {/* Countdown Helper below composer when exhausted */}
-          {(isDailyExhausted || isMonthlyExhausted) && countdownText && (
-            <div className="zuuai-composer-helper">
-              <span>Yenilenmesine {countdownText} kaldı</span>
-            </div>
-          )}
         </div>
       </div>
 
-      {/* ────────────────── Floating Trigger Button ────────────────── */}
-      <button
-        type="button"
-        className={`zuuai-trigger-btn ${isOpen ? 'is-open' : ''}`}
-        onClick={() => setIsOpen((prev) => !prev)}
-        aria-label={isOpen ? 'ZuuAI Asistanını Kapat' : 'ZuuAI Asistanını Aç'}
-        aria-expanded={isOpen}
-      >
-        <span className="zuuai-trigger-btn__badge" aria-hidden="true" />
-        <span className="zuuai-trigger-btn__icon">
-          {isOpen ? (
-            <IconClose size={22} />
-          ) : (
-            <img src="/zuuai.svg" alt="ZuuAI" className="zuuai-trigger-btn__logo" />
+      {/* ────────────────── Floating Trigger Button & Toast ────────────────── */}
+      <div className="zuuai-trigger-wrap">
+        {quotaToast.visible && (
+          <div className="zuuai-quota-toast" role="alert">
+            <span className="zuuai-quota-toast__text">{quotaToast.text}</span>
+          </div>
+        )}
+
+        <button
+          type="button"
+          className={`zuuai-trigger-btn ${isOpen ? 'is-open' : ''} ${isShaking ? 'is-shaking' : ''} ${isQuotaExhausted ? 'is-exhausted' : ''}`}
+          onClick={handleTriggerClick}
+          aria-label={isOpen ? 'ZuuAI Asistanını Kapat' : 'ZuuAI Asistanını Aç'}
+          aria-expanded={isOpen}
+        >
+          {/* Circular Countdown Progress Ring when Quota is Exhausted */}
+          {isQuotaExhausted && !isOpen && (
+            <svg className="zuuai-trigger-ring" viewBox="0 0 60 60" aria-hidden="true">
+              <circle
+                className="zuuai-trigger-ring__bg"
+                cx="30"
+                cy="30"
+                r={ringRadius}
+              />
+              <circle
+                className="zuuai-trigger-ring__fill"
+                cx="30"
+                cy="30"
+                r={ringRadius}
+                style={{
+                  strokeDasharray: ringCircumference,
+                  strokeDashoffset: strokeOffset,
+                }}
+              />
+            </svg>
           )}
-        </span>
-      </button>
+
+          <span
+            className={`zuuai-trigger-btn__badge ${isQuotaExhausted ? 'is-exhausted' : ''}`}
+            aria-hidden="true"
+          />
+          <span className="zuuai-trigger-btn__icon">
+            {isOpen ? (
+              <IconClose size={22} />
+            ) : (
+              <img src="/zuuai.svg" alt="ZuuAI" className="zuuai-trigger-btn__logo" />
+            )}
+          </span>
+        </button>
+      </div>
     </div>
   );
 };

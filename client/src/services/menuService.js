@@ -78,4 +78,19 @@ export const menuService = {
     const response = await api.delete(`/menu/products/${productId}/image`);
     return response.data;
   },
+
+  bulkDeleteCategories: async (payload) => {
+    const response = await api.post('/menu/bulk-delete-categories', payload);
+    return response.data;
+  },
+
+  bulkDeleteProducts: async (payload) => {
+    const response = await api.post('/menu/bulk-delete-products', payload);
+    return response.data;
+  },
+
+  bulkClearDescriptions: async (payload) => {
+    const response = await api.post('/menu/bulk-clear-descriptions', payload);
+    return response.data;
+  },
 };

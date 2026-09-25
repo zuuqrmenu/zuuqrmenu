@@ -8,19 +8,22 @@ import { getAdminSystemPrompt } from '../services/ai/prompts/systemPrompt.js';
  */
 export const getAiSettings = async (req, res, next) => {
   try {
-    const [{ activeModel, dailyLimit, monthlyLimit }, usageStats] = await Promise.all([
+    const [{ chatAssistantModel, menuUploadModel, smartProductDescriptionModel, activeModel, dailyLimit, monthlyLimit }, usageStats] = await Promise.all([
       aiConfigService.getAiConfig(),
       aiConfigService.getUsageStats(),
     ]);
 
     const [availableModels, providerLimits] = await Promise.all([
       aiConfigService.getAvailableModels(),
-      aiConfigService.getProviderRateLimitStats(activeModel),
+      aiConfigService.getProviderRateLimitStats(chatAssistantModel || activeModel),
     ]);
 
     return res.status(200).json({
       success: true,
       data: {
+        chatAssistantModel,
+        menuUploadModel,
+        smartProductDescriptionModel,
         activeModel,
         dailyLimit,
         monthlyLimit,
@@ -36,13 +39,20 @@ export const getAiSettings = async (req, res, next) => {
 
 /**
  * PUT /api/admin/ai/settings
- * Updates the active ZuuAI model and/or user message limits.
+ * Updates the active ZuuAI feature models and/or user message limits.
  */
 export const updateAiSettings = async (req, res, next) => {
   try {
-    const { model, dailyLimit, monthlyLimit } = req.body || {};
+    const { chatAssistantModel, menuUploadModel, smartProductDescriptionModel, model, dailyLimit, monthlyLimit } = req.body || {};
 
-    const updated = await aiConfigService.updateAiConfig({ model, dailyLimit, monthlyLimit });
+    const updated = await aiConfigService.updateAiConfig({
+      chatAssistantModel,
+      menuUploadModel,
+      smartProductDescriptionModel,
+      model,
+      dailyLimit,
+      monthlyLimit,
+    });
 
     return res.status(200).json({
       success: true,

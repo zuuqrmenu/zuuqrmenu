@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { menuService } from '../services/menuService';
+import { suggestProductDetails } from '../services/aiService';
 import { compressImageToWebp } from '../utils/imageOptimizer';
 import '../components/CategorySuggester.css';
 import {
@@ -299,6 +300,7 @@ export const ProductModal = ({ product, categoryId, categories, onClose, onSaved
   // AI Description Generator State
   const [isGeneratingDesc, setIsGeneratingDesc] = useState(false);
   const [streamState, setStreamState] = useState('idle'); // 'idle' | 'thinking' | 'streaming' | 'completed'
+  const [isCalorieAiSuggested, setIsCalorieAiSuggested] = useState(false);
   const thinkTimeoutRef = useRef(null);
   const streamIntervalRef = useRef(null);
   const lastGeneratedTextRef = useRef('');
@@ -438,9 +440,9 @@ export const ProductModal = ({ product, categoryId, categories, onClose, onSaved
   };
 
   /**
-   * ZuuAI Description Generator with 2.5s soft typing animation & yellow toast for re-clicks
+   * ZuuAI Description & Product Details Generator with streaming feedback & safe fallbacks
    */
-  const handleGenerateDescription = () => {
+  const handleGenerateDescription = async () => {
     if (isGeneratingDesc) return;
 
     if (!form.name.trim()) {
@@ -449,11 +451,9 @@ export const ProductModal = ({ product, categoryId, categories, onClose, onSaved
     }
 
     const categoryName = selectedCategoryName;
-    const targetText = generateProductDescriptionText(form.name, categoryName);
     const currentDesc = (form.description || '').trim();
 
-    // If description already has the generated text untouched,
-    // show yellow toast warning on repeated click!
+    // If description already has the generated text untouched, show hint
     if (
       currentDesc &&
       lastGeneratedTextRef.current &&
@@ -463,27 +463,66 @@ export const ProductModal = ({ product, categoryId, categories, onClose, onSaved
       return;
     }
 
-    // Otherwise (empty or any character deleted/changed):
-    // Generate/regenerate the text!
     if (thinkTimeoutRef.current) clearTimeout(thinkTimeoutRef.current);
     if (streamIntervalRef.current) clearInterval(streamIntervalRef.current);
 
     setIsGeneratingDesc(true);
     setStreamState('thinking');
 
-    // Phase 1: Soft preparation / AI synthesis (200ms)
-    thinkTimeoutRef.current = setTimeout(() => {
+    try {
+      let targetText = '';
+      let suggestedCalories = null;
+      let suggestedIngredients = [];
+      let suggestedAllergens = [];
+      let suggestedDietaryTags = [];
+
+      try {
+        const aiRes = await suggestProductDetails({
+          name: form.name.trim(),
+          categoryName,
+          currentDescription: currentDesc,
+          ingredients: form.ingredients,
+          allergens: form.allergens,
+          dietaryTags: form.dietaryTags,
+        });
+        if (aiRes?.data) {
+          targetText = aiRes.data.description || '';
+          suggestedCalories = aiRes.data.calories;
+          suggestedIngredients = aiRes.data.ingredients || [];
+          suggestedAllergens = aiRes.data.allergens || [];
+          suggestedDietaryTags = aiRes.data.dietaryTags || [];
+        }
+      } catch (aiErr) {
+        console.warn('AI product suggestion API fallback to local catalogue:', aiErr.message);
+      }
+
       if (!targetText) {
-        setIsGeneratingDesc(false);
-        setStreamState('idle');
-        return;
+        targetText = generateProductDescriptionText(form.name, categoryName);
+      }
+
+      // Apply extra suggestions if fields are currently empty
+      if (suggestedCalories !== null && (form.calories === '' || form.calories === null || form.calories === undefined)) {
+        setForm((curr) => ({ ...curr, calories: suggestedCalories }));
+        setIsCalorieAiSuggested(true);
+      }
+
+      if (suggestedIngredients.length > 0 && (!form.ingredients || form.ingredients.length === 0)) {
+        setForm((curr) => ({ ...curr, ingredients: suggestedIngredients }));
+      }
+
+      if (suggestedAllergens.length > 0 && (!form.allergens || form.allergens.length === 0)) {
+        setForm((curr) => ({ ...curr, allergens: suggestedAllergens }));
+      }
+
+      if (suggestedDietaryTags.length > 0 && (!form.dietaryTags || form.dietaryTags.length === 0)) {
+        setForm((curr) => ({ ...curr, dietaryTags: suggestedDietaryTags }));
       }
 
       setStreamState('streaming');
       setForm((curr) => ({ ...curr, description: '' }));
 
-      // Phase 2: Smooth text stream lasting precisely 2.5 seconds (2500ms)
-      const totalDuration = 2500;
+      // Phase 2: Smooth text stream
+      const totalDuration = 1800;
       const textLength = targetText.length;
       const startTime = performance.now();
 
@@ -505,7 +544,12 @@ export const ProductModal = ({ product, categoryId, categories, onClose, onSaved
           }, 850);
         }
       }, 30);
-    }, 200);
+    } catch (err) {
+      console.error('Failed to generate product description:', err);
+      setIsGeneratingDesc(false);
+      setStreamState('idle');
+      showToast('Açıklama oluşturulamadı. Lütfen manuel olarak devam edin.', 'warning');
+    }
   };
 
   const handleSelectProductSuggestion = (item) => {
@@ -824,8 +868,11 @@ export const ProductModal = ({ product, categoryId, categories, onClose, onSaved
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-semibold text-slate-700">
-                      Kalori (kcal) <span className="text-rose-500">*</span>
+                    <label className="mb-1 flex items-center justify-between text-xs font-semibold text-slate-700">
+                      <span>Kalori (kcal) <span className="text-rose-500">*</span></span>
+                      {isCalorieAiSuggested && (
+                        <span className="text-[10px] font-medium text-amber-600">ZuuAI tahmini</span>
+                      )}
                     </label>
                     <input
                       name="calories"
@@ -833,7 +880,10 @@ export const ProductModal = ({ product, categoryId, categories, onClose, onSaved
                       min="0"
                       step="1"
                       value={form.calories}
-                      onChange={updateField}
+                      onChange={(e) => {
+                        updateField(e);
+                        setIsCalorieAiSuggested(false);
+                      }}
                       className="field-input w-full"
                       placeholder="Örn. 350"
                     />
@@ -933,6 +983,9 @@ export const ProductModal = ({ product, categoryId, categories, onClose, onSaved
                     <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700">
                       Detaylı Açıklama <span className="text-slate-400 font-normal lowercase">(opsiyonel)</span>
                     </label>
+                    <span className="text-[10px] text-amber-600 font-semibold flex items-center gap-1">
+                      ✨ ZuuAI önerisi
+                    </span>
                   </div>
                   <div className="category-ai-textarea-wrapper">
                     <textarea
@@ -949,7 +1002,7 @@ export const ProductModal = ({ product, categoryId, categories, onClose, onSaved
                       }`}
                       placeholder={
                         isGeneratingDesc
-                          ? 'ZuuAI açıklama hazırlıyor...'
+                          ? 'ZuuAI öneri hazırlıyor...'
                           : 'Ürün hakkında detaylı iştah açıcı açıklama...'
                       }
                     />
@@ -974,14 +1027,14 @@ export const ProductModal = ({ product, categoryId, categories, onClose, onSaved
                         isGeneratingDesc
                           ? 'Açıklama hazırlanıyor...'
                           : form.name.trim()
-                          ? 'ZuuAI ile açıklama öner'
+                          ? 'ZuuAI ile öner'
                           : 'Açıklama önerisi için ürün adı girin'
                       }
                       title={
                         isGeneratingDesc
                           ? 'Açıklama hazırlanıyor...'
                           : form.name.trim()
-                          ? 'ZuuAI ile açıklama öner'
+                          ? 'ZuuAI ile öner'
                           : 'Açıklama önerisi için ürün adı girin'
                       }
                     >

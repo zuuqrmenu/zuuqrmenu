@@ -13,6 +13,7 @@ import {
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { ProductModal } from './ProductManager';
+import BulkMenuActionsModal from './BulkMenuActionsModal';
 import { menuService } from '../services/menuService';
 import { publicMenuService } from '../services/publicMenuService';
 
@@ -236,6 +237,7 @@ const MenuStructureEditor = ({ categories, products, actionId, onEditCategory, o
   const [editingProduct, setEditingProduct] = useState(null);
   const [productModalCategory, setProductModalCategory] = useState(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState(null);
+  const [bulkModalOpen, setBulkModalOpen] = useState(false);
   const dragStartColumns = useRef(columns);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }), useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 6 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
 
@@ -436,73 +438,147 @@ const MenuStructureEditor = ({ categories, products, actionId, onEditCategory, o
   };
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd} onDragCancel={() => setActiveId(null)}><section className="menu-structure-section"><header className="menu-structure-section__header"><div><p className="menu-publish-card__eyebrow">Menü</p><h3>Menü İçeriği</h3><p>{categories.length} kategori menünüzde yer alıyor.</p></div><div className="menu-structure-section__actions"><button type="button" className="menu-structure-add-category" onClick={onAddCategory}>+ Kategori Ekle</button><button type="button" className={`menu-structure-add-product ${!hasCategories ? 'is-disabled' : ''}`} aria-disabled={!hasCategories} onMouseEnter={() => !hasCategories && onMessage('Önce kategori eklemelisiniz.', true)} onClick={openHeaderProductModal}>+ Ürün Ekle</button></div></header><div className="menu-structure-board"><SortableContext items={columns.map((column) => `category:${getId(column.category)}`)} strategy={verticalListSortingStrategy}>{columns.map((column) => <SortableCategory key={getId(column.category)} column={column} actionId={actionId} onEdit={onEditCategory} onToggle={onToggleCategory} onDelete={requestCategoryDelete} onAddProduct={productActions} />)}</SortableContext>{columns.length === 0 && (
-  <div className="menu-structure-empty menu-structure-empty--board">
-    <div className="menu-structure-empty__icon">
-      <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
-        <path d="M6 6h10" />
-        <path d="M6 10h10" />
-      </svg>
-    </div>
-    <h4>Henüz bir kategori eklenmedi</h4>
-    <p>Menünüzü oluşturmaya başlamak için ilk kategorinizi ekleyin ve ardından ürünlerinizi sıralayın.</p>
-    <button type="button" onClick={onAddCategory} className="menu-structure-empty__btn">
-      + İlk Kategoriyi Ekle
-    </button>
-  </div>
-)}</div></section><DragOverlay>{activeProduct ? <div className="menu-structure-drag-preview">{activeProduct.name}</div> : activeCategory ? <div className="menu-structure-drag-preview">{activeCategory.name}</div> : null}</DragOverlay>        {(editingProduct || productModalCategory) && (
-          <ProductModal
-            product={editingProduct}
-            categoryId={getId(productModalCategory || editingProduct?.categoryId)}
-            categories={categories}
-            onClose={() => { setEditingProduct(null); setProductModalCategory(null); }}
-            onSaved={(message, finalProduct) => {
-              setEditingProduct(null);
-              setProductModalCategory(null);
-              if (finalProduct) {
-                const finalId = getId(finalProduct);
-                const targetCatId = getId(finalProduct.categoryId?._id || finalProduct.categoryId);
-                setColumns((prev) => {
-                  let found = false;
-                  const updated = prev.map((col) => {
-                    const isTargetCol = getId(col.category) === targetCatId;
-                    const exists = col.products.some((p) => getId(p) === finalId);
-                    if (exists) {
-                      found = true;
-                      if (isTargetCol) {
-                        return {
-                          ...col,
-                          products: col.products.map((p) => (getId(p) === finalId ? { ...p, ...finalProduct } : p)),
-                        };
-                      }
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd} onDragCancel={() => setActiveId(null)}>
+      <section className="menu-structure-section">
+        <header className="menu-structure-section__header">
+          <div>
+            <p className="menu-publish-card__eyebrow">Menü</p>
+            <h3>Menü İçeriği</h3>
+            <p>{categories.length} kategori menünüzde yer alıyor.</p>
+          </div>
+          <div className="menu-structure-section__actions">
+            <button type="button" className="menu-structure-add-category" onClick={onAddCategory}>
+              + Kategori Ekle
+            </button>
+            <button
+              type="button"
+              className={`menu-structure-add-product ${!hasCategories ? 'is-disabled' : ''}`}
+              aria-disabled={!hasCategories}
+              onMouseEnter={() => !hasCategories && onMessage('Önce kategori eklemelisiniz.', true)}
+              onClick={openHeaderProductModal}
+            >
+              + Ürün Ekle
+            </button>
+            <button
+              type="button"
+              className="menu-structure-bulk-btn"
+              onClick={() => setBulkModalOpen(true)}
+              title="Toplu ürün veya açıklama silme işlemleri"
+            >
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 20v-6M6 20V10M18 20V4" />
+              </svg>
+              <span>Toplu İşlemler</span>
+            </button>
+          </div>
+        </header>
+        <div className="menu-structure-board">
+          <SortableContext items={columns.map((column) => `category:${getId(column.category)}`)} strategy={verticalListSortingStrategy}>
+            {columns.map((column) => (
+              <SortableCategory
+                key={getId(column.category)}
+                column={column}
+                actionId={actionId}
+                onEdit={onEditCategory}
+                onToggle={onToggleCategory}
+                onDelete={requestCategoryDelete}
+                onAddProduct={productActions}
+              />
+            ))}
+          </SortableContext>
+          {columns.length === 0 && (
+            <div className="menu-structure-empty menu-structure-empty--board">
+              <div className="menu-structure-empty__icon">
+                <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
+                  <path d="M6 6h10" />
+                  <path d="M6 10h10" />
+                </svg>
+              </div>
+              <h4>Henüz bir kategori eklenmedi</h4>
+              <p>Menünüzü oluşturmaya başlamak için ilk kategorinizi ekleyin ve ardından ürünlerinizi sıralayın.</p>
+              <button type="button" onClick={onAddCategory} className="menu-structure-empty__btn">
+                + İlk Kategoriyi Ekle
+              </button>
+            </div>
+          )}
+        </div>
+      </section>
+      <DragOverlay>
+        {activeProduct ? (
+          <div className="menu-structure-drag-preview">{activeProduct.name}</div>
+        ) : activeCategory ? (
+          <div className="menu-structure-drag-preview">{activeCategory.name}</div>
+        ) : null}
+      </DragOverlay>
+      {(editingProduct || productModalCategory) && (
+        <ProductModal
+          product={editingProduct}
+          categoryId={getId(productModalCategory || editingProduct?.categoryId)}
+          categories={categories}
+          onClose={() => { setEditingProduct(null); setProductModalCategory(null); }}
+          onSaved={(message, finalProduct) => {
+            setEditingProduct(null);
+            setProductModalCategory(null);
+            if (finalProduct) {
+              const finalId = getId(finalProduct);
+              const targetCatId = getId(finalProduct.categoryId?._id || finalProduct.categoryId);
+              setColumns((prev) => {
+                let found = false;
+                const updated = prev.map((col) => {
+                  const isTargetCol = getId(col.category) === targetCatId;
+                  const exists = col.products.some((p) => getId(p) === finalId);
+                  if (exists) {
+                    found = true;
+                    if (isTargetCol) {
                       return {
                         ...col,
-                        products: col.products.filter((p) => getId(p) !== finalId),
+                        products: col.products.map((p) => (getId(p) === finalId ? { ...p, ...finalProduct } : p)),
                       };
                     }
-                    if (isTargetCol && !exists) {
-                      return { ...col, products: [...col.products, finalProduct] };
-                    }
-                    return col;
-                  });
-                  return updated;
+                    return {
+                      ...col,
+                      products: col.products.filter((p) => getId(p) !== finalId),
+                    };
+                  }
+                  if (isTargetCol && !exists) {
+                    return { ...col, products: [...col.products, finalProduct] };
+                  }
+                  return col;
                 });
-              }
-              publicMenuService.clearCache();
-              handleProductMessage(message);
-            }}
-          />
-        )}
-        {deleteConfirmation && (
-          <DeleteConfirmDialog
-            confirmation={deleteConfirmation}
-            onClose={() => setDeleteConfirmation(null)}
-            onConfirm={confirmDelete}
-          />
-        )}
-      </DndContext>
-    );
+                return updated;
+              });
+            }
+            publicMenuService.clearCache();
+            handleProductMessage(message);
+          }}
+        />
+      )}
+      {deleteConfirmation && (
+        <DeleteConfirmDialog
+          confirmation={deleteConfirmation}
+          onClose={() => setDeleteConfirmation(null)}
+          onConfirm={confirmDelete}
+        />
+      )}
+      {bulkModalOpen && (
+        <BulkMenuActionsModal
+          open={bulkModalOpen}
+          categories={categories}
+          products={products}
+          onClose={() => setBulkModalOpen(false)}
+          onSuccess={async (message) => {
+            setBulkModalOpen(false);
+            onMessage(message);
+            await onRefresh();
+          }}
+          onError={(errorMsg) => {
+            onMessage(errorMsg, true);
+          }}
+        />
+      )}
+    </DndContext>
+  );
 };
 
 export default MenuStructureEditor;

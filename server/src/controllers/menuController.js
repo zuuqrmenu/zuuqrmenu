@@ -4,6 +4,8 @@ import Menu from '../models/Menu.js';
 import Product from '../models/Product.js';
 import Restaurant from '../models/Restaurant.js';
 import MenuView from '../models/MenuView.js';
+import { cloudinaryConfigured } from '../config/cloudinary.js';
+import { removeFromCloudinary } from './productController.js';
 
 const getRestaurantId = (req) => req.restaurant._id;
 
@@ -246,3 +248,56 @@ export const updateMenuStatus = async (req, res, next) => {
     next(error);
   }
 };
+
+/**
+ * Bulk delete categories (all categories or a specific category with its products)
+ */
+export const bulkDeleteCategories = async (req, res, next) => {
+  try {
+    const restaurantId = getRestaurantId(req);
+    const { categoryId, all } = req.body || {};
+
+    const categoryFilter = { restaurantId };
+    const productFilter = { restaurantId };
+
+    if (!all) {
+      if (!categoryId || !isValidId(categoryId)) {
+        return res.status(400).json({ error: 'Geçerli bir kategori seçilmeli veya tümü seçeneği belirtilmelidir.' });
+      }
+      const category = await Category.findOne({ _id: categoryId, restaurantId });
+      if (!category) {
+        return res.status(404).json({ error: 'Kategori bulunamadı.' });
+      }
+      categoryFilter._id = category._id;
+      productFilter.categoryId = category._id;
+    }
+
+    // Background Cloudinary image removal
+    if (cloudinaryConfigured) {
+      Product.find(productFilter).select('image').lean().then((products) => {
+        products.forEach((p) => {
+          if (p.image) removeFromCloudinary(p.image).catch(() => {});
+        });
+      }).catch(() => {});
+    }
+
+    const [deletedProducts, deletedCategories] = await Promise.all([
+      Product.deleteMany(productFilter),
+      Category.deleteMany(categoryFilter),
+    ]);
+
+    const catCount = deletedCategories.deletedCount || 0;
+    const prodCount = deletedProducts.deletedCount || 0;
+
+    res.json({
+      success: true,
+      message: catCount > 0
+        ? (all ? `${catCount} kategori ve tüm ürünler başarıyla silindi.` : `Kategori ve bağlı ${prodCount} ürün başarıyla silindi.`)
+        : 'Silinecek kategori bulunamadı.',
+      categoryCount: catCount,
+      productCount: prodCount,
+    });
+  } catch (error) {
+    next(error);
+  }
+};

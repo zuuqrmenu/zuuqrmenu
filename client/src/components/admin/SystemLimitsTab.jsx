@@ -158,7 +158,9 @@ export default function SystemLimitsTab() {
   const [aiData, setAiData] = useState(null);
   const [aiLoading, setAiLoading] = useState(true);
   const [aiRefreshing, setAiRefreshing] = useState(false);
-  const [selectedModel, setSelectedModel] = useState('gemini-3.1-flash-lite');
+  const [chatAssistantModel, setChatAssistantModel] = useState('gemini-3.1-flash-lite');
+  const [menuUploadModel, setMenuUploadModel] = useState('gemini-3.1-flash-lite');
+  const [smartProductDescriptionModel, setSmartProductDescriptionModel] = useState('gemini-3.1-flash-lite');
   const [dailyLimitInput, setDailyLimitInput] = useState(20);
   const [monthlyLimitInput, setMonthlyLimitInput] = useState(300);
   const [savingModel, setSavingModel] = useState(false);
@@ -166,8 +168,14 @@ export default function SystemLimitsTab() {
   const [modelErrorMsg, setModelErrorMsg] = useState('');
   const [showGeminiDetails, setShowGeminiDetails] = useState(false);
   const [selectedPlanTier, setSelectedPlanTier] = useState('standard');
-  const isNvidiaModel = selectedModel === 'google/gemma-4-31b-it' || selectedModel === 'z-ai/glm-5.3-flash' || selectedModel === 'deepseek-ai/deepseek-v4.1-flash';
-  const activeProviderLabel = isNvidiaModel ? 'NVIDIA API' : 'Google Gemini';
+
+  const isNvidiaChat = chatAssistantModel && !chatAssistantModel.startsWith('gemini-');
+  const isNvidiaMenu = menuUploadModel && !menuUploadModel.startsWith('gemini-');
+  const isNvidiaSmart = smartProductDescriptionModel && !smartProductDescriptionModel.startsWith('gemini-');
+  const isNvidiaModel = isNvidiaChat || isNvidiaMenu || isNvidiaSmart;
+  const activeProviderLabel = isNvidiaModel
+    ? (isNvidiaChat && isNvidiaMenu && isNvidiaSmart ? 'NVIDIA API' : 'Google Gemini / NVIDIA API')
+    : 'Google Gemini';
 
   const loadAiData = async (isManualRefresh = false) => {
     if (isManualRefresh) {
@@ -179,8 +187,20 @@ export default function SystemLimitsTab() {
       const res = await adminService.getAiSettings();
       if (res?.data) {
         setAiData(res.data);
-        if (res.data.activeModel) {
-          setSelectedModel(res.data.activeModel);
+        if (res.data.chatAssistantModel) {
+          setChatAssistantModel(res.data.chatAssistantModel);
+        } else if (res.data.activeModel) {
+          setChatAssistantModel(res.data.activeModel);
+        }
+        if (res.data.menuUploadModel) {
+          setMenuUploadModel(res.data.menuUploadModel);
+        } else if (res.data.activeModel) {
+          setMenuUploadModel(res.data.activeModel);
+        }
+        if (res.data.smartProductDescriptionModel) {
+          setSmartProductDescriptionModel(res.data.smartProductDescriptionModel);
+        } else if (res.data.activeModel) {
+          setSmartProductDescriptionModel(res.data.activeModel);
         }
         if (res.data.dailyLimit !== undefined) {
           setDailyLimitInput(res.data.dailyLimit);
@@ -216,13 +236,18 @@ export default function SystemLimitsTab() {
     setModelErrorMsg('');
     try {
       const res = await adminService.updateAiSettings({
-        model: selectedModel,
+        chatAssistantModel,
+        menuUploadModel,
+        smartProductDescriptionModel,
         dailyLimit: dailyNum,
         monthlyLimit: monthlyNum,
       });
       if (res?.data) {
         setAiData((prev) => ({
           ...prev,
+          chatAssistantModel: res.data.chatAssistantModel,
+          menuUploadModel: res.data.menuUploadModel,
+          smartProductDescriptionModel: res.data.smartProductDescriptionModel,
           activeModel: res.data.activeModel,
           dailyLimit: res.data.dailyLimit,
           monthlyLimit: res.data.monthlyLimit,
@@ -238,22 +263,55 @@ export default function SystemLimitsTab() {
     }
   };
 
-  const handleModelChange = async (newModel) => {
-    if (savingModel || newModel === selectedModel) return;
-    setSelectedModel(newModel);
+  const handleFeatureModelChange = async (feature, newModel) => {
+    if (savingModel) return;
+    const currentModel =
+      feature === 'chatAssistant'
+        ? chatAssistantModel
+        : feature === 'menuUpload'
+        ? menuUploadModel
+        : smartProductDescriptionModel;
+
+    if (newModel === currentModel) return;
+
+    if (feature === 'chatAssistant') {
+      setChatAssistantModel(newModel);
+    } else if (feature === 'menuUpload') {
+      setMenuUploadModel(newModel);
+    } else {
+      setSmartProductDescriptionModel(newModel);
+    }
+
     setSavingModel(true);
     setModelSuccessMsg('');
     setModelErrorMsg('');
     try {
+      const payloadKey =
+        feature === 'chatAssistant'
+          ? 'chatAssistantModel'
+          : feature === 'menuUpload'
+          ? 'menuUploadModel'
+          : 'smartProductDescriptionModel';
+
       const res = await adminService.updateAiSettings({
-        model: newModel,
+        [payloadKey]: newModel,
       });
       if (res?.data) {
         setAiData((prev) => ({
           ...prev,
+          chatAssistantModel: res.data.chatAssistantModel,
+          menuUploadModel: res.data.menuUploadModel,
+          smartProductDescriptionModel: res.data.smartProductDescriptionModel,
           activeModel: res.data.activeModel,
         }));
-        setModelSuccessMsg(`Aktif model başarıyla değiştirildi: ${newModel}`);
+        const featureLabel =
+          feature === 'chatAssistant'
+            ? 'ZuuAI Chat Asistanı'
+            : feature === 'menuUpload'
+            ? 'Menünü Yükle'
+            : 'Akıllı Ürün Açıklaması';
+
+        setModelSuccessMsg(`${featureLabel} modeli başarıyla güncellendi: ${newModel}`);
         setTimeout(() => setModelSuccessMsg(''), 3500);
         await loadAiData(true);
       }
@@ -808,30 +866,8 @@ export default function SystemLimitsTab() {
               </div>
             </div>
 
-            {/* Model Selector */}
+            {/* Header Refresh Button */}
             <div className="flex items-center gap-3 self-start sm:self-auto">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Aktif Model:</span>
-                <select
-                  value={selectedModel}
-                  disabled={savingModel || aiLoading}
-                  onChange={(e) => handleModelChange(e.target.value)}
-                  className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 shadow-xs focus:border-brand focus:outline-none dark:border-white/10 dark:bg-neutral-900 dark:text-white"
-                >
-                  {(aiData?.availableModels || [
-                    { id: 'gemini-3.1-flash-lite', name: 'Gemini 3.1 Flash-Lite', isDefault: true },
-                    { id: 'gemini-3.6-flash', name: 'Gemini 3.6 Flash', isDefault: false },
-                    { id: 'google/gemma-4-31b-it', name: 'NVIDIA Gemma 4 31B', isDefault: false },
-                    { id: 'z-ai/glm-5.3-flash', name: 'NVIDIA GLM 5.3 Flash', isDefault: false },
-                    { id: 'deepseek-ai/deepseek-v4.1-flash', name: 'NVIDIA DeepSeek V4.1 Flash', isDefault: false },
-                  ]).map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name} {m.isDefault ? '(Varsayılan)' : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
               <button
                 type="button"
                 disabled={aiRefreshing}
@@ -858,6 +894,130 @@ export default function SystemLimitsTab() {
               <span>{modelErrorMsg}</span>
             </div>
           )}
+
+          {/* Feature-Based AI Model Selection Cards */}
+          <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4.5 dark:border-white/[0.06] dark:bg-white/[0.02]">
+            <div className="flex items-center justify-between mb-3.5">
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Özellik Bazlı AI Modelleri
+                </h4>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Her ZuuAI özelliğinin kullanacağı yapay zeka modelini bağımsız olarak seçebilirsiniz.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+              {/* Feature 1: Chat Assistant */}
+              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs dark:border-white/10 dark:bg-neutral-900/90">
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand text-xs">💬</span>
+                    <h5 className="text-xs font-bold text-slate-800 dark:text-white">ZuuAI Chat Asistanı</h5>
+                  </div>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 font-mono">
+                    {chatAssistantModel && !chatAssistantModel.startsWith('gemini-') ? 'NVIDIA' : 'Gemini'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 mb-3">
+                  ZuuAI'nin sohbet yanıtlarında ve kullanıcı asistanlığında kullanılacak model.
+                </p>
+                <select
+                  value={chatAssistantModel}
+                  disabled={savingModel || aiLoading}
+                  onChange={(e) => handleFeatureModelChange('chatAssistant', e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-800 shadow-xs focus:border-brand focus:outline-none dark:border-white/10 dark:bg-neutral-900 dark:text-white"
+                >
+                  {(aiData?.availableModels || [
+                    { id: 'gemini-3.1-flash-lite', name: 'Gemini 3.1 Flash-Lite', isDefault: true },
+                    { id: 'gemini-3.6-flash', name: 'Gemini 3.6 Flash', isDefault: false },
+                    { id: 'google/gemma-4-31b-it', name: 'NVIDIA Gemma 4 31B', isDefault: false },
+                    { id: 'z-ai/glm-5.3-flash', name: 'NVIDIA GLM 5.3 Flash', isDefault: false },
+                    { id: 'deepseek-ai/deepseek-v4.1-flash', name: 'NVIDIA DeepSeek V4.1 Flash', isDefault: false },
+                    { id: 'google/diffusiongemma-26b-a4b-it', name: 'Google DiffusionGemma 26B', isDefault: false },
+                    { id: 'meta/llama-3.2-11b-vision-instruct', name: 'Meta Llama 3.2 11B Vision', isDefault: false },
+                  ]).map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name} {m.isDefault ? '(Varsayılan)' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Feature 2: Menu Upload */}
+              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs dark:border-white/10 dark:bg-neutral-900/90">
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500 text-xs">📸</span>
+                    <h5 className="text-xs font-bold text-slate-800 dark:text-white">Menünü Yükle</h5>
+                  </div>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 font-mono">
+                    {menuUploadModel && !menuUploadModel.startsWith('gemini-') ? 'NVIDIA' : 'Gemini'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 mb-3">
+                  Menü fotoğraflarından ürün/fiyat ve kategori taslağı ayıklamada kullanılacak model.
+                </p>
+                <select
+                  value={menuUploadModel}
+                  disabled={savingModel || aiLoading}
+                  onChange={(e) => handleFeatureModelChange('menuUpload', e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-800 shadow-xs focus:border-brand focus:outline-none dark:border-white/10 dark:bg-neutral-900 dark:text-white"
+                >
+                  {(aiData?.availableModels || [
+                    { id: 'gemini-3.1-flash-lite', name: 'Gemini 3.1 Flash-Lite', isDefault: true },
+                    { id: 'gemini-3.6-flash', name: 'Gemini 3.6 Flash', isDefault: false },
+                    { id: 'google/gemma-4-31b-it', name: 'NVIDIA Gemma 4 31B', isDefault: false },
+                    { id: 'z-ai/glm-5.3-flash', name: 'NVIDIA GLM 5.3 Flash', isDefault: false },
+                    { id: 'deepseek-ai/deepseek-v4.1-flash', name: 'NVIDIA DeepSeek V4.1 Flash', isDefault: false },
+                    { id: 'google/diffusiongemma-26b-a4b-it', name: 'Google DiffusionGemma 26B', isDefault: false },
+                    { id: 'meta/llama-3.2-11b-vision-instruct', name: 'Meta Llama 3.2 11B Vision', isDefault: false },
+                  ]).map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name} {m.isDefault ? '(Varsayılan)' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Feature 3: Smart Product Description */}
+              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs dark:border-white/10 dark:bg-neutral-900/90">
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500 text-xs">✨</span>
+                    <h5 className="text-xs font-bold text-slate-800 dark:text-white">Akıllı Ürün Açıklaması</h5>
+                  </div>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 font-mono">
+                    {smartProductDescriptionModel && !smartProductDescriptionModel.startsWith('gemini-') ? 'NVIDIA' : 'Gemini'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 mb-3">
+                  Toplu ürün açıklaması oluştururken ve ürün önerilerinde kullanılacak model.
+                </p>
+                <select
+                  value={smartProductDescriptionModel}
+                  disabled={savingModel || aiLoading}
+                  onChange={(e) => handleFeatureModelChange('smartProductDescription', e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-800 shadow-xs focus:border-brand focus:outline-none dark:border-white/10 dark:bg-neutral-900 dark:text-white"
+                >
+                  {(aiData?.availableModels || [
+                    { id: 'gemini-3.1-flash-lite', name: 'Gemini 3.1 Flash-Lite', isDefault: true },
+                    { id: 'gemini-3.6-flash', name: 'Gemini 3.6 Flash', isDefault: false },
+                    { id: 'google/gemma-4-31b-it', name: 'NVIDIA Gemma 4 31B', isDefault: false },
+                    { id: 'z-ai/glm-5.3-flash', name: 'NVIDIA GLM 5.3 Flash', isDefault: false },
+                    { id: 'deepseek-ai/deepseek-v4.1-flash', name: 'NVIDIA DeepSeek V4.1 Flash', isDefault: false },
+                    { id: 'google/diffusiongemma-26b-a4b-it', name: 'Google DiffusionGemma 26B', isDefault: false },
+                    { id: 'meta/llama-3.2-11b-vision-instruct', name: 'Meta Llama 3.2 11B Vision', isDefault: false },
+                  ]).map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name} {m.isDefault ? '(Varsayılan)' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
 
           {/* SECTION A: GEMINI API USAGE (Token-First Unified Meter Box) */}
           <div className="resource-meter-box p-5 space-y-4">
@@ -1240,7 +1400,7 @@ export default function SystemLimitsTab() {
           {/* Clean minimal footer */}
           <div className="pt-3 border-t border-slate-200/25 dark:border-white/[0.04] flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
             <span>Sağlayıcı: <strong className="font-bold text-slate-700 dark:text-slate-300">{activeProviderLabel}</strong></span>
-            <span>Desteklenen Modeller: <strong className="font-mono text-slate-600 dark:text-slate-400">gemini-3.1-flash-lite, gemini-3.6-flash, google/gemma-4-31b-it, z-ai/glm-5.3-flash, deepseek-ai/deepseek-v4.1-flash</strong></span>
+            <span>Desteklenen Modeller: <strong className="font-mono text-slate-600 dark:text-slate-400">gemini-3.1-flash-lite, gemini-3.6-flash, google/gemma-4-31b-it, z-ai/glm-5.3-flash, deepseek-ai/deepseek-v4.1-flash, google/diffusiongemma-26b-a4b-it, meta/llama-3.2-11b-vision-instruct</strong></span>
             <span className="inline-flex items-center gap-1.5 font-medium text-emerald-500">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
               Hazır & Canlı

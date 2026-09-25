@@ -37,6 +37,18 @@ export const AVAILABLE_MODELS = [
     description: 'NVIDIA API üzerinden görsel destekli DeepSeek V4.1 Flash',
     isDefault: false,
   },
+  {
+    id: 'google/diffusiongemma-26b-a4b-it',
+    name: 'Google DiffusionGemma 26B',
+    description: 'NVIDIA API üzerinden Google DiffusionGemma 26B A4B Instruct',
+    isDefault: false,
+  },
+  {
+    id: 'meta/llama-3.2-11b-vision-instruct',
+    name: 'Meta Llama 3.2 11B Vision',
+    description: 'NVIDIA API üzerinden görsel ve metin destekli Meta Llama 3.2 11B Vision Instruct',
+    isDefault: false,
+  },
 ];
 
 export const MODEL_PROVIDER_LIMITS = {
@@ -85,6 +97,24 @@ export const MODEL_PROVIDER_LIMITS = {
     tpmResetText: '1 dakikalık kayan pencere',
     rpdResetText: 'Sağlayıcının günlük kota penceresine göre',
   },
+  'google/diffusiongemma-26b-a4b-it': {
+    name: 'Google DiffusionGemma 26B',
+    rpm: 40,
+    tpm: 1000000,
+    rpd: 1500,
+    rpmResetText: '1 dakikalık kayan pencere',
+    tpmResetText: '1 dakikalık kayan pencere',
+    rpdResetText: 'Sağlayıcının günlük kota penceresine göre',
+  },
+  'meta/llama-3.2-11b-vision-instruct': {
+    name: 'Meta Llama 3.2 11B Vision',
+    rpm: 40,
+    tpm: 1000000,
+    rpd: 1500,
+    rpmResetText: '1 dakikalık kayan pencere',
+    tpmResetText: '1 dakikalık kayan pencere',
+    rpdResetText: 'Sağlayıcının günlük kota penceresine göre',
+  },
 };
 
 const ALLOWED_MODEL_IDS = AVAILABLE_MODELS.map((m) => m.id);
@@ -94,6 +124,16 @@ const ALLOWED_MODEL_IDS = AVAILABLE_MODELS.map((m) => m.id);
  * Never uses rolling 24-hour / 30-day windows or client-side clocks.
  * @returns {{ startOfToday: Date, startOfMonth: Date }}
  */
+/**
+ * Checks if the promotional unlimited menu upload period is active (until 1 October 2026).
+ * After this date, standard daily limit of 1 menu upload per day applies.
+ * @returns {boolean}
+ */
+export const isMenuImportUnlimitedPromo = () => {
+  const promoEnd = new Date('2026-10-01T00:00:00.000+03:00');
+  return new Date() < promoEnd;
+};
+
 export const getIstanbulDateBoundaries = () => {
   const now = new Date();
   const formatter = new Intl.DateTimeFormat('en-CA', {
@@ -113,17 +153,31 @@ export const getIstanbulDateBoundaries = () => {
 };
 
 /**
- * Retrieves the full ZuuAI configuration (active model and user limits) with fallbacks.
- * @returns {Promise<{ activeModel: string, dailyLimit: number, monthlyLimit: number }>}
+ * Retrieves the full ZuuAI configuration (feature-based models and user limits) with fallbacks.
+ * @returns {Promise<{ chatAssistantModel: string, menuUploadModel: string, activeModel: string, dailyLimit: number, monthlyLimit: number }>}
  */
 export const getAiConfig = async () => {
   try {
     const setting = await SystemSetting.findOne({ key: 'zuuai_config' }).lean();
     const val = setting?.value || {};
 
-    const activeModel = (val.activeModel && ALLOWED_MODEL_IDS.includes(val.activeModel))
+    const legacyModel = (val.activeModel && ALLOWED_MODEL_IDS.includes(val.activeModel))
       ? val.activeModel
       : DEFAULT_MODEL;
+
+    const chatAssistantModel = (val.chatAssistantModel && ALLOWED_MODEL_IDS.includes(val.chatAssistantModel))
+      ? val.chatAssistantModel
+      : legacyModel;
+
+    const menuUploadModel = (val.menuUploadModel && ALLOWED_MODEL_IDS.includes(val.menuUploadModel))
+      ? val.menuUploadModel
+      : legacyModel;
+
+    const smartProductDescriptionModel = (val.smartProductDescriptionModel && ALLOWED_MODEL_IDS.includes(val.smartProductDescriptionModel))
+      ? val.smartProductDescriptionModel
+      : legacyModel;
+
+    const activeModel = chatAssistantModel;
 
     const dailyLimit = (Number.isInteger(val.dailyLimit) && val.dailyLimit >= 1)
       ? val.dailyLimit
@@ -134,6 +188,9 @@ export const getAiConfig = async () => {
       : DEFAULT_MONTHLY_LIMIT;
 
     return {
+      chatAssistantModel,
+      menuUploadModel,
+      smartProductDescriptionModel,
       activeModel,
       dailyLimit,
       monthlyLimit,
@@ -141,6 +198,9 @@ export const getAiConfig = async () => {
   } catch (error) {
     console.error('Failed to read ZuuAI config from SystemSetting, falling back to defaults:', error.message);
     return {
+      chatAssistantModel: DEFAULT_MODEL,
+      menuUploadModel: DEFAULT_MODEL,
+      smartProductDescriptionModel: DEFAULT_MODEL,
       activeModel: DEFAULT_MODEL,
       dailyLimit: DEFAULT_DAILY_LIMIT,
       monthlyLimit: DEFAULT_MONTHLY_LIMIT,
@@ -149,27 +209,97 @@ export const getAiConfig = async () => {
 };
 
 /**
- * Retrieves active AI model name.
+ * Retrieves the model ID configured for a specific ZuuAI feature.
+ * @param {'chatAssistant'|'menuUpload'|'smartProductDescription'} [featureName='chatAssistant']
  * @returns {Promise<string>}
  */
-export const getActiveModel = async () => {
+export const getFeatureModel = async (featureName = 'chatAssistant') => {
   const config = await getAiConfig();
-  return config.activeModel;
+  if (featureName === 'menuUpload') {
+    return config.menuUploadModel;
+  }
+  if (featureName === 'smartProductDescription' || featureName === 'productDescription') {
+    return config.smartProductDescriptionModel;
+  }
+  return config.chatAssistantModel || config.activeModel || DEFAULT_MODEL;
 };
 
 /**
- * Updates ZuuAI configuration (model and/or limits) with validation.
+ * Retrieves active AI model name for chat assistant (backward compatible).
+ * @returns {Promise<string>}
+ */
+export const getActiveModel = async () => {
+  return getFeatureModel('chatAssistant');
+};
+
+/**
+ * Updates ZuuAI configuration (feature models and/or limits) with validation.
  * @param {Object} params
+ * @param {string} [params.chatAssistantModel]
+ * @param {string} [params.menuUploadModel]
  * @param {string} [params.model]
  * @param {number} [params.dailyLimit]
  * @param {number} [params.monthlyLimit]
- * @returns {Promise<{ activeModel: string, dailyLimit: number, monthlyLimit: number }>}
+ * @returns {Promise<{ chatAssistantModel: string, menuUploadModel: string, activeModel: string, dailyLimit: number, monthlyLimit: number }>}
  */
-export const updateAiConfig = async ({ model, dailyLimit, monthlyLimit }) => {
+export const updateAiConfig = async ({ chatAssistantModel, menuUploadModel, smartProductDescriptionModel, model, dailyLimit, monthlyLimit }) => {
   const current = await getAiConfig();
   const updates = {};
 
-  if (model !== undefined) {
+  if (chatAssistantModel !== undefined) {
+    if (!chatAssistantModel || typeof chatAssistantModel !== 'string') {
+      const error = new Error('Chat asistanı model kimliği zorunludur.');
+      error.statusCode = 400;
+      throw error;
+    }
+    const trimmed = chatAssistantModel.trim();
+    if (!ALLOWED_MODEL_IDS.includes(trimmed)) {
+      const error = new Error(
+        `Geçersiz model seçimi. Desteklenen modeller: ${ALLOWED_MODEL_IDS.join(', ')}`
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+    updates['value.chatAssistantModel'] = trimmed;
+    updates['value.activeModel'] = trimmed;
+  }
+
+  if (menuUploadModel !== undefined) {
+    if (!menuUploadModel || typeof menuUploadModel !== 'string') {
+      const error = new Error('Menü yükleme model kimliği zorunludur.');
+      error.statusCode = 400;
+      throw error;
+    }
+    const trimmed = menuUploadModel.trim();
+    if (!ALLOWED_MODEL_IDS.includes(trimmed)) {
+      const error = new Error(
+        `Geçersiz model seçimi. Desteklenen modeller: ${ALLOWED_MODEL_IDS.join(', ')}`
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+    updates['value.menuUploadModel'] = trimmed;
+  }
+
+  if (smartProductDescriptionModel !== undefined) {
+    if (!smartProductDescriptionModel || typeof smartProductDescriptionModel !== 'string') {
+      const error = new Error('Akıllı ürün açıklaması model kimliği zorunludur.');
+      error.statusCode = 400;
+      throw error;
+    }
+    const trimmed = smartProductDescriptionModel.trim();
+    if (!ALLOWED_MODEL_IDS.includes(trimmed)) {
+      const error = new Error(
+        `Geçersiz model seçimi. Desteklenen modeller: ${ALLOWED_MODEL_IDS.join(', ')}`
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+    updates['value.smartProductDescriptionModel'] = trimmed;
+  }
+
+  // Backward compatibility: if model is provided without chatAssistantModel
+  if (model !== undefined && chatAssistantModel === undefined) {
     if (!model || typeof model !== 'string') {
       const error = new Error('Model kimliği zorunludur.');
       error.statusCode = 400;
@@ -184,6 +314,7 @@ export const updateAiConfig = async ({ model, dailyLimit, monthlyLimit }) => {
       throw error;
     }
     updates['value.activeModel'] = trimmed;
+    updates['value.chatAssistantModel'] = trimmed;
   }
 
   if (dailyLimit !== undefined) {
@@ -222,8 +353,12 @@ export const updateAiConfig = async ({ model, dailyLimit, monthlyLimit }) => {
   ).lean();
 
   const val = updatedSetting?.value || {};
+  const fallbackModel = val.activeModel || DEFAULT_MODEL;
   return {
-    activeModel: val.activeModel || DEFAULT_MODEL,
+    chatAssistantModel: val.chatAssistantModel || fallbackModel,
+    menuUploadModel: val.menuUploadModel || fallbackModel,
+    smartProductDescriptionModel: val.smartProductDescriptionModel || fallbackModel,
+    activeModel: val.chatAssistantModel || fallbackModel,
     dailyLimit: val.dailyLimit || DEFAULT_DAILY_LIMIT,
     monthlyLimit: val.monthlyLimit || DEFAULT_MONTHLY_LIMIT,
   };
@@ -519,8 +654,10 @@ export default {
   DEFAULT_MONTHLY_LIMIT,
   AVAILABLE_MODELS,
   MODEL_PROVIDER_LIMITS,
+  isMenuImportUnlimitedPromo,
   getIstanbulDateBoundaries,
   getAiConfig,
+  getFeatureModel,
   getActiveModel,
   setActiveModel,
   updateAiConfig,
