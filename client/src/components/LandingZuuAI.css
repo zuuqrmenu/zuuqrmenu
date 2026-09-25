@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════════════════════════════════════
-   Landing Page ZuuAI Product Assistant - Dedicated Isolated Styles
+   Landing Page ZuuAI Product Assistant - Polished Premium Theme
    ══════════════════════════════════════════════════════════════════════ */
 
 .landing-zuuai-widget {
@@ -7,7 +7,7 @@
   bottom: 1.5rem;
   right: 1.5rem;
   z-index: 950;
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 @supports (padding: max(0px)) {
@@ -18,19 +18,19 @@
 }
 
 /* ──────────────────────────────────────────────────────────────────────
-   1. Initial Speech Bubble (Subtle Spring / Fade Animation)
+   1. Initial Speech Bubble (Spring Entrance)
    ────────────────────────────────────────────────────────────────────── */
 .landing-zuuai-bubble {
   position: absolute;
   bottom: calc(100% + 14px);
   right: 0;
   width: 275px;
-  background: #111827;
+  background: #141410;
   border: 1px solid rgba(222, 255, 54, 0.4);
   border-radius: 1rem;
-  padding: 0.75rem 0.85rem;
+  padding: 0.75rem 0.9rem;
   box-shadow: 
-    0 14px 34px -4px rgba(0, 0, 0, 0.65),
+    0 16px 36px -4px rgba(0, 0, 0, 0.4),
     0 0 16px rgba(222, 255, 54, 0.12);
   display: flex;
   align-items: flex-start;
@@ -46,8 +46,8 @@
   transform: translateY(-2px);
   border-color: rgba(222, 255, 54, 0.65);
   box-shadow: 
-    0 18px 40px -4px rgba(0, 0, 0, 0.75),
-    0 0 20px rgba(222, 255, 54, 0.18);
+    0 20px 42px -4px rgba(0, 0, 0, 0.5),
+    0 0 20px rgba(222, 255, 54, 0.2);
 }
 
 @keyframes zuuai-speech-in {
@@ -75,15 +75,15 @@
 .landing-zuuai-bubble__text {
   font-size: 0.8rem;
   line-height: 1.4;
-  color: #f1f5f9;
-  font-weight: 500;
+  color: #f9f8f5;
+  font-weight: 600;
   margin: 0;
 }
 
 .landing-zuuai-bubble__close {
   background: transparent;
   border: none;
-  color: #64748b;
+  color: #888880;
   padding: 0.2rem;
   cursor: pointer;
   display: flex;
@@ -96,8 +96,8 @@
 }
 
 .landing-zuuai-bubble__close:hover {
-  color: #f8fafc;
-  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 /* Triangle Pointer */
@@ -107,7 +107,7 @@
   right: 22px;
   width: 12px;
   height: 12px;
-  background: #111827;
+  background: #141410;
   border-right: 1px solid rgba(222, 255, 54, 0.4);
   border-bottom: 1px solid rgba(222, 255, 54, 0.4);
   transform: rotate(45deg);
@@ -118,15 +118,15 @@
    ────────────────────────────────────────────────────────────────────── */
 .landing-zuuai-trigger-btn {
   position: relative;
-  width: 3.375rem; /* 54px */
-  height: 3.375rem;
+  width: 3.5rem; /* 56px */
+  height: 3.5rem;
   border-radius: 9999px;
-  background: #0f172a;
+  background: #141410;
   color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   box-shadow: 
-    0 12px 30px -4px rgba(0, 0, 0, 0.65),
-    0 4px 12px -2px rgba(0, 0, 0, 0.4);
+    0 14px 34px -4px rgba(0, 0, 0, 0.4),
+    0 4px 12px -2px rgba(0, 0, 0, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -144,11 +144,11 @@
 }
 
 .landing-zuuai-trigger-btn:hover {
-  transform: translateY(-2px) scale(1.04);
-  border-color: rgba(222, 255, 54, 0.45);
+  transform: translateY(-2px) scale(1.05);
+  border-color: rgba(222, 255, 54, 0.55);
   box-shadow: 
-    0 16px 36px -4px rgba(0, 0, 0, 0.8),
-    0 0 0 1px rgba(222, 255, 54, 0.35);
+    0 18px 40px -4px rgba(0, 0, 0, 0.5),
+    0 0 0 2px rgba(222, 255, 54, 0.3);
 }
 
 .landing-zuuai-trigger-btn:active {
@@ -158,19 +158,19 @@
 .landing-zuuai-trigger-btn:focus-visible {
   box-shadow: 
     0 0 0 3px rgba(222, 255, 54, 0.45),
-    0 12px 30px -4px rgba(0, 0, 0, 0.65);
+    0 12px 30px -4px rgba(0, 0, 0, 0.4);
 }
 
 .landing-zuuai-trigger-btn__badge {
   position: absolute;
   top: 1px;
   right: 1px;
-  width: 11px;
-  height: 11px;
-  background: #DEFF36;
-  border: 2px solid #0f172a;
+  width: 12px;
+  height: 12px;
+  background: #deff36;
+  border: 2px solid #141410;
   border-radius: 9999px;
-  box-shadow: 0 0 8px rgba(222, 255, 54, 0.6);
+  box-shadow: 0 0 10px rgba(222, 255, 54, 0.8);
   transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
@@ -193,8 +193,8 @@
 }
 
 .landing-zuuai-trigger-btn__logo {
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   object-fit: contain;
   display: block;
   user-select: none;
@@ -208,18 +208,17 @@
   position: absolute;
   bottom: calc(100% + 1rem);
   right: 0;
-  width: 400px;
+  width: 410px;
   max-width: calc(100vw - 2.5rem);
-  height: 590px;
+  height: 600px;
   max-height: calc(100vh - 7rem);
   min-height: 420px;
-  background: #0f172a;
-  border-radius: 1.25rem;
+  background: #141410;
+  border-radius: 1.35rem;
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 
-    0 28px 60px -12px rgba(0, 0, 0, 0.75),
-    0 10px 24px -4px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(255, 255, 255, 0.06);
+    0 30px 70px -12px rgba(0, 0, 0, 0.55),
+    0 10px 24px -4px rgba(0, 0, 0, 0.25);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -249,8 +248,8 @@
    4. Header
    ────────────────────────────────────────────────────────────────────── */
 .landing-zuuai-header {
-  padding: 0.85rem 1rem;
-  background: #111827;
+  padding: 0.9rem 1.1rem;
+  background: #1c1c18;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   align-items: center;
@@ -268,11 +267,11 @@
 
 .landing-zuuai-header__avatar {
   position: relative;
-  width: 2rem;
-  height: 2rem;
+  width: 2.1rem;
+  height: 2.1rem;
   border-radius: 9999px;
-  background: #1e293b;
-  border: 1px solid rgba(222, 255, 54, 0.3);
+  background: #242420;
+  border: 1px solid rgba(222, 255, 54, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -280,8 +279,8 @@
 }
 
 .landing-zuuai-header__logo {
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   object-fit: contain;
 }
 
@@ -291,10 +290,10 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #DEFF36;
+  background: #deff36;
   box-shadow: 0 0 10px rgba(222, 255, 54, 0.9);
   flex-shrink: 0;
-  margin-left: 0.35rem;
+  margin-left: 0.4rem;
 }
 
 .landing-zuuai-header__live-dot::after {
@@ -302,19 +301,13 @@
   position: absolute;
   inset: -3px;
   border-radius: 50%;
-  border: 1.5px solid #DEFF36;
+  border: 1.5px solid #deff36;
   animation: landing-zuuai-live-ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
 
 @keyframes landing-zuuai-live-ping {
-  0% {
-    transform: scale(0.85);
-    opacity: 0.9;
-  }
-  100% {
-    transform: scale(2.4);
-    opacity: 0;
-  }
+  0% { transform: scale(0.85); opacity: 0.9; }
+  100% { transform: scale(2.4); opacity: 0; }
 }
 
 .landing-zuuai-header__titles {
@@ -330,15 +323,15 @@
 
 .landing-zuuai-header__title {
   font-size: 0.95rem;
-  font-weight: 700;
-  color: #f8fafc;
+  font-weight: 800;
+  color: #f9f8f5;
   letter-spacing: -0.01em;
   line-height: 1.2;
 }
 
 .landing-zuuai-header__subtitle {
   font-size: 0.72rem;
-  color: #94a3b8;
+  color: #9c9a92;
   margin: 0.15rem 0 0;
   white-space: nowrap;
   overflow: hidden;
@@ -355,7 +348,7 @@
 .landing-zuuai-header__close-btn {
   background: transparent;
   border: none;
-  color: #64748b;
+  color: #888880;
   padding: 0.35rem;
   border-radius: 0.45rem;
   display: flex;
@@ -368,7 +361,7 @@
 .landing-zuuai-header__reset-btn:hover,
 .landing-zuuai-header__close-btn:hover {
   background: rgba(255, 255, 255, 0.08);
-  color: #f8fafc;
+  color: #ffffff;
 }
 
 /* ──────────────────────────────────────────────────────────────────────
@@ -377,21 +370,19 @@
 .landing-zuuai-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 0.9rem 0.9rem 0.6rem;
+  padding: 0.95rem 0.95rem 0.65rem;
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
-  background: #0b1120;
+  gap: 0.85rem;
+  background: #0d0d0b;
 }
 
 .landing-zuuai-messages::-webkit-scrollbar {
   width: 5px;
 }
-
 .landing-zuuai-messages::-webkit-scrollbar-track {
   background: transparent;
 }
-
 .landing-zuuai-messages::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.15);
   border-radius: 9999px;
@@ -399,7 +390,7 @@
 
 .landing-zuuai-msg-row {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.55rem;
   align-items: flex-start;
   width: 100%;
 }
@@ -409,43 +400,43 @@
 }
 
 .landing-zuuai-msg-avatar {
-  width: 1.625rem;
-  height: 1.625rem;
+  width: 1.75rem;
+  height: 1.75rem;
   border-radius: 9999px;
-  background: #1e293b;
-  color: #DEFF36;
+  background: #242420;
+  color: #deff36;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   margin-top: 0.15rem;
-  border: 1px solid rgba(222, 255, 54, 0.2);
+  border: 1px solid rgba(222, 255, 54, 0.25);
 }
 
 .landing-zuuai-msg-avatar__logo {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   object-fit: contain;
 }
 
 .landing-zuuai-bubble-msg {
   max-width: 84%;
-  padding: 0.65rem 0.85rem;
+  padding: 0.7rem 0.9rem;
   font-size: 0.82rem;
   line-height: 1.48;
   word-break: break-word;
 }
 
 .landing-zuuai-bubble-msg.is-user {
-  background: #1e293b;
+  background: #272722;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #f8fafc;
+  color: #ffffff;
   border-radius: 1rem 1rem 0.25rem 1rem;
 }
 
 .landing-zuuai-bubble-msg.is-assistant {
-  background: #162033;
-  color: #f1f5f9;
+  background: #1c1c18;
+  color: #f3f3f0;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 1rem 1rem 1rem 0.25rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
@@ -462,7 +453,7 @@
   margin-top: 0.65rem;
   padding: 0.55rem 0.65rem;
   border-radius: 0.6rem;
-  background: rgba(222, 255, 54, 0.06);
+  background: rgba(222, 255, 54, 0.08);
   border: 1px solid rgba(222, 255, 54, 0.25);
   display: flex;
   flex-direction: column;
@@ -476,14 +467,14 @@
 }
 
 .landing-zuuai-cta-card__bolt {
-  color: #DEFF36;
+  color: #deff36;
   flex-shrink: 0;
 }
 
 .landing-zuuai-cta-card__note {
   font-size: 0.73rem;
   font-weight: 600;
-  color: #e2e8f0;
+  color: #f3f3f0;
 }
 
 .landing-zuuai-cta-btn {
@@ -491,11 +482,11 @@
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
-  background: #DEFF36;
-  color: #000000;
-  font-size: 0.74rem;
+  background: #deff36;
+  color: #141410;
+  font-size: 0.75rem;
   font-weight: 700;
-  padding: 0.35rem 0.75rem;
+  padding: 0.35rem 0.8rem;
   border-radius: 0.45rem;
   text-decoration: none;
   transition: background-color 0.15s ease, transform 0.15s ease;
@@ -503,7 +494,7 @@
 }
 
 .landing-zuuai-cta-btn:hover {
-  background: #c9ea1e;
+  background: #bde010;
   transform: translateY(-1px);
 }
 
@@ -514,8 +505,8 @@
   display: flex;
   align-items: center;
   gap: 0.45rem;
-  padding: 0.55rem 0.8rem;
-  background: #162033;
+  padding: 0.55rem 0.85rem;
+  background: #1c1c18;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 1rem 1rem 1rem 0.25rem;
   width: fit-content;
@@ -531,7 +522,7 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #DEFF36;
+  background: #deff36;
   animation: landing-zuuai-bounce 1.4s infinite ease-in-out both;
 }
 
@@ -541,8 +532,8 @@
 
 .landing-zuuai-typing__text {
   font-size: 0.73rem;
-  color: #94a3b8;
-  font-weight: 500;
+  color: #9c9a92;
+  font-weight: 600;
 }
 
 @keyframes landing-zuuai-bounce {
@@ -554,12 +545,12 @@
    8. Predefined Questions Section
    ────────────────────────────────────────────────────────────────────── */
 .landing-zuuai-questions-area {
-  background: #0f172a;
+  background: #141410;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 0.7rem 0.85rem;
+  padding: 0.75rem 0.9rem;
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
+  gap: 0.6rem;
   flex-shrink: 0;
 }
 
@@ -570,17 +561,14 @@
   overflow-x: auto;
   padding-bottom: 2px;
 }
-
-.landing-zuuai-categories-bar::-webkit-scrollbar {
-  display: none;
-}
+.landing-zuuai-categories-bar::-webkit-scrollbar { display: none; }
 
 .landing-zuuai-categories-label {
   font-size: 0.68rem;
-  color: #64748b;
-  font-weight: 600;
+  color: #888880;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
   white-space: nowrap;
 }
 
@@ -591,12 +579,12 @@
 }
 
 .landing-zuuai-category-tab {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  color: #94a3b8;
-  font-size: 0.69rem;
+  color: #9c9a92;
+  font-size: 0.7rem;
   font-weight: 600;
-  padding: 0.2rem 0.5rem;
+  padding: 0.22rem 0.55rem;
   border-radius: 9999px;
   cursor: pointer;
   white-space: nowrap;
@@ -604,14 +592,14 @@
 }
 
 .landing-zuuai-category-tab:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
 }
 
 .landing-zuuai-category-tab.is-active {
-  background: rgba(222, 255, 54, 0.15);
-  border-color: rgba(222, 255, 54, 0.35);
-  color: #DEFF36;
+  background: rgba(222, 255, 54, 0.18);
+  border-color: rgba(222, 255, 54, 0.4);
+  color: #deff36;
 }
 
 .landing-zuuai-questions-list {
@@ -626,19 +614,18 @@
 .landing-zuuai-questions-list::-webkit-scrollbar {
   width: 4px;
 }
-
 .landing-zuuai-questions-list::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.12);
   border-radius: 9999px;
 }
 
 .landing-zuuai-question-btn {
-  background: #162033;
+  background: #1c1c18;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 0.65rem;
-  padding: 0.45rem 0.65rem;
-  color: #e2e8f0;
-  font-size: 0.74rem;
+  padding: 0.45rem 0.7rem;
+  color: #e4e4df;
+  font-size: 0.75rem;
   font-weight: 500;
   text-align: left;
   cursor: pointer;
@@ -655,8 +642,8 @@
 }
 
 .landing-zuuai-question-btn:hover:not(:disabled) {
-  background: #1e293b;
-  border-color: rgba(222, 255, 54, 0.35);
+  background: #252520;
+  border-color: rgba(222, 255, 54, 0.4);
   color: #ffffff;
   transform: translateX(2px);
 }
@@ -667,14 +654,14 @@
 }
 
 .landing-zuuai-question-btn__arrow {
-  color: #64748b;
+  color: #888880;
   font-size: 0.7rem;
   flex-shrink: 0;
   transition: color 0.15s ease, transform 0.15s ease;
 }
 
 .landing-zuuai-question-btn:hover .landing-zuuai-question-btn__arrow {
-  color: #DEFF36;
+  color: #deff36;
   transform: translate(1px, -1px);
 }
 
@@ -682,8 +669,8 @@
    9. Footer Disclaimer
    ────────────────────────────────────────────────────────────────────── */
 .landing-zuuai-footer {
-  padding: 0.55rem 0.85rem;
-  background: #090e18;
+  padding: 0.6rem 0.9rem;
+  background: #0f0f0c;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   display: flex;
   justify-content: center;
@@ -693,8 +680,8 @@
 }
 
 .landing-zuuai-footer__link {
-  font-size: 0.68rem;
-  color: #DEFF36;
+  font-size: 0.7rem;
+  color: #deff36;
   text-decoration: none;
   font-weight: 600;
   transition: opacity 0.15s ease;

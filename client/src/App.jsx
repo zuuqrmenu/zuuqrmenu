@@ -16,17 +16,24 @@ const QrManagement = lazy(() => import('./pages/QrManagement'));
 const Analytics = lazy(() => import('./pages/Analytics'));
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const MenuShowcase = lazy(() => import('./pages/MenuShowcase'));
+const PricingPage = lazy(() => import('./pages/PricingPage'));
+const AboutPage = lazy(() => import('./pages/LegalPages').then(m => ({ default: m.AboutPage })));
+const ContactPage = lazy(() => import('./pages/LegalPages').then(m => ({ default: m.ContactPage })));
+const PrivacyPage = lazy(() => import('./pages/LegalPages').then(m => ({ default: m.PrivacyPage })));
+const TermsPage = lazy(() => import('./pages/LegalPages').then(m => ({ default: m.TermsPage })));
+const KvkkPage = lazy(() => import('./pages/LegalPages').then(m => ({ default: m.KvkkPage })));
+const CookiePage = lazy(() => import('./pages/LegalPages').then(m => ({ default: m.CookiePage })));
 import PublicMenuSkeleton from './components/public-menu/PublicMenuSkeleton';
 
 // Initialise GA4 once when the module is first loaded
 initGA();
 
 const resolveCurrentTheme = () => {
-  if (typeof window === 'undefined') return 'dark';
+  if (typeof window === 'undefined') return 'light';
   const path = window.location.pathname;
   const isDashboard = path.startsWith('/dashboard') || path.startsWith('/admin');
   if (!isDashboard) {
-    return 'dark';
+    return 'light';
   }
   const bodyTheme = document.body.getAttribute('data-dashboard-theme');
   if (bodyTheme === 'dark' || bodyTheme === 'light') return bodyTheme;
@@ -254,6 +261,13 @@ function App() {
               }
             />
             <Route path="/menu" element={<MenuShowcase />} />
+            <Route path="/fiyatlandirma" element={<PricingPage />} />
+            <Route path="/hakkimizda" element={<AboutPage />} />
+            <Route path="/iletisim" element={<ContactPage />} />
+            <Route path="/gizlilik" element={<PrivacyPage />} />
+            <Route path="/kullanim-kosullari" element={<TermsPage />} />
+            <Route path="/kvkk" element={<KvkkPage />} />
+            <Route path="/cerez" element={<CookiePage />} />
             <Route path="/" element={<HomeRoute />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

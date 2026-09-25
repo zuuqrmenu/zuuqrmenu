@@ -86,19 +86,19 @@ button {
   animation: route-ambient-pulse 3s ease-in-out infinite alternate;
 }
 
-/* Light Mode Theme (Light Dashboard) */
+/* Light Mode Theme (Pre-Panel & Light Dashboard) */
 .route-loading--light {
-  background: #f7faf8;
-  color: #111a16;
+  background: #f8f7f2;
+  color: #141410;
 }
 
 .route-loading--light .route-loading__ambient {
   position: absolute;
-  width: 22rem;
-  height: 22rem;
+  width: 24rem;
+  height: 24rem;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(214, 247, 74, 0.2) 0%, rgba(132, 204, 22, 0.05) 50%, transparent 70%);
-  filter: blur(25px);
+  background: radial-gradient(circle, rgba(222, 255, 54, 0.22) 0%, rgba(200, 240, 40, 0.06) 45%, transparent 70%);
+  filter: blur(28px);
   pointer-events: none;
   animation: route-ambient-pulse 3s ease-in-out infinite alternate;
 }
@@ -136,7 +136,7 @@ button {
 }
 
 .route-loading--light .route-loading__track {
-  background: rgba(0, 0, 0, 0.08);
+  background: rgba(20, 20, 16, 0.08);
 }
 
 /* Moving beam element */
@@ -155,8 +155,8 @@ button {
 }
 
 .route-loading--light .route-loading__beam {
-  background: linear-gradient(90deg, transparent 0%, #15221b 40%, #2f4538 100%);
-  box-shadow: 0 0 8px rgba(21, 34, 27, 0.25);
+  background: linear-gradient(90deg, transparent 0%, #141410 40%, #deff36 100%);
+  box-shadow: 0 0 12px rgba(222, 255, 54, 0.55);
 }
 
 @keyframes route-beam-flow {
