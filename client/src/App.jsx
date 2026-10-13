@@ -43,23 +43,20 @@ const resolveCurrentTheme = () => {
 };
 
 const RouteLoading = () => {
+  // Once the real page replaces this fallback, the first-paint shell flag is no longer needed.
+  useEffect(() => () => { delete document.documentElement.dataset.shell; }, []);
   const theme = resolveCurrentTheme();
   const isDark = theme === 'dark';
 
   return (
     <div className={`route-loading ${isDark ? 'route-loading--dark' : 'route-loading--light'}`} data-theme={theme}>
-      <div className="route-loading__ambient" aria-hidden="true" />
-      <div className="route-loading__content">
-        <div className="route-loading__brand">
-          <img
-            src={isDark ? '/logo_darkmode.svg' : '/logo.svg'}
-            alt="zuuqrmenu"
-            className="route-loading__logo"
-          />
-        </div>
-        <div className="route-loading__track" aria-label="Yükleniyor" role="progressbar">
-          <div className="route-loading__beam" />
-        </div>
+      <div className="route-loading__content" role="status" aria-label="Yükleniyor">
+        <img
+          src={isDark ? '/logo_darkmode.svg' : '/logo.svg'}
+          alt="zuuqrmenu"
+          className="route-loading__logo"
+        />
+        <div className="route-loading__dots" aria-hidden="true"><i /><i /><i /></div>
       </div>
     </div>
   );

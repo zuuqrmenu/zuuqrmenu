@@ -6,16 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
     <!-- Primary Meta -->
-    <title>zuuqrmenu — QR Menü Oluştur | Dijital Restoran Menüsü</title>
+    <title>Restoran için QR Menü ve Dijital Menü Oluştur | zuuqrmenu</title>
     <meta name="description" content="5 dakikada QR menü oluştur. Restoranına özel dijital menü, anında QR kod ve canlı analitik. zuuqrmenu ile hemen başla." />
     <meta name="robots" content="index,follow" />
-    <meta name="theme-color" content="#f8f7f2" />
+    <meta name="theme-color" content="#f6f5f0" />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:site_name" content="zuuqrmenu" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="tr_TR" />
-    <meta property="og:title" content="zuuqrmenu — QR Menü Oluştur | Dijital Restoran Menüsü" />
+    <meta property="og:title" content="Restoran için QR Menü ve Dijital Menü Oluştur | zuuqrmenu" />
     <meta property="og:description" content="5 dakikada QR menü oluştur. Restoranına özel dijital menü, anında QR kod ve canlı analitik. zuuqrmenu ile hemen başla." />
     <meta property="og:url" content="https://zuuqrmenu.com/" />
     <meta property="og:image" content="https://zuuqrmenu.com/og-cover.png" />
@@ -25,7 +25,7 @@
 
     <!-- Twitter / X -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="zuuqrmenu — QR Menü Oluştur | Dijital Restoran Menüsü" />
+    <meta name="twitter:title" content="Restoran için QR Menü ve Dijital Menü Oluştur | zuuqrmenu" />
     <meta name="twitter:description" content="5 dakikada QR menü oluştur. Restoranına özel dijital menü, anında QR kod ve canlı analitik." />
     <meta name="twitter:image" content="https://zuuqrmenu.com/og-cover.png" />
 
@@ -33,9 +33,34 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://res.cloudinary.com" />
+    <style>
+      /* First-paint shell: shown until React mounts, then replaced by the app. Mirrors .route-loading in index.css */
+      .boot { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.6rem; background: #f6f5f0; color: #11160f; animation: boot-in .35s .1s cubic-bezier(.32,.72,0,1) both; }
+      .boot--dark { background: #0a0f0b; color: #fff; }
+      .boot img { display: block; height: 2.2rem; width: auto; }
+      .boot div { display: flex; gap: .55rem; }
+      .boot i { width: .7rem; height: .7rem; border-radius: 50%; background: currentColor; opacity: .14; animation: boot-dot 1.2s cubic-bezier(.32,.72,0,1) infinite; }
+      .boot i:nth-child(2) { animation-delay: .16s; } .boot i:nth-child(3) { animation-delay: .32s; }
+      @keyframes boot-in { from { opacity: 0; } to { opacity: 1; } }
+      @keyframes boot-dot { 0%,100% { opacity: .14; transform: scale(.85); background: currentColor; } 40% { opacity: 1; transform: scale(1.15); background: #deff36; box-shadow: inset 0 0 0 1.5px rgba(17,22,15,.55); } }
+      @media (prefers-reduced-motion: reduce) { .boot { animation-duration: .01ms; } .boot i { animation: none; opacity: .5; } }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"><div class="boot" id="boot" role="status" aria-label="Yükleniyor"><img src="/logo.svg" alt="zuuqrmenu" width="96" height="33"><div aria-hidden="true"><i></i><i></i><i></i></div></div></div>
+    <script>
+      (function () {
+        document.documentElement.dataset.shell = '1';
+        var p = location.pathname;
+        if (p.indexOf('/dashboard') !== 0 && p.indexOf('/admin') !== 0) return;
+        var t = document.body.getAttribute('data-dashboard-theme') || localStorage.getItem('zuulab.dashboard.theme') || 'system';
+        var dark = t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+        if (!dark) return;
+        var b = document.getElementById('boot');
+        b.className += ' boot--dark';
+        b.querySelector('img').src = '/logo_darkmode.svg';
+      })();
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

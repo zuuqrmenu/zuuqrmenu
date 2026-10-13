@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import SeoHead from '../components/SeoHead';
+import { AuthPanel, GoogleMark, PasswordInput } from '../components/auth/AuthPanel';
+import '../styles/auth.css';
 import { authService } from '../services/authService';
 import { auth } from '../config/firebase';
 import { getFirebaseAuthError } from '../utils/firebaseAuthErrors';
@@ -21,6 +23,10 @@ const Register = () => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPw, setShowPw] = useState(false);
+  const [consent, setConsent] = useState(false);
+  const [consentMissing, setConsentMissing] = useState(false);
+  const consentRef = useRef(null);
   const [registrationComplete, setRegistrationComplete] = useState(false);
   const { setApplicationSession } = useAuth();
   const navigate = useNavigate();
@@ -42,9 +48,27 @@ const Register = () => {
     setError('');
   };
 
+  /** KVKK and privacy consent is mandatory for every way of registering, Google included. */
+  const requireConsent = () => {
+    if (consent) return true;
+    setConsentMissing(true);
+    setError('Devam etmek için KVKK Aydınlatma Metni ve Gizlilik Politikası’nı kabul etmeniz gerekiyor.');
+    consentRef.current?.focus();
+    return false;
+  };
+
+  const handleConsentChange = (e) => {
+    setConsent(e.target.checked);
+    if (e.target.checked) {
+      setConsentMissing(false);
+      setError('');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    if (!requireConsent()) return;
     setLoading(true);
     try {
       const currentFirebaseUser = auth.currentUser;
@@ -95,6 +119,7 @@ const Register = () => {
 
   const handleGoogleRegister = async () => {
     setError('');
+    if (!requireConsent()) return;
     setLoading(true);
     try {
       const credential = await signInWithPopup(auth, new GoogleAuthProvider());
@@ -140,20 +165,20 @@ const Register = () => {
           <div className="reg-success__badge">
             <span className="reg-success__icon" aria-hidden="true">✓</span>
           </div>
-          <h2>Kaydınız Alındı</h2>
+          <h2>Kaydınız alındı</h2>
           <p>
             Restoranınız incelemeye alındı. Hesabınız onaylandığında e-posta ile bilgilendirileceksiniz.
           </p>
           <div className="reg-success__status">
             <span className="reg-success__status-dot" aria-hidden="true" />
-            <span>Başvuru Durumu: <strong>İnceleniyor</strong></span>
+            <span>Başvuru durumu: <strong>İnceleniyor</strong></span>
           </div>
           <Link
             to="/login"
             className="reg-btn reg-btn--primary"
-            style={{ width: '100%', marginTop: '1.25rem', display: 'inline-flex', justifyContent: 'center' }}
+            
           >
-            Giriş Sayfasına Dön
+            Giriş sayfasına dön
           </Link>
         </div>
       </div>
@@ -162,38 +187,29 @@ const Register = () => {
 
   return (
     <div className="reg-page">
-      <SeoHead title="Restoranını Oluştur | zuuqrmenu" description="Restoranınız için zuuqrmenu dijital menü hesabı oluşturun." canonical="https://zuuqrmenu.com/register" robots="noindex,nofollow" />
+      <SeoHead title="Restoran Kaydı Oluştur | zuuqrmenu" description="Restoranınız için zuuqrmenu dijital menü hesabı oluşturun." canonical="https://zuuqrmenu.com/register" robots="noindex,nofollow" />
 
-      <aside className="reg-panel" aria-hidden="true">
-        <a href="/" className="reg-panel__logo-link">
-          <img src="/logo_darkmode.svg" alt="zuuqrmenu" className="reg-panel__logo" />
-        </a>
-        <div className="reg-panel__body">
-          <p className="reg-panel__kicker">RESTORANLAR İÇİN</p>
-          <h2 className="reg-panel__headline">
-            Menünüzü dijitale<br /><em>taşıyın.</em>
-          </h2>
-          <p className="reg-panel__sub">
-            QR menü, analitik ve yönetim paneli — tek çatı altında.
-          </p>
-          <ul className="reg-panel__features">
-            <li className="reg-panel__feature"><span className="reg-panel__feature-icon" aria-hidden="true">◈</span><span><b>Dijital menü</b><small>PDF'e son, canlı menü başlasın.</small></span></li>
-            <li className="reg-panel__feature"><span className="reg-panel__feature-icon" aria-hidden="true">⌘</span><span><b>QR tasarımı</b><small>Masanıza özel baskı kartları.</small></span></li>
-            <li className="reg-panel__feature"><span className="reg-panel__feature-icon" aria-hidden="true">↗</span><span><b>Gerçek zamanlı analiz</b><small>Hangi ürün ilgi görüyor, görün.</small></span></li>
-            <li className="reg-panel__feature"><span className="reg-panel__feature-icon" aria-hidden="true">◎</span><span><b>Anlık güncelleme</b><small>Fiyat değişti mi? Saniyede yayında.</small></span></li>
-          </ul>
-        </div>
-        <p className="reg-panel__note">Ücretli üyelik · Ücretsiz deneme dönemi mevcuttur</p>
-      </aside>
+      <AuthPanel
+        href="/"
+        headline="Menünüzü dijitale taşıyın."
+        sub="QR menü, analitik ve yönetim paneli tek çatı altında."
+        points={[
+          ['Dijital menü', "PDF'e son, canlı menü başlasın."],
+          ['QR tasarımı', 'Masanıza özel baskı kartları.'],
+          ['Gerçek zamanlı analiz', 'Hangi ürün ilgi görüyor, görün.'],
+          ['Anlık güncelleme', 'Fiyat değişti mi? Saniyede yayında.'],
+        ]}
+        note="Ücretli üyelik · Ücretsiz deneme dönemi mevcuttur"
+      />
 
       <div className="reg-form-wrap">
-        <div className="reg-card">
+        <div className="reg-card reg-card--wide">
           <a href="/" className="reg-card__mobile-logo">
             <img src="/logo.svg" alt="zuuqrmenu" />
           </a>
 
-          <h1 className="reg-card__title">Restoran Kaydı</h1>
-          <p className="reg-card__sub">Birkaç adımda hazır olun.</p>
+          <h1 className="reg-card__title">Restoranınızı oluşturun</h1>
+          <p className="reg-card__sub">Birkaç dakikada hazır olun, ilk 7 gün ücretsiz.</p>
 
           {error && <div className="reg-error" role="alert">{error}</div>}
 
@@ -203,19 +219,19 @@ const Register = () => {
               <div className="reg-grid2">
                 <div className="reg-field">
                   <label htmlFor="reg-name">Ad Soyad <abbr title="zorunlu">*</abbr></label>
-                  <input id="reg-name" type="text" name="name" value={formData.name} onChange={handleChange} required placeholder="Ahmet Yılmaz" className="reg-input" />
+                  <input id="reg-name" type="text" name="name" value={formData.name} onChange={handleChange} required autoComplete="name" placeholder="Ahmet Yılmaz" className="reg-input" />
                 </div>
                 <div className="reg-field">
                   <label htmlFor="reg-email">E-posta <abbr title="zorunlu">*</abbr></label>
-                  <input id="reg-email" type="email" name="email" value={formData.email} onChange={handleChange} required placeholder="ornek@email.com" className="reg-input" />
+                  <input id="reg-email" type="email" name="email" value={formData.email} onChange={handleChange} required autoComplete="email" placeholder="ornek@email.com" className="reg-input" />
                 </div>
                 <div className="reg-field">
                   <label htmlFor="reg-password">Şifre <abbr title="zorunlu">*</abbr></label>
-                  <input id="reg-password" type="password" name="password" value={formData.password} onChange={handleChange} required minLength="6" placeholder="En az 6 karakter" className="reg-input" />
+                  <PasswordInput show={showPw} onToggle={() => setShowPw((v) => !v)} id="reg-password" name="password" value={formData.password} onChange={handleChange} required minLength="6" autoComplete="new-password" placeholder="En az 6 karakter" />
                 </div>
                 <div className="reg-field">
                   <label htmlFor="reg-phone">Telefon</label>
-                  <input id="reg-phone" type="tel" name="phone" value={formData.phone} onChange={handleChange} placeholder="+90 5XX XXX XX XX" className="reg-input" />
+                  <input id="reg-phone" type="tel" name="phone" value={formData.phone} onChange={handleChange} autoComplete="tel" placeholder="+90 5XX XXX XX XX" className="reg-input" />
                 </div>
               </div>
             </div>
@@ -239,10 +255,27 @@ const Register = () => {
                 </div>
                 <div className="reg-field">
                   <label htmlFor="reg-city">Şehir <abbr title="zorunlu">*</abbr></label>
-                  <input id="reg-city" type="text" name="city" value={formData.city} onChange={handleChange} required placeholder="İstanbul" className="reg-input" />
+                  <input id="reg-city" type="text" name="city" value={formData.city} onChange={handleChange} required autoComplete="address-level1" placeholder="İstanbul" className="reg-input" />
                 </div>
               </div>
             </div>
+
+            <label className={`reg-consent ${consentMissing ? 'is-missing' : ''}`} htmlFor="reg-consent">
+              <input
+                ref={consentRef}
+                id="reg-consent"
+                type="checkbox"
+                checked={consent}
+                onChange={handleConsentChange}
+                aria-invalid={consentMissing}
+              />
+              <span className="reg-consent__box" aria-hidden="true" />
+              <span className="reg-consent__text">
+                <Link to="/kvkk" target="_blank" rel="noopener noreferrer">KVKK Aydınlatma Metni</Link> ve{' '}
+                <Link to="/gizlilik" target="_blank" rel="noopener noreferrer">Gizlilik Politikası</Link>’nı okudum, kabul ediyorum.
+                <small>Google ile kayıt olurken de geçerlidir.</small>
+              </span>
+            </label>
 
             <button type="submit" disabled={loading} className="reg-btn reg-btn--primary" id="reg-submit-btn">
               {loading ? 'Kayıt yapılıyor…' : 'Restoranı Oluştur'}
@@ -251,7 +284,7 @@ const Register = () => {
 
           <div className="auth-divider"><span>veya</span></div>
           <button type="button" onClick={handleGoogleRegister} disabled={loading} className="auth-google-button auth-google-button--register" id="reg-google-btn">
-            <span className="auth-google-button__logo">G</span>
+            <GoogleMark />
             Google ile kayıt ol
           </button>
 

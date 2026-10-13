@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import SeoHead from '../components/SeoHead';
+import { AuthPanel, GoogleMark, PasswordInput } from '../components/auth/AuthPanel';
+import '../styles/auth.css';
 import { authService } from '../services/authService';
 import { auth } from '../config/firebase';
 import { getFirebaseAuthError } from '../utils/firebaseAuthErrors';
@@ -16,6 +18,7 @@ const Login = () => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPw, setShowPw] = useState(false);
 
   const { login, setApplicationSession } = useAuth();
   const navigate = useNavigate();
@@ -128,35 +131,17 @@ const Login = () => {
     <div className="reg-page login-page">
       <SeoHead title="Giriş Yap | zuuqrmenu" description="zuuqrmenu restoran panelinize güvenli şekilde giriş yapın." canonical="https://panel.zuuqrmenu.com/login" robots="noindex,nofollow" />
 
-      <aside className="reg-panel" aria-hidden="true">
-        <a href={getMainSiteUrl('/')} className="reg-panel__logo-link">
-          <img src="/logo_darkmode.svg" alt="zuuqrmenu" className="reg-panel__logo" />
-        </a>
-        <div className="reg-panel__body">
-          <p className="reg-panel__kicker">RESTORAN PANELİ</p>
-          <h2 className="reg-panel__headline">
-            İşletmenizin kontrolü<br /><em>tek ekranda.</em>
-          </h2>
-          <p className="reg-panel__sub">
-            Canlı menü yönetimi, masa QR'ları ve ziyaretçi analitiğine anında erişin.
-          </p>
-          <ul className="reg-panel__features">
-            <li className="reg-panel__feature">
-              <span className="reg-panel__feature-icon" aria-hidden="true">◈</span>
-              <span><b>Hızlı Menü Yönetimi</b><small>Fiyat ve stokları saniyeler içinde güncelleyin.</small></span>
-            </li>
-            <li className="reg-panel__feature">
-              <span className="reg-panel__feature-icon" aria-hidden="true">↗</span>
-              <span><b>Anlık Ziyaret Analitiği</b><small>Popüler ürünler ve masa trafiğini takip edin.</small></span>
-            </li>
-            <li className="reg-panel__feature">
-              <span className="reg-panel__feature-icon" aria-hidden="true">⌘</span>
-              <span><b>Akıllı Masa QR'ları</b><small>Yeniden basım gerektirmeyen dinamik kodlar.</small></span>
-            </li>
-          </ul>
-        </div>
-        <p className="reg-panel__note">Güvenli Yönetim Portalı · 256-bit SSL Korumalı</p>
-      </aside>
+      <AuthPanel
+        href={getMainSiteUrl('/')}
+        headline="İşletmenizin kontrolü tek ekranda."
+        sub="Canlı menü yönetimi, masa QR'ları ve ziyaretçi analitiğine anında erişin."
+        points={[
+          ['Hızlı menü yönetimi', 'Fiyat ve stokları saniyeler içinde güncelleyin.'],
+          ['Anlık ziyaret analitiği', 'Popüler ürünleri ve masa trafiğini takip edin.'],
+          ['Akıllı masa QR\'ları', 'Yeniden basım gerektirmeyen dinamik kodlar.'],
+        ]}
+        note="Güvenli yönetim portalı · 256-bit SSL korumalı"
+      />
 
       <div className="reg-form-wrap">
         <div className="reg-card">
@@ -164,17 +149,15 @@ const Login = () => {
             <img src="/logo.svg" alt="zuuqrmenu" />
           </a>
 
-          <h1 className="reg-card__title">Giriş Yap</h1>
+          <h1 className="reg-card__title">Tekrar hoş geldiniz</h1>
           <p className="reg-card__sub">Restoran yönetim panelinize erişin.</p>
 
           {error && (
             <div className="reg-error" role="alert">
               <div>{error}</div>
               {error.includes('kaydı bulunamadı') && (
-                <div style={{ marginTop: '0.5rem', fontSize: '0.875rem' }}>
-                  <Link to="/register" style={{ color: 'inherit', textDecoration: 'underline', fontWeight: 600 }}>
-                    Restoran kaydınızı oluşturmak için buraya tıklayın →
-                  </Link>
+                <div className="reg-error__action">
+                  <Link to="/register">Restoran kaydınızı oluşturun</Link>
                 </div>
               )}
             </div>
@@ -190,6 +173,7 @@ const Login = () => {
                 value={formData.email}
                 onChange={handleChange}
                 required
+                autoComplete="username"
                 className="reg-input"
                 placeholder="ornek@email.com veya admin"
               />
@@ -197,15 +181,16 @@ const Login = () => {
 
             <div className="reg-field">
               <label htmlFor="password">Şifre</label>
-              <input
-                type="password"
+              <PasswordInput
+                show={showPw}
+                onToggle={() => setShowPw((v) => !v)}
                 id="password"
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
                 required
-                className="reg-input"
-                placeholder="••••••••"
+                autoComplete="current-password"
+                placeholder="Şifreniz"
               />
             </div>
 
@@ -228,13 +213,13 @@ const Login = () => {
             className="auth-google-button"
             id="login-google-btn"
           >
-            <span className="auth-google-button__logo">G</span>
+            <GoogleMark />
             Google ile devam et
           </button>
 
           <p className="reg-card__footer">
             Hesabınız yok mu?{' '}
-            <Link to="/register">Restoranınızı Oluşturun</Link>
+            <Link to="/register">Restoranınızı oluşturun</Link>
           </p>
         </div>
       </div>
