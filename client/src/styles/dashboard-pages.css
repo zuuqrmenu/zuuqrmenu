@@ -490,3 +490,77 @@ body[data-dashboard-theme='dark'] .dp-chip--bad, body[data-dashboard-theme='dark
   .dp-theme__count { position: absolute; top: 0.9rem; right: 0.9rem; }
   .dp-theme__live { position: relative; }
 }
+
+/* Billing checkout: form + order summary */
+.dp .bill-checkout { display: grid; grid-template-columns: minmax(0, 1fr) 20rem; gap: 1rem; align-items: start; scroll-margin-top: 1rem; }
+.dp .bill-summary { position: sticky; top: 1rem; }
+.dp .bill-summary dl { display: grid; gap: 0.6rem; margin: 0 0 1rem; }
+.dp .bill-summary dl > div { display: flex; justify-content: space-between; gap: 1rem; }
+.dp .bill-summary dt { color: var(--dashboard-secondary); }
+.dp .bill-summary dd { margin: 0; font-weight: 600; }
+.dp .bill-summary__total { padding-top: 0.75rem; border-top: 1px solid var(--glass-line, rgba(17, 17, 14, 0.1)); }
+.dp .bill-summary__total dd { font: 700 1.5rem/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em; }
+@media (max-width: 900px) {
+  .dp .bill-checkout { grid-template-columns: minmax(0, 1fr); }
+  .dp .bill-summary { position: static; order: -1; }
+}
+
+/* Standalone checkout page */
+.ck { min-height: 100vh; font-family: 'Instrument Sans', system-ui, sans-serif; }
+.ck__bar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding: 1rem clamp(1rem, 4vw, 2.5rem); border-bottom: 1px solid var(--glass-line, rgba(17, 17, 14, 0.1)); }
+.ck__brand { font: 700 1.2rem/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em; }
+.ck__secure { display: inline-flex; align-items: center; gap: 0.4rem; color: var(--dashboard-secondary); font-size: 0.85rem; }
+.ck__back { color: var(--dashboard-secondary); font-size: 0.9rem; text-decoration: none; }
+.ck__back:hover { color: var(--dashboard-text); }
+.ck__main { padding: clamp(1.25rem, 4vw, 2.5rem) clamp(1rem, 4vw, 2.5rem) 4rem; }
+.ck__title { margin: 0; font: 650 clamp(1.6rem, 4vw, 2.2rem)/1.1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.03em; }
+.ck__grid { display: grid; grid-template-columns: minmax(0, 1fr) 22rem; gap: 1.25rem; align-items: start; }
+.ck__steps { display: grid; gap: 1.25rem; min-width: 0; }
+.ck__plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: 0.75rem; margin-top: 1rem; }
+.ck__plan { position: relative; display: grid; gap: 0.35rem; padding: 1rem 1.1rem; border: 1px solid var(--glass-line, rgba(17, 17, 14, 0.14)); border-radius: 18px; cursor: pointer; }
+.ck__plan.is-selected { border-color: var(--dashboard-text); box-shadow: 0 0 0 1px var(--dashboard-text), 0 0 0 4px var(--brand-accent-glow); }
+.ck__plan input { position: absolute; opacity: 0; pointer-events: none; }
+.ck__plan-head { display: flex; align-items: center; gap: 0.5rem; }
+.ck__plan-head em { padding: 0.1rem 0.55rem; border-radius: 999px; background: var(--brand-accent-subtle); font-size: 0.72rem; font-style: normal; font-weight: 650; }
+.ck__plan-price { font: 700 1.5rem/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.03em; }
+.ck__plan-price small { color: var(--dashboard-muted); font: 400 0.85rem 'Instrument Sans', sans-serif; }
+.ck__plan-desc { color: var(--dashboard-secondary); font-size: 0.88rem; line-height: 1.45; }
+.ck__features { display: grid; gap: 0.45rem; margin: 0; padding: 0; list-style: none; font-size: 0.9rem; }
+.ck__features li { display: flex; gap: 0.5rem; align-items: flex-start; }
+.ck__features svg { flex: none; margin-top: 0.15rem; }
+@media (max-width: 900px) {
+  .ck__grid { grid-template-columns: minmax(0, 1fr); }
+  .ck .bill-summary { position: static; order: -1; }
+}
+
+/* Checkout: opaque, clearly separated surfaces (the glass cards need the panel shell's backdrop, which this page doesn't have) */
+body[data-dashboard-theme='light'] .ck { --ck-bg: #f4f4ef; --ck-card: #ffffff; --ck-field: #f7f7f2; --ck-line: rgba(17, 17, 14, 0.16); --ck-line-strong: rgba(17, 17, 14, 0.38); }
+body[data-dashboard-theme='dark'] .ck { --ck-bg: #0b0b09; --ck-card: #1a1a17; --ck-field: #0f0f0d; --ck-line: rgba(255, 255, 255, 0.16); --ck-line-strong: rgba(255, 255, 255, 0.4); }
+.ck { background: var(--ck-bg); color: var(--dashboard-text); }
+.ck__bar { background: var(--ck-card); border-bottom-color: var(--ck-line); }
+.ck .dp-card { background: var(--ck-card); border: 1px solid var(--ck-line); border-radius: 22px; padding: 1.5rem; backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: none; }
+.ck .dp-card__title { font-size: 1.15rem; }
+.ck .dp-card__sub { color: var(--dashboard-secondary); }
+.ck .dp-card__head { margin-bottom: 1.1rem; }
+.ck .dp-seg { background: var(--ck-field); box-shadow: inset 0 0 0 1px var(--ck-line); }
+.ck .dp-seg button { color: var(--dashboard-text); }
+.ck .dp-seg button.is-active { background: var(--brand-primary); color: #11110e; }
+.ck .ck__plan { background: var(--ck-field); border: 1.5px solid var(--ck-line); padding: 1.1rem 1.2rem; }
+.ck .ck__plan:hover { border-color: var(--ck-line-strong); }
+.ck .ck__plan.is-selected { border-color: var(--brand-primary); background: var(--brand-accent-subtle); box-shadow: 0 0 0 3px var(--brand-accent-glow); }
+.ck .ck__plan-desc { color: var(--dashboard-secondary); }
+.ck .bill-form input:not([type='checkbox']), .ck .bill-form textarea { background: var(--ck-field); border: 1.5px solid var(--ck-line); color: var(--dashboard-text); padding: 0.8rem 0.95rem; }
+.ck .bill-form input:not([type='checkbox']):focus, .ck .bill-form textarea:focus { outline: none; border-color: var(--brand-primary); box-shadow: 0 0 0 3px var(--brand-accent-glow); }
+.ck .bill-form input::placeholder, .ck .bill-form textarea::placeholder { color: var(--dashboard-muted); }
+.ck .bill-form input[type='checkbox'] { width: 1.15rem; height: 1.15rem; accent-color: var(--brand-primary); }
+.ck .bill-summary dl > div { padding: 0.15rem 0; }
+.ck .bill-summary__total { border-top-color: var(--ck-line); }
+.ck .dp-btn--ghost { border: 1.5px solid var(--ck-line-strong); color: var(--dashboard-text); }
+.ck .dp-btn--lime[disabled] { opacity: 0.45; cursor: not-allowed; }
+
+/* Payment success */
+.ck__success { justify-items: center; text-align: center; max-width: 34rem; padding-top: clamp(2rem, 8vw, 5rem); }
+.ck__success-icon { display: grid; place-items: center; width: 4.5rem; height: 4.5rem; border-radius: 50%; background: var(--brand-primary); color: #11110e; box-shadow: 0 0 0 10px var(--brand-accent-glow); }
+.ck__success .dp-card__sub { margin: 0; }
+.ck__success-card { width: 100%; text-align: left; }
+.ck__success-card dl { margin: 0; }

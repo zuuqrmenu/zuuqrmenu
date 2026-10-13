@@ -239,3 +239,10 @@
   .reg-card, .reg-success, .reg-flow__track, .reg-art__glow { animation: none; }
   .reg-btn, .reg-btn::after, .reg-input { transition: none; }
 }
+
+/* Pending-approval variants */
+.reg-success__badge--bad { background: #ffb4a2; box-shadow: 0 0 0 6px rgba(255, 140, 110, 0.3); }
+.reg-success__status-dot--bad { background: #ff7a5c; box-shadow: 0 0 0 3px rgba(255, 122, 92, 0.35); }
+.reg-success__restaurant { font-weight: 650; color: var(--ink, #11110e); }
+.reg-success__help { font-size: 0.88rem; }
+.reg-success__help a { text-decoration: underline; }

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import SeoHead from '../components/SeoHead';
 import { AuthPanel, GoogleMark, PasswordInput } from '../components/auth/AuthPanel';
@@ -9,7 +9,7 @@ import { auth } from '../config/firebase';
 import { getFirebaseAuthError } from '../utils/firebaseAuthErrors';
 import { GoogleAuthProvider, signInWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth';
 import { trackEvent } from '../utils/analytics';
-import { isLocalhost, isMainDomain, getMainSiteUrl } from '../utils/domainHelpers';
+import { isLocalhost, isMainDomain, getMainSiteUrl, getSafeNextPath, rememberCheckoutIntent } from '../utils/domainHelpers';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -22,15 +22,18 @@ const Login = () => {
 
   const { login, setApplicationSession } = useAuth();
   const navigate = useNavigate();
+  const { search } = useLocation();
+
+  useEffect(() => { rememberCheckoutIntent(search); }, [search]);
 
   const redirectApplicationUser = (user, restaurant) => {
     if (user?.role === 'ADMIN') return navigate('/admin');
     if (restaurant) {
       if (!isLocalhost() && isMainDomain()) {
-        window.location.replace('https://panel.zuuqrmenu.com/dashboard');
+        window.location.replace(`https://panel.zuuqrmenu.com${getSafeNextPath(search) || '/dashboard'}`);
         return;
       }
-      return navigate('/dashboard');
+      return navigate(getSafeNextPath(search) || '/dashboard');
     }
     return navigate('/pending-approval');
   };
@@ -157,7 +160,7 @@ const Login = () => {
               <div>{error}</div>
               {error.includes('kaydı bulunamadı') && (
                 <div className="reg-error__action">
-                  <Link to="/register">Restoran kaydınızı oluşturun</Link>
+                  <Link to={`/register${search}`}>Restoran kaydınızı oluşturun</Link>
                 </div>
               )}
             </div>
@@ -219,7 +222,7 @@ const Login = () => {
 
           <p className="reg-card__footer">
             Hesabınız yok mu?{' '}
-            <Link to="/register">Restoranınızı oluşturun</Link>
+            <Link to={`/register${search}`}>Restoranınızı oluşturun</Link>
           </p>
         </div>
       </div>

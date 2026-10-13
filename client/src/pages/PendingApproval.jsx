@@ -1,74 +1,54 @@
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import SeoHead from '../components/SeoHead';
+import '../styles/auth.css';
+
+const STATUS_COPY = {
+  PENDING: {
+    title: 'Başvurunuz inceleniyor',
+    description: 'Başvurunuz alındı. Hesabınız onaylandığında e-posta ile bilgilendirileceksiniz; ardından menünüzü oluşturup paketinizi seçebilirsiniz.',
+    label: 'İnceleniyor',
+    icon: '…',
+  },
+  REJECTED: {
+    title: 'Başvurunuz onaylanmadı',
+    description: 'Bu restoran başvurusu şu anda yönetim paneline erişim sağlayamıyor. Daha fazla bilgi için bizimle iletişime geçin.',
+    label: 'Reddedildi',
+    icon: '!',
+    bad: true,
+  },
+  SUSPENDED: {
+    title: 'Hesabınız askıya alındı',
+    description: 'Restoran hesabınız geçici olarak kullanıma kapatıldı. Yeniden aktifleştirildiğinde erişiminiz geri verilecektir.',
+    label: 'Askıya alındı',
+    icon: '!',
+    bad: true,
+  },
+};
 
 const PendingApproval = () => {
   const { user, restaurant, logout } = useAuth();
-  const statusMessages = {
-    PENDING: {
-      title: 'Başvurunuz İnceleniyor',
-      description: 'Başvurunuz başarıyla alındı. Hesabınızın incelenmesi için bekliyoruz.',
-      notice: 'Hesabınız onaylandığında menünüzü yönetmeye başlayabilirsiniz.',
-    },
-    REJECTED: {
-      title: 'Başvurunuz Reddedildi',
-      description: 'Bu restoran başvurusu şu anda yönetim paneline erişim sağlayamıyor.',
-      notice: 'Daha fazla bilgi için zuuqrmenu yöneticinizle iletişime geçin.',
-    },
-    SUSPENDED: {
-      title: 'Hesabınız Askıya Alındı',
-      description: 'Restoran hesabınız geçici olarak kullanıma kapatıldı.',
-      notice: 'Hesabınız yeniden aktifleştirildiğinde erişiminiz geri verilecektir.',
-    },
-  };
-  const currentStatus = statusMessages[restaurant?.status] || statusMessages.PENDING;
+  const copy = STATUS_COPY[restaurant?.status] || STATUS_COPY.PENDING;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="reg-page reg-page--center">
       <SeoHead title="Başvuru Durumu | zuuqrmenu" description="zuuqrmenu restoran başvuru durumu." canonical="https://zuuqrmenu.com/pending-approval" robots="noindex,nofollow,noarchive" />
-      <div className="max-w-md w-full">
-        <div className="bg-white rounded-lg shadow-md p-8 text-center">
-          <div className="mb-6">
-            <svg
-              className="mx-auto h-16 w-16 text-yellow-500"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-          </div>
-
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">{currentStatus.title}</h2>
-
-          <p className="text-gray-600 mb-6">
-            Merhaba {user?.name}, {currentStatus.description}
-          </p>
-
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <p className="text-sm text-blue-800">
-              <strong>Restoran:</strong> {restaurant?.name}
-            </p>
-            <p className="text-sm text-blue-800 mt-1">
-              <strong>Durum:</strong> {restaurant?.status === 'PENDING' ? 'Onay bekliyor' : restaurant?.status === 'REJECTED' ? 'Reddedildi' : 'Askıya alındı'}
-            </p>
-          </div>
-
-          <p className="text-gray-500 text-sm mb-6">
-            {currentStatus.notice}
-          </p>
-
-          <button
-            onClick={logout}
-            className="w-full bg-gray-200 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
-          >
-            Çıkış Yap
-          </button>
+      <div className="reg-success">
+        <Link to="/" className="reg-success__logo">
+          <img src="/logo.svg" alt="zuuqrmenu" />
+        </Link>
+        <div className={`reg-success__badge ${copy.bad ? 'reg-success__badge--bad' : ''}`}>
+          <span className="reg-success__icon" aria-hidden="true">{copy.icon}</span>
         </div>
+        <h2>{copy.title}</h2>
+        <p>{user?.name ? `Merhaba ${user.name}, ` : ''}{copy.description}</p>
+        {restaurant?.name && <p className="reg-success__restaurant">{restaurant.name}</p>}
+        <div className="reg-success__status">
+          <span className={`reg-success__status-dot ${copy.bad ? 'reg-success__status-dot--bad' : ''}`} aria-hidden="true" />
+          <span>Başvuru durumu: <strong>{copy.label}</strong></span>
+        </div>
+        <button type="button" className="reg-btn reg-btn--primary" onClick={logout}>Çıkış yap</button>
+        <p className="reg-success__help">Sorunuz mu var? <Link to="/iletisim">Bize ulaşın</Link></p>
       </div>
     </div>
   );

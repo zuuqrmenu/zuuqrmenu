@@ -2,7 +2,8 @@ import { useEffect, useRef, lazy, Suspense } from 'react';
 import { initGA, trackPageView } from './utils/analytics';
 import { BrowserRouter as Router, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { isPanelSubdomain, isMainDomain, isLocalhost, redirectToPanelIfNeeded, isPanelPath, isPublicMenuPath } from './utils/domainHelpers';
+import { isPanelSubdomain, isMainDomain, isLocalhost, redirectToPanelIfNeeded, isPanelPath, isPublicMenuPath, getSafeNextPath } from './utils/domainHelpers';
+import CookieBanner from './components/CookieBanner';
 
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
@@ -17,6 +18,8 @@ const Analytics = lazy(() => import('./pages/Analytics'));
 const BlogPage = lazy(() => import('./pages/BlogPage'));
 const BlogPostPage = lazy(() => import('./pages/BlogPostPage'));
 const Billing = lazy(() => import('./pages/Billing'));
+const Checkout = lazy(() => import('./pages/Checkout'));
+const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'));
 const PaymentResult = lazy(() => import('./pages/PaymentResult'));
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const MenuShowcase = lazy(() => import('./pages/MenuShowcase'));
@@ -36,6 +39,7 @@ import PublicMenuSkeleton from './components/public-menu/PublicMenuSkeleton';
 
 // Initialise GA4 once when the module is first loaded
 initGA();
+window.addEventListener('zuulab-cookie-consent', initGA);
 
 const resolveCurrentTheme = () => {
   if (typeof window === 'undefined') return 'light';
@@ -95,7 +99,15 @@ const HostRouterGuard = () => {
   return null;
 };
 
+const CookieBannerGate = () => {
+  const { pathname } = useLocation();
+  // Panel and customer-facing menus stay free of the banner; only the marketing site asks.
+  if (isPanelPath(pathname) || isPublicMenuPath(pathname) || pathname.startsWith('/odeme-sonuc')) return null;
+  return <CookieBanner />;
+};
+
 const LoginRoute = () => {
+  const location = useLocation();
   const { loading, isAuthenticated, isRestaurantUser, isAdmin, isRestaurantAccessible } = useAuth();
   if (isMainDomain() && !isLocalhost()) {
     return <RouteLoading />;
@@ -103,12 +115,13 @@ const LoginRoute = () => {
   if (loading) return <RouteLoading />;
   if (isAuthenticated) {
     if (isAdmin) return <Navigate to="/admin" replace />;
-    if (isRestaurantUser) return isRestaurantAccessible ? <Navigate to="/dashboard" replace /> : <Navigate to="/pending-approval" replace />;
+    if (isRestaurantUser) return isRestaurantAccessible ? <Navigate to={getSafeNextPath(location.search) || '/dashboard'} replace /> : <Navigate to="/pending-approval" replace />;
   }
   return <Login />;
 };
 
 const RegisterRoute = () => {
+  const location = useLocation();
   const { loading, isAuthenticated, isRestaurantUser, isAdmin, isRestaurantAccessible } = useAuth();
   if (isMainDomain() && !isLocalhost()) {
     return <RouteLoading />;
@@ -116,7 +129,7 @@ const RegisterRoute = () => {
   if (loading) return <RouteLoading />;
   if (isAuthenticated) {
     if (isAdmin) return <Navigate to="/admin" replace />;
-    if (isRestaurantUser) return isRestaurantAccessible ? <Navigate to="/dashboard" replace /> : <Navigate to="/pending-approval" replace />;
+    if (isRestaurantUser) return isRestaurantAccessible ? <Navigate to={getSafeNextPath(location.search) || '/dashboard'} replace /> : <Navigate to="/pending-approval" replace />;
   }
   return <Register />;
 };
@@ -190,7 +203,7 @@ const AdminRoute = () => {
   return isAdmin ? <AdminDashboard /> : <Navigate to="/dashboard" replace />;
 };
 
-const RestaurantRoute = ({ menu = false, settings = false, analytics = false, qr = false, billing = false }) => {
+const RestaurantRoute = ({ menu = false, settings = false, analytics = false, qr = false, billing = false, checkout = false, success = false }) => {
   const location = useLocation();
   const { loading, isAuthenticated, isRestaurantUser, isRestaurantAccessible } = useAuth();
 
@@ -203,9 +216,9 @@ const RestaurantRoute = ({ menu = false, settings = false, analytics = false, qr
   }
 
   if (loading) return <RouteLoading />;
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!isAuthenticated) return <Navigate to={`/login?next=${encodeURIComponent(location.pathname + location.search)}`} replace />;
   if (!isRestaurantUser) return <Navigate to="/admin" replace />;
-  return isRestaurantAccessible ? (billing ? <Billing /> : qr ? <QrManagement /> : analytics ? <Analytics /> : settings ? <RestaurantSettings /> : menu ? <MenuManagement /> : <RestaurantDashboard />) : <Navigate to="/pending-approval" replace />;
+  return isRestaurantAccessible ? (success ? <PaymentSuccess /> : checkout ? <Checkout /> : billing ? <Billing /> : qr ? <QrManagement /> : analytics ? <Analytics /> : settings ? <RestaurantSettings /> : menu ? <MenuManagement /> : <RestaurantDashboard />) : <Navigate to="/pending-approval" replace />;
 };
 
 const PendingRoute = () => {
@@ -243,6 +256,7 @@ function App() {
         <HostRouterGuard />
         <DashboardThemeController />
         <GAPageTracker />
+        <CookieBannerGate />
         <Suspense fallback={<RouteLoading />}>
           <Routes>
             <Route path="/login" element={<LoginRoute />} />
@@ -259,6 +273,8 @@ function App() {
             <Route path="/dashboard/analytics" element={<RestaurantRoute analytics />} />
             <Route path="/dashboard/qr" element={<RestaurantRoute qr />} />
             <Route path="/dashboard/billing" element={<RestaurantRoute billing />} />
+            <Route path="/dashboard/checkout" element={<RestaurantRoute checkout />} />
+            <Route path="/dashboard/odeme-basarili" element={<RestaurantRoute success />} />
             <Route path="/odeme-sonuc" element={<PaymentResult />} />
             <Route
               path="/:username/menu"

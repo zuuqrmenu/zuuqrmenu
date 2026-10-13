@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import RestaurantLayout from '../components/RestaurantLayout';
 import { useAuth } from '../context/AuthContext';
 import { menuService } from '../services/menuService';
+import { useNavigate } from 'react-router-dom';
+import { consumeCheckoutPath } from '../utils/domainHelpers';
 import MenuOnboardingModal from '../components/MenuOnboardingModal';
 import DashboardSkeleton from '../components/DashboardSkeleton';
 import { PageHeader, Card, Stat, Button, Segmented, ActionRow, EmptyState, Notice, Icon } from '../components/dashboard/ui';
@@ -153,6 +155,7 @@ return (
 
 const RestaurantDashboard = () => {
   const { user, restaurant, createMenuIdentity } = useAuth();
+  const navigate = useNavigate();
   const [overview, setOverview] = useState(null);
   const [range, setRange] = useState('sevenDays');
   const [loading, setLoading] = useState(true);
@@ -215,7 +218,8 @@ const RestaurantDashboard = () => {
     const result = await createMenuIdentity(username);
     if (result.success) {
       setOnboardingOpen(false);
-      setNotice('Menünüz başarıyla oluşturuldu.');
+      // First sign-in of a new account: continue straight to choosing and paying for a plan.
+      navigate(consumeCheckoutPath());
     }
     return result;
   };

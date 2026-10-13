@@ -99,3 +99,38 @@ export const redirectToPanelIfNeeded = (targetPath = '/dashboard') => {
   return false;
 };
 
+
+/**
+ * Reads the post-login destination from a "?next=" query value.
+ * Only same-site dashboard paths are accepted, so it can't be abused as an open redirect.
+ */
+export const getSafeNextPath = (search = '') => {
+  const next = new URLSearchParams(search).get('next');
+  return next && /^\/dashboard(\/|\?|$)/.test(next) && !next.includes('//') ? next : null;
+};
+
+const CHECKOUT_INTENT_KEY = 'zuulab.checkout-intent';
+const DEFAULT_CHECKOUT_PATH = '/dashboard/checkout?plan=professional&period=yearly';
+
+/**
+ * Remembers the plan a visitor picked on the pricing cards (carried in "?next=") so it survives
+ * registration, admin approval and the first sign-in, which can happen days later.
+ */
+export const rememberCheckoutIntent = (search = '') => {
+  const next = getSafeNextPath(search);
+  if (!next || !next.startsWith('/dashboard/checkout')) return;
+  try { localStorage.setItem(CHECKOUT_INTENT_KEY, next); } catch { /* storage blocked */ }
+};
+
+/** Returns the remembered checkout path (once) or the default plan. */
+export const consumeCheckoutPath = () => {
+  try {
+    const stored = localStorage.getItem(CHECKOUT_INTENT_KEY);
+    localStorage.removeItem(CHECKOUT_INTENT_KEY);
+    const params = new URLSearchParams((stored || '').split('?')[1] || '');
+    if (['starter', 'professional'].includes(params.get('plan')) && ['monthly', 'yearly'].includes(params.get('period'))) {
+      return `/dashboard/checkout?plan=${params.get('plan')}&period=${params.get('period')}`;
+    }
+  } catch { /* fall through */ }
+  return DEFAULT_CHECKOUT_PATH;
+};

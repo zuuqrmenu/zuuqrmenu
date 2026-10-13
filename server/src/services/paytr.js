@@ -54,7 +54,7 @@ export const requestIframeToken = async ({ merchantOid, email, amountTry, userIp
     lang: 'tr',
   });
 
-  const response = await fetch(GET_TOKEN_URL, { method: 'POST', body, signal: AbortSignal.timeout(15000) });
+  const response = await fetch(GET_TOKEN_URL, { method: 'POST', body, signal: AbortSignal.timeout(8000) });
   const data = await response.json().catch(() => null);
   if (!data || data.status !== 'success' || !data.token) {
     const error = new Error(data?.reason || 'PayTR ödeme oturumu başlatılamadı.');

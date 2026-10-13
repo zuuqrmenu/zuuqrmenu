@@ -5,6 +5,8 @@
  * No PII is collected – only the page path and title are sent.
  */
 
+import { hasAnalyticsConsent } from './consent';
+
 const GA_ID = import.meta.env.VITE_GA_MEASUREMENT_ID;
 
 let initialised = false;
@@ -15,7 +17,8 @@ let initialised = false;
  * calls are ignored.
  */
 export function initGA() {
-  if (!GA_ID || initialised) return;
+  // Analytics cookies only load after the visitor accepted them (see CookieBanner).
+  if (!GA_ID || initialised || !hasAnalyticsConsent()) return;
 
   // Create the async gtag loader script
   const script = document.createElement('script');

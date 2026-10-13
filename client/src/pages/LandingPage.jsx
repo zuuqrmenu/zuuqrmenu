@@ -203,8 +203,6 @@ const savingPct = (p) => Math.round((1 - p.yearly / (p.monthly * 12)) * 100);
 const MAX_SAVING = Math.max(...PLANS.filter((p) => p.yearly).map(savingPct));
 
 export const PricingCardsGrid = ({ isAnnual, setIsAnnual }) => {
-  const registerUrl = getPanelUrl('/register');
-
   return (
     <>
       <div className="lp3-pricing__header lp3-reveal">
@@ -266,7 +264,7 @@ export const PricingCardsGrid = ({ isAnnual, setIsAnnual }) => {
               </ul>
 
               <a
-                href={custom ? '/iletisim' : registerUrl}
+                href={custom ? '/iletisim' : getPanelUrl(`/dashboard/checkout?plan=${plan.id}&period=${isAnnual ? 'yearly' : 'monthly'}`)}
                 className={`lp3-btn ${plan.featured ? 'lp3-btn--accent' : 'lp3-btn--ghost'} lp3-price-card__cta`}
                 onClick={() => trackEvent('click_pricing_plan', { plan: plan.id, isAnnual })}
               >

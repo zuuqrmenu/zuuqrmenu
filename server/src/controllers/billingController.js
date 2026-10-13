@@ -3,6 +3,7 @@ import Order from '../models/Order.js';
 import Restaurant from '../models/Restaurant.js';
 import User from '../models/User.js';
 import { BILLING_PERIODS, PLANS, getPlanPrice } from '../config/plans.js';
+import { sendPurchaseNotification } from '../services/mailer.js';
 import { PAYTR_IFRAME_URL, isPaytrConfigured, requestIframeToken, verifyCallbackHash } from '../services/paytr.js';
 
 // PayTR shows the result pages inside its iframe, so they live on the public site (no frame restrictions).
@@ -176,6 +177,8 @@ export const paytrCallback = async (req, res) => {
         restaurant.subscription = { plan: order.plan, period: order.period, status: 'ACTIVE', currentPeriodEnd: end, lastOrderId: order._id };
         await restaurant.save();
       }
+      // Awaited on purpose: serverless functions may be frozen once the response is sent.
+      await sendPurchaseNotification({ order, restaurant });
     } else {
       order.status = 'FAILED';
       order.failureCode = payload.failed_reason_code;

@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import SeoHead from '../components/SeoHead';
 import { AuthPanel, GoogleMark, PasswordInput } from '../components/auth/AuthPanel';
@@ -9,7 +9,7 @@ import { auth } from '../config/firebase';
 import { getFirebaseAuthError } from '../utils/firebaseAuthErrors';
 import { GoogleAuthProvider, createUserWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth';
 import { trackEvent } from '../utils/analytics';
-import { isLocalhost, isMainDomain } from '../utils/domainHelpers';
+import { isLocalhost, isMainDomain, getSafeNextPath, rememberCheckoutIntent } from '../utils/domainHelpers';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -30,15 +30,18 @@ const Register = () => {
   const [registrationComplete, setRegistrationComplete] = useState(false);
   const { setApplicationSession } = useAuth();
   const navigate = useNavigate();
+  const { search } = useLocation();
+
+  useEffect(() => { rememberCheckoutIntent(search); }, [search]);
 
   const redirectApplicationUser = (user, restaurant) => {
     if (user?.role === 'ADMIN') return navigate('/admin');
     if (restaurant) {
       if (!isLocalhost() && isMainDomain()) {
-        window.location.replace('https://panel.zuuqrmenu.com/dashboard');
+        window.location.replace(`https://panel.zuuqrmenu.com${getSafeNextPath(search) || '/dashboard'}`);
         return;
       }
-      return navigate('/dashboard');
+      return navigate(getSafeNextPath(search) || '/dashboard');
     }
     return navigate('/pending-approval');
   };
@@ -289,7 +292,7 @@ const Register = () => {
           </button>
 
           <p className="reg-card__footer">
-            Zaten hesabınız var mı? <Link to="/login">Giriş Yap</Link>
+            Zaten hesabınız var mı? <Link to={`/login${search}`}>Giriş Yap</Link>
           </p>
         </div>
       </div>

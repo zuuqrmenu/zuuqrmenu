@@ -71,13 +71,23 @@ const normalizeSavedMenuEntries = (entries, fallback = {}) => {
   return unique.slice(0, 3);
 };
 
-const getSettings = async (restaurantId) => {
-  let settings = await RestaurantSettings.findOne({ restaurantId });
-  if (!settings) {
-    settings = await RestaurantSettings.create({ restaurantId });
+// Several dashboard requests can hit a brand-new restaurant at once; the unique restaurantId index
+// then rejects the losers of the upsert race (E11000). The row exists by then, so a retry simply reads it.
+const upsertSettings = async (restaurantId, update = {}) => {
+  const run = () => RestaurantSettings.findOneAndUpdate(
+    { restaurantId },
+    { ...update, $setOnInsert: { restaurantId } },
+    { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true },
+  );
+  try {
+    return await run();
+  } catch (error) {
+    if (error?.code !== 11000) throw error;
+    return run();
   }
-  return settings;
 };
+
+const getSettings = (restaurantId) => upsertSettings(restaurantId);
 
 const getCloudinaryPublicId = (imageUrl) => {
   if (!imageUrl || typeof imageUrl !== 'string') return null;
@@ -234,11 +244,7 @@ export const updateRestaurantSettings = async (req, res, next) => {
       return res.json({ message: 'Ayarlar güncellendi', settings: { ...settings.toObject(), address: (await Restaurant.findById(restaurantId).select('address').lean())?.address || '' } });
     }
 
-    const settings = await RestaurantSettings.findOneAndUpdate(
-      { restaurantId },
-      { $set: updates, $setOnInsert: { restaurantId } },
-      { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true },
-    );
+    const settings = await upsertSettings(restaurantId, { $set: updates });
     const restaurant = await Restaurant.findById(restaurantId).select('address').lean();
     res.json({ message: 'Ayarlar güncellendi', settings: { ...settings.toObject(), address: restaurant?.address || '' } });
   } catch (error) {
