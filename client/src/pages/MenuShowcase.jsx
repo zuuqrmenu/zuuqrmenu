@@ -286,7 +286,7 @@ const MenuShowcase = () => {
   return (
     <div className="lp3-page">
       <SeoHead
-        title="QR Menü Temaları — Restoranınıza Özel Tasarım | zuuqrmenu"
+        title="QR Menü Temaları ve Demo Menüler | zuuqrmenu"
         description="Restoranınız için en şık QR menü temasını seçin. Modern Bento Grid ve Story modüllü klasik tasarımları canlı deneyin. zuuqrmenu ile dijital menünüzü özelleştirin."
         canonical="https://zuuqrmenu.com/menu"
         image="https://zuuqrmenu.com/og-cover.png"

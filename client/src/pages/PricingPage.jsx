@@ -11,7 +11,7 @@ const comparisonData = [
   {
     category: 'Menü & Ürün Yönetimi',
     rows: [
-      { name: 'Kategori ve Ürün Ekleme', starter: 'Sınırsız', pro: 'Sınırsız', enterprise: 'Sınırsız' },
+      { name: 'Kategori ve Ürün Ekleme', starter: '3 kategori / 25 ürün', pro: 'Sınırsız', enterprise: 'Sınırsız' },
       { name: 'Anlık Fiyat & Stok Güncelleme', starter: true, pro: true, enterprise: true },
       { name: 'Ürün Fotoğrafları & Galeri', starter: true, pro: true, enterprise: true },
       { name: 'Alerjen, Kalori & Etiket Bilgisi', starter: true, pro: true, enterprise: true },
@@ -91,8 +91,8 @@ const PricingPage = () => {
   return (
     <div className="lp3-page">
       <SeoHead
-        title="Fiyatlandırma & Paketler — zuuqrmenu"
-        description="Restoranınız için en uygun dijital QR menü planını seçin. Yıllık paketlerde %37'ye varan indirim ve 7 gün ücretsiz deneme fırsatı."
+        title="QR Menü Fiyatları ve Paketler | zuuqrmenu"
+        description="Restoranınız için en uygun dijital QR menü planını seçin. Yıllık paketlerde %39'a varan indirim ve 7 gün ücretsiz deneme fırsatı."
         canonical="https://zuuqrmenu.com/fiyatlandirma"
       />
 

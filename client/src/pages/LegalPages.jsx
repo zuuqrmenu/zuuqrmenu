@@ -16,7 +16,7 @@ const PageShell = ({ title, eyebrow, subtitle, children, canonical, metaDesc }) 
   return (
     <div className="lp3-page">
       <SeoHead
-        title={`${title} — zuuqrmenu`}
+        title={`${title} | zuuqrmenu`}
         description={metaDesc || `${title} sayfası. Restoranlar için akıllı QR dijital menü platformu.`}
         canonical={`https://zuuqrmenu.com${canonical}`}
       />
