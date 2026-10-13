@@ -184,10 +184,10 @@
   height: 2.6rem;
   border-radius: 50%;
   background: var(--lime) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2311160f' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.5 11.5 11.5 4.5M5.5 4.5h6v6'/%3E%3C/svg%3E") center / 15px no-repeat;
-  transition: transform 0.5s var(--spring);
+  transition: background-position 0.5s var(--spring);
 }
 .reg-btn--primary:hover { background: #1f291c; }
-.reg-btn--primary:hover::after { transform: translate(2px, -2px) scale(1.06); }
+.reg-btn--primary:hover::after { background-position: calc(50% + 2px) calc(50% - 2px); }
 .reg-btn:active { transform: scale(0.985); }
 .reg-btn:disabled { opacity: 0.6; cursor: progress; }
 

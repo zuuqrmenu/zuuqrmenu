@@ -2,11 +2,11 @@ import { useEffect, useState, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation } from 'react-router-dom';
 import RestaurantLayout from '../components/RestaurantLayout';
-import ProductManager from '../components/ProductManager';
 import MenuStructureEditor from '../components/MenuStructureEditor';
 import DashboardSkeleton from '../components/DashboardSkeleton';
+import { PageHeader, Card, Button } from '../components/dashboard/ui';
 import PublicMenuButton from '../components/PublicMenuButton';
-import MenuCustomizationCompactModal, { ThemePreview, buildDefaultMenuTemplate, ThemeDeleteConfirmDialog } from '../components/MenuCustomizationCompactModal';
+import MenuCustomizationCompactModal, { buildDefaultMenuTemplate, ThemeDeleteConfirmDialog } from '../components/MenuCustomizationCompactModal';
 import MenuImportPanel from '../components/MenuImportPanel';
 import { useAuth } from '../context/AuthContext';
 import { menuService } from '../services/menuService';
@@ -638,6 +638,7 @@ const MenuManagement = () => {
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [booted, setBooted] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [noticeVisible, setNoticeVisible] = useState(false);
@@ -704,6 +705,7 @@ const MenuManagement = () => {
       setError(err.response?.data?.error || 'Kategoriler yüklenemedi.');
     } finally {
       setLoading(false);
+      setBooted(true);
     }
   };
 
@@ -843,6 +845,18 @@ const MenuManagement = () => {
     }
   };
 
+  const activeTheme = activeMenuThemeId
+    ? menuThemes.find((t) => String(t._id || t.id) === String(activeMenuThemeId)) || null
+    : null;
+
+  const handleEditActiveOrNew = () => {
+    if (!activeTheme) return handleOpenCustomization();
+    const index = menuThemes.findIndex((t) => String(t._id || t.id) === String(activeMenuThemeId));
+    setEditingTheme(activeTheme);
+    setEditingThemeIndex(index >= 0 ? index : null);
+    setCustomizationOpen(true);
+  };
+
   const handleOpenCustomization = () => {
     if (menuThemes.length >= 3) {
       setNotice('En fazla 4 tema kaydedebilirsiniz (3 özel tema + 1 varsayılan). Düzenlemek istediğiniz temayı seçebilirsiniz.');
@@ -857,24 +871,22 @@ const MenuManagement = () => {
 
   return (
     <RestaurantLayout>
-      <div className="mx-auto max-w-7xl space-y-8 px-5 py-8 sm:px-8">
-        <section className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="text-sm font-medium text-emerald-600">Menü</p>
-            <h2 className="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">Menünüzü buradan yönetin</h2>
-            <p className="mt-1 text-sm text-slate-500">Kategorilerinizi oluşturun, düzenleyin ve menü sıralamanızı belirleyin.</p>
-          </div>
-          {user?.username && (
+      <div className="dp">
+        <PageHeader
+          kicker="Menü yönetimi"
+          title="Menünüzü buradan yönetin"
+          lede="Kategorilerinizi oluşturun, ürünleri düzenleyin ve sıralamayı sürükleyerek belirleyin."
+          actions={user?.username && (
             <PublicMenuButton
               username={user?.username}
-              label="Menüyü Görüntüle"
+              label="Menüyü görüntüle"
               compact
               brand
               highlighted={highlightViewMenu}
               onHighlightDismiss={() => setHighlightViewMenu(false)}
             />
           )}
-        </section>
+        />
         {notice && typeof document !== 'undefined' && createPortal(
           <div key={notice} className="site-global-toast site-global-toast--success" role="status">
             <span>✓</span>
@@ -889,12 +901,16 @@ const MenuManagement = () => {
           </div>,
           document.body
         )}
+        {!booted ? (
+          <DashboardSkeleton variant="menu-page" />
+        ) : (
+          <>
         <div className="menu-management-header-grid">
           {overview ? (
             <section className="menu-publish-card">
               <div className="menu-publish-card__header">
                 <div>
-                  <p className="menu-publish-card__eyebrow">Yayın Durumu</p>
+                  <p className="menu-publish-card__eyebrow">Yayın durumu</p>
                   <h3>{statusCopy[0]}</h3>
                   <p>{statusCopy[1]}</p>
                   {overview.restaurant?.publishedAt && (
@@ -917,22 +933,38 @@ const MenuManagement = () => {
               </div>
             </section>
           ) : (
-            <section className="menu-publish-card menu-publish-card--skeleton">
+            <section className="menu-publish-card menu-publish-card--skeleton" role="status" aria-busy="true" aria-label="Yayın durumu yükleniyor">
               <div className="menu-publish-card__header">
-                <div>
-                  <span className="dashboard-skeleton__line dashboard-skeleton__eyebrow" style={{ width: '80px', display: 'block' }} />
-                  <span className="dashboard-skeleton__line dashboard-skeleton__heading" style={{ width: '160px', height: '1.4rem', marginTop: '6px', display: 'block' }} />
-                  <span className="dashboard-skeleton__line dashboard-skeleton__short" style={{ width: '220px', marginTop: '6px', display: 'block' }} />
+                <div style={{ display: 'grid', gap: '0.6rem', flex: 1 }}>
+                  <span className="dsk" style={{ width: '5rem', height: '0.8rem' }} />
+                  <span className="dsk" style={{ width: '10rem', height: '1.4rem' }} />
+                  <span className="dsk" style={{ width: '14rem', height: '0.85rem' }} />
                 </div>
-                <div className="menu-status-switcher" style={{ opacity: 0.6, pointerEvents: 'none' }}>
-                  <button type="button" className="is-active">Taslak</button>
-                  <button type="button">Yayında</button>
-                  <button type="button">Gizli</button>
-                </div>
+                <span className="dsk" style={{ width: '12rem', height: '2.6rem', borderRadius: '999px' }} />
               </div>
             </section>
           )}
-          <section className="menu-customization-entry"><div className="menu-customization-entry__header"><div><p className="menu-publish-card__eyebrow">Tasarım</p><h3>Menü Özelleştirme</h3><p>Temanızı, tipografinizi ve ürün görünümünü beğeninize göre tasarlayın.</p></div></div><div className="menu-customization-entry__actions"><button type="button" className="menu-customization-entry__edit" onClick={() => setThemeSelectionOpen(true)} aria-label="Kayıtlı menü tasarımını seç" title="Kayıtlı menü tasarımını seç"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m4 16.5-.8 4.3 4.3-.8L19.2 8.3a2.4 2.4 0 0 0-3.4-3.4L4 16.5Z" /><path d="m14.5 6.5 3 3" /></svg></button><button type="button" onClick={handleOpenCustomization} className="menu-customization-entry__button"><span>✦</span> Özelleştir</button></div></section>
+          <Card
+            className="dp-theme"
+            title="Menü tasarımı"
+            sub="Menünüzün görünümünü seçin ya da kendi tasarımınızı oluşturun."
+          >
+            <div className="dp-theme__live">
+              <span className="dp-theme__swatch" style={{ background: activeTheme?.primaryColor || '#1F2937' }} aria-hidden="true">
+                <i style={{ background: activeTheme?.secondaryColor || '#FFFFFF' }} />
+              </span>
+              <div className="dp-theme__text">
+                <small>Şu an yayında</small>
+                <b>{activeTheme?.name || 'Varsayılan'}</b>
+                <span>{activeTheme ? (activeTheme.theme === 'GRID' ? 'Modern görünüm' : 'Klasik görünüm') + ' · ' + (activeTheme.mode === 'DARK' ? 'Koyu' : 'Açık') : 'Klasik görünüm · Açık'}</span>
+              </div>
+              <span className="dp-chip dp-chip--neutral">{menuThemes.length + 1}/4 tasarım</span>
+            </div>
+            <div className="dp-theme__actions">
+              <Button variant="ghost" icon="palette" onClick={() => setThemeSelectionOpen(true)}>Tasarımlarım</Button>
+              <Button variant="lime" icon="spark" onClick={handleEditActiveOrNew}>{activeTheme ? 'Bu tasarımı düzenle' : 'Özelleştir'}</Button>
+            </div>
+          </Card>
         </div>
         <MenuImportPanel onImported={async (message) => { setNotice(message); await loadData(false); }} />
         {loading ? (
@@ -949,6 +981,8 @@ const MenuManagement = () => {
             onMessage={(message, isError = false) => { if (isError) setError(message); else setNotice(message); }}
             onRefresh={() => loadData(true)}
           />
+        )}
+          </>
         )}
       </div>
       {modalOpen && <CategoryModal category={editingCategory} nextOrder={categories.length} onClose={() => { setModalOpen(false); setEditingCategory(null); }} onSaved={showNotice} />}
@@ -1024,16 +1058,19 @@ const MenuManagement = () => {
 
             const targetThemeId = targetTheme?._id || targetTheme?.id;
 
-            // Direct selection: Immediately set as active menu
-            if (targetThemeId) {
+            const wasActive = isEditing && targetThemeId && String(activeMenuThemeId) === String(targetThemeId);
+            // New themes go live right away; an edited theme is re-applied only if it is the one already live.
+            if (targetThemeId && (!isEditing || wasActive)) {
               await selectMenuTheme(targetThemeId, targetTheme || savedPayload);
             }
 
             publicMenuService.clearCache();
             setNotice('');
-            setTimeout(() => setNotice(isEditing ? 'Tema güncellendi ve menü olarak uygulandı.' : 'Tema kaydedildi ve yeni menü olarak seçildi.'), 50);
-            setHighlightViewMenu(true);
-            setTimeout(() => setHighlightViewMenu(false), 9000);
+            setTimeout(() => setNotice(!isEditing ? 'Tema kaydedildi ve menünüzde yayına alındı.' : wasActive ? 'Tema güncellendi, menünüzde yayında.' : 'Tema güncellendi. Yayına almak için Tasarımlarım bölümünden seçin.'), 50);
+            if (!isEditing || wasActive) {
+              setHighlightViewMenu(true);
+              setTimeout(() => setHighlightViewMenu(false), 9000);
+            }
             return settings;
           }}
           onDelete={async (remainingThemes, deletedId) => {

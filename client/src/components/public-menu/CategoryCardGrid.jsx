@@ -3,7 +3,7 @@ import BlurImage from '../common/BlurImage';
 const ABSTRACT_PATTERNS = [
   // 0: Concentric Zen Arcs & Floating Rings
   (
-    <svg viewBox="0 0 240 180" className="bento-abstract-svg" preserveAspectRatio="none" fill="none" aria-hidden="true">
+    <svg key="pattern-0" viewBox="0 0 240 180" className="bento-abstract-svg" preserveAspectRatio="none" fill="none" aria-hidden="true">
       <circle cx="215" cy="150" r="105" stroke="currentColor" strokeWidth="1.2" strokeOpacity="0.4" />
       <circle cx="215" cy="150" r="75" stroke="currentColor" strokeWidth="1.1" strokeDasharray="3 4" strokeOpacity="0.32" />
       <circle cx="215" cy="150" r="46" fill="currentColor" fillOpacity="0.08" />
@@ -15,7 +15,7 @@ const ABSTRACT_PATTERNS = [
   ),
   // 1: Modern Organic Waves & Contours
   (
-    <svg viewBox="0 0 240 180" className="bento-abstract-svg" preserveAspectRatio="none" fill="none" aria-hidden="true">
+    <svg key="pattern-1" viewBox="0 0 240 180" className="bento-abstract-svg" preserveAspectRatio="none" fill="none" aria-hidden="true">
       <path d="M75 180 C105 130, 165 120, 240 142" stroke="currentColor" strokeWidth="1.2" strokeOpacity="0.32" />
       <path d="M105 180 C130 110, 190 95, 240 105" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.42" />
       <path d="M135 180 C160 88, 210 68, 240 74" stroke="currentColor" strokeWidth="1.2" strokeDasharray="2 3" strokeOpacity="0.3" />
@@ -27,7 +27,7 @@ const ABSTRACT_PATTERNS = [
   ),
   // 2: Bauhaus Geometry & Floating Capsule
   (
-    <svg viewBox="0 0 240 180" className="bento-abstract-svg" preserveAspectRatio="none" fill="none" aria-hidden="true">
+    <svg key="pattern-2" viewBox="0 0 240 180" className="bento-abstract-svg" preserveAspectRatio="none" fill="none" aria-hidden="true">
       <rect x="162" y="68" width="56" height="92" rx="28" fill="currentColor" fillOpacity="0.08" />
       <rect x="162" y="68" width="56" height="92" rx="28" stroke="currentColor" strokeWidth="1.2" strokeOpacity="0.38" />
       <circle cx="132" cy="140" r="46" stroke="currentColor" strokeWidth="1.2" strokeOpacity="0.32" />
@@ -39,7 +39,7 @@ const ABSTRACT_PATTERNS = [
   ),
   // 3: Harmonic Ellipses & Orbital Rings
   (
-    <svg viewBox="0 0 240 180" className="bento-abstract-svg" preserveAspectRatio="none" fill="none" aria-hidden="true">
+    <svg key="pattern-3" viewBox="0 0 240 180" className="bento-abstract-svg" preserveAspectRatio="none" fill="none" aria-hidden="true">
       <ellipse cx="192" cy="132" rx="64" ry="40" stroke="currentColor" strokeWidth="1.2" strokeOpacity="0.38" transform="rotate(22 192 132)" />
       <ellipse cx="192" cy="132" rx="40" ry="24" fill="currentColor" fillOpacity="0.08" transform="rotate(22 192 132)" />
       <circle cx="138" cy="92" r="28" stroke="currentColor" strokeWidth="1.2" strokeDasharray="3 4" strokeOpacity="0.32" />

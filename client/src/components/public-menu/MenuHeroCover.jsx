@@ -1,4 +1,3 @@
-import { useRef } from 'react';
 import BlurImage from '../common/BlurImage';
 
 const MenuHeroCover = ({

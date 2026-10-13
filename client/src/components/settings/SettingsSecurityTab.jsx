@@ -197,7 +197,7 @@ const SettingsSecurityTab = ({ email, onEmailChanged, onNotice }) => {
           >
             <div className="settings-modal__header">
               <div>
-                <span className="settings-eyebrow">Güvenlik Doğrulaması</span>
+                <span className="settings-eyebrow">Güvenlik doğrulaması</span>
                 <h3 id="settings-modal-title">{modal === 'email' ? 'E-posta Adresini Güncelle' : 'Hesap Şifresini Güncelle'}</h3>
               </div>
               <button type="button" onClick={() => closeModal()} className="settings-modal__close" aria-label="Kapat">×</button>

@@ -9,7 +9,6 @@ import ReviewSheet from '../components/public-menu/ReviewSheet';
 import SearchSheet from '../components/public-menu/SearchSheet';
 import SeoHead from '../components/SeoHead';
 import FeaturedStories from '../components/public-menu/FeaturedStories';
-import MenuHeroCover from '../components/public-menu/MenuHeroCover';
 import CategoryCardGrid from '../components/public-menu/CategoryCardGrid';
 import { publicMenuService } from '../services/publicMenuService';
 import { getPublicMenuTheme, publicMenuFonts } from '../utils/publicMenuTheme';

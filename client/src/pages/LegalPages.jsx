@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import SeoHead from '../components/SeoHead';
 import { trackEvent } from '../utils/analytics';
 import { getPanelUrl } from '../utils/domainHelpers';

@@ -3,21 +3,14 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import SeoHead from './SeoHead';
 import ZuuAIAssistant from './ZuuAIAssistant';
+import DashboardSidebar, { useSidebarCollapsed } from './DashboardSidebar';
+import '../styles/dashboard-theme.css';
 
 const RestaurantLayout = ({ children }) => {
   const { user, restaurant, logout } = useAuth();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const navItems = [
-    { label: 'Genel Bakış', to: '/dashboard', end: true },
-    { label: 'Menü Yönetimi', to: '/dashboard/menu', end: false },
-    { label: 'QR Kod', to: '/dashboard/qr', end: false },
-  ];
-
-  const settingsItem = { label: 'Ayarlar', to: '/dashboard/settings', end: false };
-
-  const desktopLinkClass = ({ isActive }) => `dashboard-nav-link ${isActive ? 'is-active' : ''}`;
+  const [collapsed, setCollapsed] = useSidebarCollapsed();
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -40,33 +33,25 @@ const RestaurantLayout = ({ children }) => {
   }, [mobileMenuOpen]);
 
   return (
-    <div className="dashboard-shell min-h-screen bg-slate-50 text-slate-900">
+    <div className={`dashboard-shell min-h-screen bg-slate-50 text-slate-900 ${collapsed ? 'is-sidebar-collapsed' : ''}`}>
       <SeoHead title="Restoran Paneli | zuuqrmenu" description="zuuqrmenu restoran yönetim paneli." canonical="https://panel.zuuqrmenu.com/dashboard" robots="noindex,nofollow,noarchive" />
 
       {/* Desktop Sidebar (Only visible on lg and above) */}
-      <aside className="dashboard-sidebar fixed inset-y-0 left-0 hidden w-64 lg:flex lg:flex-col">
-        <div className="dashboard-brand">
-          <span className="dashboard-brand__logo-wrap">
-            <img src="/logo.svg" alt="zuuqrmenu" className="dashboard-brand__logo dashboard-brand__logo--light" />
-            <img src="/logo_darkmode.svg" alt="" className="dashboard-brand__logo dashboard-brand__logo--dark" />
-          </span>
-          <div><h1>Restoran Paneli</h1></div>
-        </div>
-        <div className="dashboard-restaurant">
-          <p className="truncate">{restaurant?.name}</p>
-          <span className="truncate">{user?.email}</span>
-        </div>
-        <nav className="dashboard-sidebar__nav">
-          <div className="dashboard-sidebar__primary">
-            {navItems.map((item) => <NavLink key={item.to} to={item.to} end={item.end} className={desktopLinkClass}>{item.label}</NavLink>)}
-            <NavLink to="/dashboard/analytics" className={desktopLinkClass}>İstatistikler</NavLink>
-          </div>
-          <div className="dashboard-sidebar__bottom">
-            <NavLink to={settingsItem.to} end={settingsItem.end} className={desktopLinkClass}>{settingsItem.label}</NavLink>
-            <button onClick={logout} className="dashboard-logout">Çıkış Yap</button>
-          </div>
-        </nav>
-      </aside>
+      <DashboardSidebar
+        title="Restoran Paneli"
+        identity={restaurant?.name || 'Restoranınız'}
+        subline={user?.email}
+        items={[
+          { label: 'Genel bakış', to: '/dashboard', end: true, icon: 'overview' },
+          { label: 'Menü yönetimi', to: '/dashboard/menu', icon: 'menu' },
+          { label: 'QR kod', to: '/dashboard/qr', icon: 'qr' },
+          { label: 'İstatistikler', to: '/dashboard/analytics', icon: 'stats' },
+        ]}
+        footerItems={[{ label: 'Ayarlar', to: '/dashboard/settings', icon: 'settings' }]}
+        onLogout={logout}
+        collapsed={collapsed}
+        onToggle={() => setCollapsed((v) => !v)}
+      />
 
       {/* Mobile Drawer Overlay & Sheet (Only on mobile / tablet < 1024px) */}
       <div
@@ -187,7 +172,7 @@ const RestaurantLayout = ({ children }) => {
       </div>
 
       {/* Main Content Area */}
-      <main className="lg:pl-64">
+      <main className="dashboard-main">
         <header className="dashboard-header lg:hidden">
           {/* Mobile Header: Hamburger on Left, Logo in Center, Balanced Spacer on Right */}
           <div className="dashboard-mobile-header">

@@ -143,7 +143,7 @@ const SortableProduct = ({ product, disabled, onEdit, onToggleAvailability, onTo
     <article ref={setNodeRef} style={style} className={`menu-structure-product ${isDragging ? 'is-dragging' : ''} ${menuOpen ? 'has-open-menu' : ''}`}>
       <button type="button" className="menu-structure-product__handle" {...attributes} {...listeners} aria-label={`${product.name} ürününü taşı`}><DragHandle label="Ürünü taşı" /></button>
       {product.image ? <img className="menu-structure-product__image" src={product.image} alt={`${product.name} görseli`} /> : <span className="menu-structure-product__image menu-structure-product__image--empty" aria-hidden="true">✦</span>}
-      <div className="menu-structure-product__content"><div className="menu-structure-product__title-row"><h4>{product.name}</h4><span className={product.isAvailable ? 'is-available' : 'is-unavailable'}>{product.isAvailable ? 'Mevcut' : 'Tükendi'}</span>{product.isFeatured && <span className="is-featured">Öne Çıkan</span>}</div><p>₺{Number(product.price).toFixed(2)}</p>{product.shortDescription && <small>{product.shortDescription}</small>}</div>
+      <div className="menu-structure-product__content"><div className="menu-structure-product__title-row"><h4>{product.name}</h4><span className={product.isAvailable ? 'is-available' : 'is-unavailable'}>{product.isAvailable ? 'Mevcut' : 'Tükendi'}</span>{product.isFeatured && <span className="is-featured">Öne çıkan</span>}</div>{product.shortDescription && <small>{product.shortDescription}</small>}</div><p className="menu-structure-product__price">₺{Number(product.price).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
       <OverflowActionMenu
         label={`${product.name} işlemleri`}
         disabled={disabled}

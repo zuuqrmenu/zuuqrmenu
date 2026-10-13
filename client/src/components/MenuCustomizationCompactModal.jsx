@@ -4,7 +4,6 @@ import FeaturedStories from './public-menu/FeaturedStories';
 import CategoryNavigation from './public-menu/CategoryNavigation';
 import CategorySection from './public-menu/CategorySection';
 import MenuHeader from './public-menu/MenuHeader';
-import MenuHeroCover from './public-menu/MenuHeroCover';
 import CategoryCardGrid from './public-menu/CategoryCardGrid';
 import { getPublicMenuTheme, publicMenuFonts, publicMenuThemes } from '../utils/publicMenuTheme';
 import useBodyScrollLock from '../hooks/useBodyScrollLock';
@@ -167,7 +166,6 @@ export const buildDefaultMenuTemplate = (overrides = {}) => ({
   font: 'Inter',
   primaryColor: '#1F2937',
   secondaryColor: '#FFFFFF',
-  layout: { ...defaults.layout },
   ...overrides,
   layout: { ...defaults.layout, ...(overrides.layout || {}) },
 });
@@ -507,13 +505,16 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, onDelete = nu
     return () => mediaQuery.removeListener(updateViewport);
   }, []);
 
+  // The saved list follows the parent; the draft only restarts when a different theme is opened.
   useEffect(() => {
-    const nextThemes = Array.isArray(themes) ? themes : [];
-    setSavedThemes(nextThemes);
+    setSavedThemes(Array.isArray(themes) ? themes : []);
+  }, [themes]);
+
+  useEffect(() => {
     const initial = initialMenu ? normalize(initialMenu) : buildDefaultMenuTemplate({ name: '' });
     setDraft(initial);
     initialDraftSnapshotRef.current = JSON.stringify(initial);
-  }, [initialMenu, themes]);
+  }, [initialMenu]);
 
   useEffect(() => () => {
     if (feedbackTimeoutRef.current) window.clearTimeout(feedbackTimeoutRef.current);
@@ -575,10 +576,7 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, onDelete = nu
           ...(existingId ? { _id: existingId } : {}),
         };
       } else if (next.length >= 3) {
-        next[next.length - 1] = {
-          ...payload,
-          ...(next[next.length - 1]?._id ? { _id: next[next.length - 1]._id } : {}),
-        };
+        throw Object.assign(new Error('limit'), { response: { status: 400, data: { error: 'En fazla 3 özel tema kaydedebilirsiniz. Yeni tema için önce birini silin.' } } });
       } else {
         const { _id, id, ...newThemePayload } = payload;
         next.push(newThemePayload);
@@ -671,7 +669,7 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, onDelete = nu
         <div className={`menu-compact-modal ${isClosing ? 'is-closing' : ''}`} role="dialog" aria-modal="true" aria-labelledby="menu-compact-title">
         <header className="menu-compact-header">
           <div className="menu-compact-header__title-wrap">
-            <span className="menu-compact-kicker">MENÜ TASARIMI</span>
+            <span className="menu-compact-kicker">Menü tasarımı</span>
             <h2 id="menu-compact-title">Menü Tasarımı</h2>
             <p>Menünüzün görünümünü ve sunumunu özelleştirin.</p>
           </div>

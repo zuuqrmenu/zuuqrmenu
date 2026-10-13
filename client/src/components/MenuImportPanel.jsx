@@ -432,7 +432,7 @@ const MenuImportPanel = ({ onImported }) => {
     <section id="menu-import" className={`menu-import-panel ${loading ? 'is-analyzing' : ''}`}>
       <div className="menu-import-panel__header">
         <div>
-          <p className="menu-import-panel__eyebrow">MENÜ İÇE AKTARMA</p>
+          <p className="menu-import-panel__eyebrow">Menü içe aktarma</p>
           <h3 className="menu-import-panel__header-title">Menünü Yükle</h3>
           <p className="menu-import-panel__header-desc">
             Menü fotoğraflarınızı yükleyin. ZuuAI ürünleri, fiyatları ve kategorileri otomatik ayıklar.
@@ -493,8 +493,10 @@ const MenuImportPanel = ({ onImported }) => {
                   <polyline points="5 12 12 5 19 12" />
                 </svg>
               </div>
-              <p className="menu-import-panel__dropzone-title">Menü fotoğraflarını buraya bırakın</p>
-              <p className="menu-import-panel__dropzone-desc">JPG, PNG veya WEBP · En fazla 3 görsel</p>
+              <div className="menu-import-panel__dropzone-copy">
+                <p className="menu-import-panel__dropzone-title">Menü fotoğraflarını buraya bırakın</p>
+                <p className="menu-import-panel__dropzone-desc">JPG, PNG veya WEBP · En fazla 3 görsel</p>
+              </div>
               <label htmlFor="menu-import-files" className="menu-import-panel__select-button">
                 Görselleri Seç
               </label>

@@ -33,7 +33,7 @@ const SettingsProfileTab = ({ account, setAccount, onNotice, onError }) => {
       <form onSubmit={saveAccount} className="settings-card">
         <div className="settings-card__header">
           <div>
-            <span className="settings-eyebrow">Yönetici Profili</span>
+            <span className="settings-eyebrow">Yönetici profili</span>
             <h3 className="settings-card__title">Hesap Bilgileri ve Menü Adresi</h3>
             <p className="settings-card__desc">
               Restoran sahibinin kişisel profil bilgileri ve sistem genelindeki erişim kimliği.
@@ -108,7 +108,7 @@ const SettingsProfileTab = ({ account, setAccount, onNotice, onError }) => {
       <section className="settings-card">
         <div className="settings-card__header">
           <div>
-            <span className="settings-eyebrow">Abonelik & Paket</span>
+            <span className="settings-eyebrow">Abonelik & paket</span>
             <h3 className="settings-card__title">Üyelik Bilgileri</h3>
             <p className="settings-card__desc">
               Restoranınızın sistemdeki mevcut paket planı ve üyelik detayları.

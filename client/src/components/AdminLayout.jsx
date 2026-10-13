@@ -3,13 +3,14 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import SeoHead from './SeoHead';
 import ZuuAIAssistant from './ZuuAIAssistant';
+import DashboardSidebar, { useSidebarCollapsed } from './DashboardSidebar';
+import '../styles/dashboard-theme.css';
 
 const AdminLayout = ({ children, title = 'Yönetim Paneli | zuuqrmenu' }) => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const desktopLinkClass = ({ isActive }) => `dashboard-nav-link ${isActive ? 'is-active' : ''}`;
+  const [collapsed, setCollapsed] = useSidebarCollapsed();
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -32,7 +33,7 @@ const AdminLayout = ({ children, title = 'Yönetim Paneli | zuuqrmenu' }) => {
   }, [mobileMenuOpen]);
 
   return (
-    <div className="dashboard-shell min-h-screen bg-slate-50 text-slate-900">
+    <div className={`dashboard-shell min-h-screen bg-slate-50 text-slate-900 ${collapsed ? 'is-sidebar-collapsed' : ''}`}>
       <SeoHead
         title={title}
         description="zuuqrmenu sistem yönetim paneli."
@@ -41,49 +42,20 @@ const AdminLayout = ({ children, title = 'Yönetim Paneli | zuuqrmenu' }) => {
       />
 
       {/* Desktop Sidebar */}
-      <aside className="dashboard-sidebar fixed inset-y-0 left-0 hidden w-64 lg:flex lg:flex-col">
-        <div className="dashboard-brand">
-          <span className="dashboard-brand__logo-wrap">
-            <img src="/logo.svg" alt="zuuqrmenu" className="dashboard-brand__logo dashboard-brand__logo--light" />
-            <img src="/logo_darkmode.svg" alt="" className="dashboard-brand__logo dashboard-brand__logo--dark" />
-          </span>
-          <div>
-            <h1>Yönetim Paneli</h1>
-          </div>
-        </div>
-
-        <div className="dashboard-restaurant">
-          <p className="truncate">{user?.name || 'Sistem Yöneticisi'}</p>
-          <span className="truncate">{user?.email || 'admin@zuuqrmenu.com'} · Yönetici</span>
-        </div>
-
-        <nav className="dashboard-sidebar__nav">
-          <div className="dashboard-sidebar__primary">
-            <NavLink to="/admin" end className={desktopLinkClass}>
-              Genel Bakış
-            </NavLink>
-            <NavLink to="/admin/restaurants" className={desktopLinkClass}>
-              Restoranlar
-            </NavLink>
-            <NavLink to="/admin/resources" className={desktopLinkClass}>
-              Kaynak Kontrol
-            </NavLink>
-          </div>
-
-          <div className="dashboard-sidebar__bottom">
-            <NavLink to="/admin/settings" className={desktopLinkClass}>
-              Ayarlar
-            </NavLink>
-            <button
-              type="button"
-              onClick={logout}
-              className="dashboard-logout"
-            >
-              Çıkış Yap
-            </button>
-          </div>
-        </nav>
-      </aside>
+      <DashboardSidebar
+        title="Yönetim Paneli"
+        identity={user?.name || 'Sistem Yöneticisi'}
+        subline={`${user?.email || 'admin@zuuqrmenu.com'} · Yönetici`}
+        items={[
+          { label: 'Genel bakış', to: '/admin', end: true, icon: 'overview' },
+          { label: 'Restoranlar', to: '/admin/restaurants', icon: 'restaurants' },
+          { label: 'Kaynak kontrol', to: '/admin/resources', icon: 'resources' },
+        ]}
+        footerItems={[{ label: 'Ayarlar', to: '/admin/settings', icon: 'settings' }]}
+        onLogout={logout}
+        collapsed={collapsed}
+        onToggle={() => setCollapsed((v) => !v)}
+      />
 
       {/* Mobile Drawer Overlay & Sheet */}
       <div
@@ -212,7 +184,7 @@ const AdminLayout = ({ children, title = 'Yönetim Paneli | zuuqrmenu' }) => {
       </div>
 
       {/* Main Content Shell */}
-      <main className="lg:pl-64">
+      <main className="dashboard-main">
         {/* Mobile Header Topbar */}
         <header className="dashboard-header lg:hidden">
           <div className="dashboard-mobile-header">

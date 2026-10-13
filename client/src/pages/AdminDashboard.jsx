@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import AdminLayout from '../components/AdminLayout';
 import { adminService } from '../services/adminService';
 import DashboardSkeleton from '../components/DashboardSkeleton';
+import { PageHeader, Card, Stat, Button, EmptyState, Notice, Icon } from '../components/dashboard/ui';
 import SystemLimitsTab from '../components/admin/SystemLimitsTab';
 import AdminSettingsTab from '../components/admin/AdminSettingsTab';
 import { getPublicMenuAbsoluteUrl } from '../utils/domainHelpers';
@@ -172,46 +173,6 @@ const StatusBadge = ({ status }) => (
     {statusLabels[status] || status}
   </span>
 );
-
-/* ─── Modern Overview Stat Card ────────────────────────────── */
-const ModernStatCard = ({ icon, tone, title, value, subtitle, badge }) => {
-  const iconTones = {
-    neutral: 'bg-slate-900 text-[#DEFF36]',
-    amber: 'bg-amber-500 text-white shadow-amber-500/20',
-    emerald: 'bg-emerald-600 text-white shadow-emerald-600/20',
-    rose: 'bg-rose-600 text-white shadow-rose-600/20',
-  };
-
-  return (
-    <article className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs transition-all hover:border-slate-300 hover:shadow-sm">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl shadow-xs ${iconTones[tone] || iconTones.neutral}`}>
-            {icon}
-          </span>
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{title}</p>
-            <strong className="block text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
-              {value}
-            </strong>
-          </div>
-        </div>
-
-        {badge && (
-          <span className="rounded-full bg-amber-50 border border-amber-200 px-2 py-0.5 text-[10px] font-bold text-amber-700">
-            {badge}
-          </span>
-        )}
-      </div>
-
-      {subtitle && (
-        <p className="mt-3 border-t border-slate-100 pt-2.5 text-xs text-slate-400 font-medium">
-          {subtitle}
-        </p>
-      )}
-    </article>
-  );
-};
 
 /* ─── Three Dots Action Menu ───────────────────────────────── */
 const RowActionMenu = ({
@@ -1235,13 +1196,14 @@ const AdminDashboard = () => {
 
   // Filters for /admin/restaurants
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [searchParams] = useSearchParams();
+  const initialStatus = (searchParams.get('status') || 'ALL').toUpperCase();
+  const [statusFilter, setStatusFilter] = useState(['ALL', 'PENDING', 'ACTIVE', 'SUSPENDED', 'REJECTED'].includes(initialStatus) ? initialStatus : 'ALL');
   const [businessFilter, setBusinessFilter] = useState('ALL');
   const [sortBy, setSortBy] = useState('newest');
 
   // Pagination & Dropdown state (5, 10, 20, 50) with "Listele" button
-  const [selectedLimit, setSelectedLimit] = useState(5);
-  const [appliedLimit, setAppliedLimit] = useState(5);
+  const [appliedLimit, setAppliedLimit] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
 
   const loadData = async (isSilent = false) => {
@@ -1268,6 +1230,11 @@ const AdminDashboard = () => {
       loadData();
     }
   }, [location.pathname, isServicesPage, isSettingsPage]);
+
+  useEffect(() => {
+    const wanted = (searchParams.get('status') || '').toUpperCase();
+    if (['PENDING', 'ACTIVE', 'SUSPENDED', 'REJECTED'].includes(wanted)) setStatusFilter(wanted);
+  }, [searchParams]);
 
   // Reset page to 1 when filters change
   useEffect(() => {
@@ -1416,590 +1383,248 @@ const AdminDashboard = () => {
       {isSettingsPage ? (
         <AdminSettingsTab />
       ) : (
-        <div className="overview-dashboard mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-8 sm:py-8">
+        <div className="dp">
           {isServicesPage ? (
             <SystemLimitsTab />
           ) : (
             <>
-            {/* ─── Header ─────────────────────────────────────── */}
-        <section className="overview-modern-header">
-          <div className="overview-modern-header__identity">
-            <span className="overview-modern-header__mark" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-              </svg>
-            </span>
-            <div>
-              <div className="overview-modern-header__eyebrow-row">
-                <p className="overview-eyebrow">YÖNETİM PANELİ</p>
-                <span className="overview-status-indicator">
-                  <span className="overview-status-dot-pulse overview-status-dot-pulse--published" />
-                  Sistem Aktif
-                </span>
-              </div>
-              <h2>{isRestaurantsPage ? 'Kayıtlı Restoranlar' : 'Sistem Genel Bakış'}</h2>
-              <p>
-                {isRestaurantsPage
-                  ? 'Kayıtlı işletmeleri sade listede görüntüleyin, detayları inceleyin veya düzenleyin.'
-                  : 'Platform genelindeki restoran hareketlerini, başvuruları ve menü metriklerini tek bakışta yönetin.'}
-              </p>
-            </div>
-          </div>
+              <PageHeader
+                kicker="Yönetim paneli"
+                title={isRestaurantsPage ? 'Restoranlar' : 'Sistem genel bakış'}
+                lede={isRestaurantsPage
+                  ? 'Kayıtlı işletmeleri arayın, durumlarını değiştirin ve ayrıntılarını düzenleyin.'
+                  : 'Başvuruları, platformdaki restoranları ve menü kullanımını tek bakışta izleyin.'}
+                actions={(
+                  <>
+                    <Button variant="ghost" icon="refresh" onClick={() => loadData(true)} disabled={refreshing}>{refreshing ? 'Yenileniyor…' : 'Yenile'}</Button>
+                    {!isRestaurantsPage && <Button to="/admin/restaurants" variant="solid" icon="chevron">Restoranları yönet</Button>}
+                  </>
+                )}
+              />
 
-          <div className="overview-modern-header__actions">
-            <button
-              type="button"
-              onClick={() => loadData(true)}
-              disabled={refreshing}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200/90 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-xs transition-colors hover:bg-slate-50 disabled:opacity-50"
-              title="Verileri yenile"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                width="14"
-                height="14"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className={refreshing ? 'animate-spin text-emerald-600' : ''}
-              >
-                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
-              </svg>
-              <span>{refreshing ? 'Yenileniyor...' : 'Yenile'}</span>
-            </button>
+              {notice && <Notice tone="ok">{notice}</Notice>}
+              {error && <Notice tone="bad">{error}</Notice>}
 
-            {!isRestaurantsPage && (
-              <Link
-                to="/admin/restaurants"
-                className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white shadow-xs transition-colors hover:bg-black"
-              >
-                <span>Restoranları Yönet</span>
-                <span aria-hidden="true">→</span>
-              </Link>
-            )}
-          </div>
-        </section>
-
-        {/* ─── Status Notices ─────────────────────────────── */}
-        {notice && (
-          <div className="settings-status settings-status--success is-visible" role="status">
-            {notice}
-          </div>
-        )}
-        {error && (
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700" role="alert">
-            {error}
-          </div>
-        )}
-
-        {loading ? (
-          <DashboardSkeleton variant="overview" />
-        ) : (
-          <>
-            {/* ═══════════════════════════════════════════════ */}
-            {/* ─── VIEW 1: OVERVIEW PAGE (/admin) ───────────── */}
-            {/* ═══════════════════════════════════════════════ */}
-            {!isRestaurantsPage && (
-              <>
-                {/* ─── Modern 4 Stat Cards ─────────────────── */}
-                <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                  <ModernStatCard
-                    icon={
-                      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                        <polyline points="9 22 9 12 15 12 15 22" />
-                      </svg>
-                    }
-                    tone="neutral"
-                    title="Toplam Restoran"
-                    value={stats?.total ?? 0}
-                    subtitle="Platformda kayıtlı tüm işletmeler"
-                  />
-
-                  <ModernStatCard
-                    icon={
-                      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="10" />
-                        <polyline points="12 6 12 12 16 14" />
-                      </svg>
-                    }
-                    tone="amber"
-                    title="Onay Bekleyen"
-                    value={stats?.pending ?? 0}
-                    subtitle={stats?.pending > 0 ? `${stats.pending} işletme onay bekliyor` : 'Bekleyen yeni başvuru yok'}
-                    badge={stats?.pending > 0 ? 'Aksiyon Gerekli' : null}
-                  />
-
-                  <ModernStatCard
-                    icon={
-                      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                        <polyline points="22 4 12 14.01 9 11.01" />
-                      </svg>
-                    }
-                    tone="emerald"
-                    title="Aktif Restoran"
-                    value={stats?.active ?? 0}
-                    subtitle={`%${activeRatio} aktif işletme oranı`}
-                  />
-
-                  <ModernStatCard
-                    icon={
-                      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="10" />
-                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
-                      </svg>
-                    }
-                    tone="rose"
-                    title="Askıya Alınmış"
-                    value={stats?.suspended ?? 0}
-                    subtitle={stats?.suspended > 0 ? 'Girişi dondurulan işletme' : 'Askıda hesap bulunmuyor'}
-                  />
-                </section>
-
-                {/* ─── Pending Applications Section ──────────── */}
-                <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs sm:p-6">
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-wider text-slate-400">BAŞVURU YÖNETİMİ</p>
-                      <h3 className="text-base font-bold text-slate-900 mt-0.5">Restoran Başvuruları</h3>
-                    </div>
-                    {pendingRestaurants.length > 0 && (
-                      <Link
-                        to="/admin/restaurants?status=PENDING"
-                        className="text-xs font-bold text-emerald-700 hover:text-emerald-800"
-                      >
-                        Tümünü Tabloda Gör ({pendingRestaurants.length}) →
-                      </Link>
-                    )}
-                  </div>
-
-                  {pendingRestaurants.length === 0 ? (
-                    <div className="flex items-center gap-3 py-6 px-3 text-slate-500">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 font-bold text-base">
-                        ✓
-                      </span>
-                      <div>
-                        <p className="text-sm font-bold text-slate-800">Onay bekleyen başvuru bulunmuyor</p>
-                        <p className="text-xs text-slate-400">Tüm restoran kayıtları incelendi ve sonuçlandırıldı.</p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="mt-4 grid grid-cols-1 gap-3.5 md:grid-cols-2 lg:grid-cols-3">
-                      {pendingRestaurants.map((restaurant) => (
-                        <article
-                          key={restaurant._id}
-                          className="flex flex-col justify-between rounded-xl border border-slate-200 bg-slate-50/50 p-4 transition-all hover:bg-white hover:border-slate-300 hover:shadow-xs"
-                        >
-                          <div>
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  <h4 className="font-bold text-slate-900 text-sm truncate">{restaurant.name}</h4>
-                                  <BusinessTypeBadge type={restaurant.businessType} />
-                                </div>
-                                <p className="mt-1 text-xs text-slate-500 truncate">{restaurant.ownerId?.email || 'E-posta yok'}</p>
-                              </div>
-                              <span className="text-[10px] text-slate-400 shrink-0">{formatTimeAgo(restaurant.createdAt)}</span>
-                            </div>
-
-                            <div className="mt-3 flex items-center gap-2 text-xs text-slate-500 flex-wrap">
-                              {restaurant.city && <span>📍 {restaurant.city}</span>}
-                              {restaurant.phone && <span>📞 {restaurant.phone}</span>}
-                              <span className="font-mono text-[10px] text-emerald-700 font-semibold">/{getMenuIdentity(restaurant)}/menu</span>
-                            </div>
-                          </div>
-
-                          <div className="mt-4 flex items-center justify-end gap-2 border-t border-slate-200/60 pt-3">
-                            <button
-                              type="button"
-                              onClick={() => handleQuickStatus(restaurant, 'reject')}
-                              className="rounded-xl border border-rose-200 bg-white px-3 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 transition-colors"
-                            >
-                              Reddet
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleQuickStatus(restaurant, 'approve')}
-                              className="rounded-xl bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 shadow-xs transition-colors"
-                            >
-                              Onayla
-                            </button>
-                          </div>
-                        </article>
-                      ))}
-                    </div>
-                  )}
-                </section>
-
-                {/* ─── Platform Health & Summary ─────────────── */}
-                <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                  {/* Left: Menu & Catalog Health */}
-                  <article className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs sm:p-6">
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-slate-400">MENÜ VE İÇERİK</p>
-                        <h3 className="text-base font-bold text-slate-900 mt-0.5">Platform Menü Durumu</h3>
-                      </div>
-                      <span className="rounded-lg bg-[#f4f9d8] border border-[#d4e875] px-2.5 py-1 text-xs font-bold text-[#485900]">
-                        %{publishedRatio} Yayında
-                      </span>
-                    </div>
-
-                    <div className="mt-4">
-                      <div className="flex items-center justify-between text-xs font-medium text-slate-600 mb-1.5">
-                        <span>Menü Yayında Olan İşletmeler</span>
-                        <span className="font-bold text-slate-900">{publishedCount} / {totalCount}</span>
-                      </div>
-                      <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-                        <div
-                          className="h-full rounded-full bg-slate-900 transition-all duration-500"
-                          style={{ width: `${Math.max(publishedRatio, 4)}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="mt-4 divide-y divide-slate-100 text-xs">
-                      <div className="flex items-center justify-between py-2.5">
-                        <span className="text-slate-500 font-medium">Toplam Menü Ürünü</span>
-                        <span className="font-bold text-slate-900">{stats?.totalProducts ?? 0}</span>
-                      </div>
-                      <div className="flex items-center justify-between py-2.5">
-                        <span className="text-slate-500 font-medium">Toplam Menü Kategorisi</span>
-                        <span className="font-bold text-slate-900">{stats?.totalCategories ?? 0}</span>
-                      </div>
-                      <div className="flex items-center justify-between py-2.5">
-                        <span className="text-slate-500 font-medium">Toplam Platform Menü Ziyareti</span>
-                        <span className="font-bold text-emerald-700">
-                          {(stats?.totalViews ?? 0).toLocaleString('tr-TR')} ziyaret
-                        </span>
-                      </div>
-                    </div>
-                  </article>
-
-                  {/* Right: Recent Registrations Stream */}
-                  <article className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs sm:p-6">
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-slate-400">SON KATILANLAR</p>
-                        <h3 className="text-base font-bold text-slate-900 mt-0.5">Son Kayıt Olan Restoranlar</h3>
-                      </div>
-                      <Link
-                        to="/admin/restaurants"
-                        className="text-xs font-bold text-slate-600 hover:text-slate-900"
-                      >
-                        Tümünü Gör →
-                      </Link>
-                    </div>
-
-                    <div className="mt-3 divide-y divide-slate-100">
-                      {restaurants.slice(0, 4).map((r) => (
-                        <div key={r._id} className="flex items-center justify-between py-2.5 gap-3">
-                          <div className="min-w-0 flex items-center gap-2.5">
-                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-xs font-bold text-slate-700">
-                              {(r.name || 'R').charAt(0).toUpperCase()}
-                            </div>
-                            <div className="min-w-0">
-                              <p className="text-xs font-bold text-slate-900 truncate">{r.name}</p>
-                              <p className="text-[11px] text-slate-400 truncate">{r.ownerId?.email || r.city || '—'}</p>
-                            </div>
-                          </div>
-                          <StatusBadge status={r.status} />
-                        </div>
-                      ))}
-                    </div>
-                  </article>
-                </section>
-              </>
-            )}
-
-            {/* ═══════════════════════════════════════════════ */}
-            {/* ─── VIEW 2: RESTAURANTS PAGE (/admin/restaurants) */}
-            {/* ═══════════════════════════════════════════════ */}
-            {isRestaurantsPage && (
-              <section className="space-y-4">
-                {/* Search & Filter Toolbar */}
-                <div className="flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs md:flex-row md:items-center md:justify-between">
-                  {/* Search Bar */}
-                  <div className="relative flex-1">
-                    <svg
-                      viewBox="0 0 24 24"
-                      width="16"
-                      height="16"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-                    >
-                      <circle cx="11" cy="11" r="8" />
-                      <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                    </svg>
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Restoran adı, kullanıcı adı (@demo), e-posta, şehir veya slug ara..."
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50/60 py-2.5 pl-10 pr-9 text-xs font-medium text-slate-800 outline-none transition-all placeholder:text-slate-400 focus:border-slate-900 focus:bg-white focus:ring-1 focus:ring-slate-900/10"
-                    />
-                    {searchQuery && (
-                      <button
-                        type="button"
-                        onClick={() => setSearchQuery('')}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-slate-600"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Filter Dropdowns */}
-                  <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-                    <select
-                      value={businessFilter}
-                      onChange={(e) => setBusinessFilter(e.target.value)}
-                      className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-slate-900"
-                    >
-                      <option value="ALL">Tüm İşletmeler</option>
-                      <option value="RESTAURANT">Restoran</option>
-                      <option value="CAFE">Kafe</option>
-                      <option value="BAR">Bar</option>
-                      <option value="BAKERY">Fırın & Pastane</option>
-                      <option value="FAST_FOOD">Fast Food</option>
-                    </select>
-
-                    <select
-                      value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value)}
-                      className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-slate-900"
-                    >
-                      <option value="newest">En Yeni Kayıt</option>
-                      <option value="oldest">En Eski Kayıt</option>
-                      <option value="name">İsme Göre (A-Z)</option>
-                      <option value="views">En Çok Ziyaret</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Status Tabs */}
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-                  {[
-                    { key: 'ALL', label: 'Tümü', count: restaurants.length },
-                    { key: 'PENDING', label: 'Onay Bekleyen', count: stats?.pending ?? 0 },
-                    { key: 'ACTIVE', label: 'Aktif', count: stats?.active ?? 0 },
-                    { key: 'SUSPENDED', label: 'Askıya Alınan', count: stats?.suspended ?? 0 },
-                    { key: 'REJECTED', label: 'Reddedilen', count: stats?.rejected ?? 0 },
-                  ].map((tab) => (
-                    <button
-                      key={tab.key}
-                      type="button"
-                      onClick={() => setStatusFilter(tab.key)}
-                      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-xl px-3.5 py-1.5 font-bold transition-all ${
-                        statusFilter === tab.key
-                          ? 'bg-slate-900 text-white shadow-xs'
-                          : 'bg-white text-slate-600 border border-slate-200/80 hover:bg-slate-50'
-                      }`}
-                    >
-                      <span>{tab.label}</span>
-                      <span className={`rounded-full px-1.5 py-0.2 text-[10px] ${statusFilter === tab.key ? 'bg-slate-700 text-[#DEFF36]' : 'bg-slate-100 text-slate-600'}`}>
-                        {tab.count}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-
-                {/* Streamlined, Optimum & Clean Table */}
-                <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs">
-                  {filteredRestaurants.length === 0 ? (
-                    <div className="py-16 text-center">
-                      <p className="text-sm font-bold text-slate-800">Aramanıza uygun restoran bulunamadı.</p>
-                      <p className="mt-1 text-xs text-slate-400">Filtreleri sıfırlayarak tekrar deneyebilirsiniz.</p>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSearchQuery('');
-                          setStatusFilter('ALL');
-                          setBusinessFilter('ALL');
-                        }}
-                        className="mt-4 rounded-xl border border-slate-200 px-4 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50"
-                      >
-                        Filtreleri Temizle
-                      </button>
-                    </div>
-                  ) : (
+              {loading ? (
+                <DashboardSkeleton variant={isRestaurantsPage ? 'table' : 'admin'} />
+              ) : (
+                <>
+                  {/* ═════════ OVERVIEW ═════════ */}
+                  {!isRestaurantsPage && (
                     <>
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left text-xs">
-                          <thead className="bg-slate-50/80 text-[11px] uppercase tracking-wider text-slate-400">
-                            <tr>
-                              <th className="px-5 py-3.5 font-bold">Restoran</th>
-                              <th className="px-4 py-3.5 font-bold">İşletme Türü</th>
-                              <th className="px-4 py-3.5 font-bold">Yetkili & Şehir</th>
-                              <th className="px-4 py-3.5 font-bold">Durum</th>
-                              <th className="px-4 py-3.5 font-bold">Kayıt Tarihi</th>
-                              <th className="px-5 py-3.5 font-bold text-right">İşlemler</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100">
-                            {displayedRestaurants.map((restaurant) => {
-                              const isSuspended = restaurant.status === 'SUSPENDED';
-                              return (
-                                <tr
-                                  key={restaurant._id}
-                                  className="hover:bg-slate-50/60 transition-colors group cursor-pointer"
-                                  onClick={() => setDetailRestaurant(restaurant)}
-                                >
-                                  {/* Col 1: Restoran (Name + Slug) */}
-                                  <td className="px-5 py-3.5">
-                                    <div className="flex items-center gap-3">
-                                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 font-bold text-slate-800 text-xs shadow-2xs group-hover:bg-slate-900 group-hover:text-[#DEFF36] transition-colors">
-                                        {(restaurant.name || 'R').charAt(0).toUpperCase()}
-                                      </div>
-                                      <div className="min-w-0">
-                                        <p className="font-bold text-slate-900 text-sm truncate">{restaurant.name}</p>
-                                        <div className="flex items-center gap-1.5 flex-wrap">
-                                          <span className="text-[11px] font-mono text-emerald-700 font-semibold truncate block">
-                                            /{getMenuIdentity(restaurant)}/menu
-                                          </span>
-                                          {restaurant.ownerId?.username && (
-                                            <span className="text-[10px] text-slate-400 font-medium">
-                                              (@{restaurant.ownerId.username})
-                                            </span>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </td>
-
-                                  {/* Col 2: İşletme Türü with Vector Icon */}
-                                  <td className="px-4 py-3.5 text-slate-600 font-medium whitespace-nowrap">
-                                    <BusinessTypeBadge type={restaurant.businessType} />
-                                  </td>
-
-                                  {/* Col 3: Yetkili & Şehir */}
-                                  <td className="px-4 py-3.5">
-                                    <p className="font-semibold text-slate-800 truncate">
-                                      {restaurant.ownerId?.email || restaurant.ownerId?.name || '—'}
-                                    </p>
-                                    <p className="text-[11px] text-slate-400">
-                                      {restaurant.city || 'Şehir belirtilmedi'}
-                                    </p>
-                                  </td>
-
-                                  {/* Col 4: Durum */}
-                                  <td className="px-4 py-3.5 whitespace-nowrap">
-                                    <StatusBadge status={restaurant.status} />
-                                  </td>
-
-                                  {/* Col 5: Kayıt Tarihi */}
-                                  <td className="px-4 py-3.5 whitespace-nowrap text-slate-600">
-                                    <span className="font-medium text-slate-700">{formatDate(restaurant.createdAt)}</span>
-                                    <small className="block text-[10px] text-slate-400">{formatTimeAgo(restaurant.createdAt)}</small>
-                                  </td>
-
-                                  {/* Col 6: İşlemler */}
-                                  <td
-                                    className="px-5 py-3.5 text-right whitespace-nowrap"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    <RowActionMenu
-                                      restaurant={restaurant}
-                                      onViewDetails={(r) => setDetailRestaurant(r)}
-                                      onEdit={(r) => setEditingRestaurant(r)}
-                                      onSuspendToggle={(r) => handleQuickStatus(r, isSuspended ? 'activate' : 'suspend')}
-                                      onDelete={(r) => setDeletingRestaurant(r)}
-                                      onApprove={(r) => handleQuickStatus(r, 'approve')}
-                                      onReject={(r) => handleQuickStatus(r, 'reject')}
-                                    />
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
+                      <div className="dp-grid dp-grid--stats">
+                        <Stat icon="home" label="Toplam restoran" value={stats?.total ?? 0} hint="Platformda kayıtlı işletme" />
+                        <Stat icon="check" label="Aktif restoran" value={stats?.active ?? 0} progress={activeRatio} hint={`%${activeRatio} aktif işletme oranı`} />
+                        <Stat icon="clock" label="Onay bekleyen" value={stats?.pending ?? 0} hint={stats?.pending > 0 ? 'İncelemenizi bekliyor' : 'Bekleyen başvuru yok'} />
+                        <Stat icon="shield" label="Askıya alınmış" value={stats?.suspended ?? 0} hint={stats?.suspended > 0 ? 'Girişi dondurulmuş işletme' : 'Askıda hesap yok'} />
                       </div>
 
-                      {/* Pagination & Dropdown (5, 10, 20, 50) with "Listele" Button */}
-                      <div className="flex flex-col md:flex-row items-center justify-between gap-4 border-t border-slate-100 bg-slate-50/70 px-5 py-3.5 text-xs text-slate-600">
-                        {/* Left: Info summary */}
-                        <div className="font-medium">
-                          Toplam <strong className="text-slate-900 font-bold">{filteredRestaurants.length}</strong> kayıttan{' '}
-                          <strong className="text-slate-900 font-bold">
-                            {filteredRestaurants.length === 0 ? 0 : startIndex + 1} - {Math.min(startIndex + appliedLimit, filteredRestaurants.length)}
-                          </strong>{' '}
-                          arası listeleniyor (Sayfa {validCurrentPage} / {totalPages})
-                        </div>
+                      <Card
+                        title="Başvurular"
+                        sub={pendingRestaurants.length ? `${pendingRestaurants.length} işletme onayınızı bekliyor` : 'Bekleyen başvuru yok'}
+                        actions={pendingRestaurants.length > 0 && <Button to="/admin/restaurants?status=PENDING" variant="ghost" className="dp-btn--sm" icon="chevron">Tabloda gör</Button>}
+                      >
+                        {pendingRestaurants.length === 0 ? (
+                          <EmptyState title="Tüm başvurular sonuçlandı" text="Yeni bir restoran kayıt olduğunda burada onayınız için listelenir." />
+                        ) : (
+                          <ul className="dp-apps">
+                            {pendingRestaurants.map((restaurant) => (
+                              <li key={restaurant._id}>
+                                <span className="dp-avatar" aria-hidden="true">{(restaurant.name || 'R').charAt(0).toUpperCase()}</span>
+                                <div className="dp-apps__main">
+                                  <div className="dp-apps__title">
+                                    <b>{restaurant.name}</b>
+                                    <BusinessTypeBadge type={restaurant.businessType} />
+                                  </div>
+                                  <small>{restaurant.ownerId?.email || 'E-posta yok'}{restaurant.city ? ` · ${restaurant.city}` : ''} · {formatTimeAgo(restaurant.createdAt)}</small>
+                                </div>
+                                <div className="dp-apps__actions">
+                                  <button type="button" className="dp-btn dp-btn--sm" onClick={() => handleQuickStatus(restaurant, 'reject')}>Reddet</button>
+                                  <button type="button" className="dp-btn dp-btn--sm dp-btn--lime" onClick={() => handleQuickStatus(restaurant, 'approve')}>Onayla</button>
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </Card>
 
-                        {/* Right: Dropdown + Listele Button + Page navigation */}
-                        <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
-                          <div className="flex items-center gap-2">
-                            <label htmlFor="limit-select" className="text-xs font-semibold text-slate-500 whitespace-nowrap">
-                              Görüntüleme:
-                            </label>
-                            <select
-                              id="limit-select"
-                              value={selectedLimit}
-                              onChange={(e) => setSelectedLimit(Number(e.target.value))}
-                              className="rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-800 outline-none focus:border-slate-900"
-                            >
-                              <option value="5">5'er Listele</option>
-                              <option value="10">10'ar Listele</option>
-                              <option value="20">20'şer Listele</option>
-                              <option value="50">50'şer Listele</option>
-                            </select>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setAppliedLimit(Number(selectedLimit));
-                                setCurrentPage(1);
-                              }}
-                              className="rounded-xl bg-slate-900 px-3.5 py-1.5 text-xs font-bold text-[#DEFF36] hover:bg-black transition-colors shadow-2xs"
-                            >
-                              Listele
-                            </button>
+                      <div className="dp-grid dp-grid--2">
+                        <Card title="Menü durumu" sub="Menüsünü yayına almış işletmeler">
+                          <div className="dp-health">
+                            <p className="dp-health__pct">%{publishedRatio}</p>
+                            <p className="dp-health__text">{publishedCount} / {totalCount} işletmenin menüsü yayında</p>
                           </div>
+                          <div className="dp-bar dp-bar--lg" aria-hidden="true"><span style={{ width: `${publishedRatio}%` }} /></div>
+                          <dl className="dp-kv">
+                            <div><dt>Toplam ürün</dt><dd>{(stats?.totalProducts ?? 0).toLocaleString('tr-TR')}</dd></div>
+                            <div><dt>Toplam kategori</dt><dd>{(stats?.totalCategories ?? 0).toLocaleString('tr-TR')}</dd></div>
+                            <div><dt>Toplam menü ziyareti</dt><dd>{(stats?.totalViews ?? 0).toLocaleString('tr-TR')}</dd></div>
+                          </dl>
+                        </Card>
 
-                          {/* Previous / Next page controls */}
-                          {totalPages > 1 && (
-                            <div className="flex items-center gap-1 border-l border-slate-200 pl-3">
-                              <button
-                                type="button"
-                                disabled={validCurrentPage <= 1}
-                                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                                className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-white transition-colors"
-                                title="Önceki Sayfa"
-                              >
-                                ← Önceki
-                              </button>
-                              <span className="px-1 text-xs font-bold text-slate-700">
-                                {validCurrentPage} / {totalPages}
-                              </span>
-                              <button
-                                type="button"
-                                disabled={validCurrentPage >= totalPages}
-                                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                                className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-white transition-colors"
-                                title="Sonraki Sayfa"
-                              >
-                                Sonraki →
-                              </button>
-                            </div>
+                        <Card title="Son kayıtlar" sub="En yeni restoranlar" actions={<Button to="/admin/restaurants" variant="ghost" className="dp-btn--sm" icon="chevron">Tümü</Button>}>
+                          {restaurants.length === 0 ? (
+                            <EmptyState title="Henüz kayıtlı restoran yok" />
+                          ) : (
+                            <ul className="dp-apps dp-apps--plain">
+                              {restaurants.slice(0, 5).map((r) => (
+                                <li key={r._id}>
+                                  <span className="dp-avatar" aria-hidden="true">{(r.name || 'R').charAt(0).toUpperCase()}</span>
+                                  <div className="dp-apps__main">
+                                    <div className="dp-apps__title"><b>{r.name}</b></div>
+                                    <small>{r.ownerId?.email || r.city || '—'}</small>
+                                  </div>
+                                  <StatusBadge status={r.status} />
+                                </li>
+                              ))}
+                            </ul>
                           )}
-                        </div>
+                        </Card>
                       </div>
                     </>
                   )}
-                </div>
-              </section>
-            )}
-          </>
-        )}
-          </>
-        )}
-      </div>
+
+                  {/* ═════════ RESTAURANTS ═════════ */}
+                  {isRestaurantsPage && (
+                    <>
+                      <Card className="dp-toolbar">
+                        <label className="dp-search">
+                          <Icon name="search" size={18} />
+                          <span className="dp-sr">Restoran ara</span>
+                          <input type="search" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Ad, e-posta, şehir veya kullanıcı adı ile arayın" />
+                        </label>
+                        <label className="dp-select">
+                          <span className="dp-sr">İşletme türü</span>
+                          <select value={businessFilter} onChange={(e) => setBusinessFilter(e.target.value)}>
+                            <option value="ALL">Tüm işletmeler</option>
+                            <option value="RESTAURANT">Restoran</option>
+                            <option value="CAFE">Kafe</option>
+                            <option value="BAR">Bar</option>
+                            <option value="BAKERY">Fırın ve pastane</option>
+                            <option value="FAST_FOOD">Fast food</option>
+                          </select>
+                        </label>
+                        <label className="dp-select">
+                          <span className="dp-sr">Sıralama</span>
+                          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                            <option value="newest">En yeni kayıt</option>
+                            <option value="oldest">En eski kayıt</option>
+                            <option value="name">İsme göre (A-Z)</option>
+                            <option value="views">En çok ziyaret</option>
+                          </select>
+                        </label>
+                      </Card>
+
+                      <div className="dp-tabs" role="tablist" aria-label="Durum">
+                        {[
+                          ['ALL', 'Tümü', restaurants.length],
+                          ['PENDING', 'Onay bekleyen', stats?.pending ?? 0],
+                          ['ACTIVE', 'Aktif', stats?.active ?? 0],
+                          ['SUSPENDED', 'Askıda', stats?.suspended ?? 0],
+                          ['REJECTED', 'Reddedilen', stats?.rejected ?? 0],
+                        ].map(([key, label, count]) => (
+                          <button key={key} type="button" role="tab" aria-selected={statusFilter === key} className={statusFilter === key ? 'is-active' : ''} onClick={() => setStatusFilter(key)}>
+                            {label}<span>{count}</span>
+                          </button>
+                        ))}
+                      </div>
+
+                      <Card className="dp-tablecard">
+                        {filteredRestaurants.length === 0 ? (
+                          <EmptyState
+                            title="Aramanıza uygun restoran yok"
+                            text="Filtreleri değiştirerek ya da temizleyerek tekrar deneyin."
+                            action={<button type="button" className="dp-btn" onClick={() => { setSearchQuery(''); setStatusFilter('ALL'); setBusinessFilter('ALL'); }}>Filtreleri temizle</button>}
+                          />
+                        ) : (
+                          <>
+                            <div className="dp-tablewrap">
+                              <table className="dp-table">
+                                <thead>
+                                  <tr>
+                                    <th>Restoran</th>
+                                    <th>İşletme türü</th>
+                                    <th>Yetkili ve şehir</th>
+                                    <th>Durum</th>
+                                    <th>Kayıt tarihi</th>
+                                    <th className="dp-table__end"><span className="dp-sr">İşlemler</span></th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {displayedRestaurants.map((restaurant) => {
+                                    const isSuspended = restaurant.status === 'SUSPENDED';
+                                    return (
+                                      <tr key={restaurant._id} onClick={() => setDetailRestaurant(restaurant)}>
+                                        <td>
+                                          <div className="dp-cell">
+                                            <span className="dp-avatar" aria-hidden="true">{(restaurant.name || 'R').charAt(0).toUpperCase()}</span>
+                                            <div className="dp-cell__text">
+                                              <b>{restaurant.name}</b>
+                                              <small>/{getMenuIdentity(restaurant)}/menu{restaurant.ownerId?.username ? ` · @${restaurant.ownerId.username}` : ''}</small>
+                                            </div>
+                                          </div>
+                                        </td>
+                                        <td><BusinessTypeBadge type={restaurant.businessType} /></td>
+                                        <td>
+                                          <div className="dp-cell__text">
+                                            <b>{restaurant.ownerId?.email || restaurant.ownerId?.name || '—'}</b>
+                                            <small>{restaurant.city || 'Şehir belirtilmedi'}</small>
+                                          </div>
+                                        </td>
+                                        <td><StatusBadge status={restaurant.status} /></td>
+                                        <td>
+                                          <div className="dp-cell__text">
+                                            <b>{formatDate(restaurant.createdAt)}</b>
+                                            <small>{formatTimeAgo(restaurant.createdAt)}</small>
+                                          </div>
+                                        </td>
+                                        <td className="dp-table__end" onClick={(e) => e.stopPropagation()}>
+                                          <RowActionMenu
+                                            restaurant={restaurant}
+                                            onViewDetails={(r) => setDetailRestaurant(r)}
+                                            onEdit={(r) => setEditingRestaurant(r)}
+                                            onSuspendToggle={(r) => handleQuickStatus(r, isSuspended ? 'activate' : 'suspend')}
+                                            onDelete={(r) => setDeletingRestaurant(r)}
+                                            onApprove={(r) => handleQuickStatus(r, 'approve')}
+                                            onReject={(r) => handleQuickStatus(r, 'reject')}
+                                          />
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+
+                            <div className="dp-pager">
+                              <p>
+                                <b>{filteredRestaurants.length}</b> kayıttan <b>{startIndex + 1}–{Math.min(startIndex + appliedLimit, filteredRestaurants.length)}</b> arası gösteriliyor
+                              </p>
+                              <div className="dp-pager__controls">
+                                <label className="dp-select dp-select--sm">
+                                  <span className="dp-sr">Sayfa başına kayıt</span>
+                                  <select value={appliedLimit} onChange={(e) => { setAppliedLimit(Number(e.target.value)); setCurrentPage(1); }}>
+                                    <option value="5">5 kayıt</option>
+                                    <option value="10">10 kayıt</option>
+                                    <option value="20">20 kayıt</option>
+                                    <option value="50">50 kayıt</option>
+                                  </select>
+                                </label>
+                                <button type="button" className="dp-btn dp-btn--sm dp-btn--icon" disabled={validCurrentPage <= 1} onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} aria-label="Önceki sayfa"><span className="dp-flip"><Icon name="chevron" size={16} /></span></button>
+                                <span className="dp-pager__page">{validCurrentPage} / {totalPages}</span>
+                                <button type="button" className="dp-btn dp-btn--sm dp-btn--icon" disabled={validCurrentPage >= totalPages} onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} aria-label="Sonraki sayfa"><Icon name="chevron" size={16} /></button>
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </Card>
+                    </>
+                  )}
+                </>
+              )}
+            </>
+          )}
+        </div>
       )}
 
       {/* ─── Detail Modal ────────────────────────────────────── */}

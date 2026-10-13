@@ -219,14 +219,41 @@ const QUICK_ACTIONS = [
   },
 ];
 
+const CHAT_KEY = (admin) => `zuulab.zuuai.chat.${admin ? 'admin' : 'user'}`;
+const MAX_STORED_MESSAGES = 40;
+
+const loadStoredChat = (admin) => {
+  try {
+    const raw = sessionStorage.getItem(CHAT_KEY(admin));
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+const saveStoredChat = (admin, messages) => {
+  try {
+    // image previews are large data URLs: never persisted
+    const slim = messages.slice(-MAX_STORED_MESSAGES).map(({ images, ...rest }) => rest);
+    sessionStorage.setItem(CHAT_KEY(admin), JSON.stringify(slim));
+  } catch {
+    /* storage unavailable or full: chat simply is not kept */
+  }
+};
+
+// Quota is shared by every mounted widget instance; avoid refetching on each page change.
+const QUOTA_TTL_MS = 30000;
+let quotaCache = { at: 0, adminMode: null, value: null };
+
 const ZuuAIAssistant = ({ adminMode = false }) => {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState(() => loadStoredChat(adminMode));
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [lastFailedText, setLastFailedText] = useState(null);
-  const [quota, setQuota] = useState(null);
+  const [quota, setQuota] = useState(() => (quotaCache.adminMode === adminMode && Date.now() - quotaCache.at < QUOTA_TTL_MS ? quotaCache.value : null));
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [countdownText, setCountdownText] = useState('');
   const [resetRatio, setResetRatio] = useState(1);
@@ -300,24 +327,25 @@ const ZuuAIAssistant = ({ adminMode = false }) => {
     setAttachmentError('');
   };
 
-  // Fetch the correct model and usage context when the assistant opens.
-  const fetchQuota = useCallback(async () => {
+  // Quota (and, for admins, the active model) is fetched lazily and cached for a short time.
+  const fetchQuota = useCallback(async (force = false) => {
+    const fresh = quotaCache.adminMode === adminMode && Date.now() - quotaCache.at < QUOTA_TTL_MS && quotaCache.value;
+    if (fresh && !force) {
+      setQuota(quotaCache.value);
+      return;
+    }
     try {
       if (adminMode) {
         const res = await getAdminAiSettings();
         const activeModel = res?.data?.chatAssistantModel || res?.data?.activeModel;
         const activeModelName = res?.data?.availableModels?.find((model) => model.id === activeModel)?.name || activeModel;
-        setQuota({ isAdmin: true });
-        if (activeModel) {
-          setMessages((previous) => [...previous, {
-            id: `assistant-${++idCounterRef.current}`,
-            role: 'assistant',
-            text: `Şu anda aktif model: ${activeModelName} (${activeModel}). Bu admin sohbetinde günlük ve aylık kullanım kotası yoktur; her konuda konuşabiliriz.`,
-          }]);
-        }
+        const value = { isAdmin: true, activeModel, activeModelName };
+        quotaCache = { at: Date.now(), adminMode, value };
+        setQuota(value);
       } else {
         const res = await getAiQuota();
         if (res?.data) {
+          quotaCache = { at: Date.now(), adminMode, value: res.data };
           setQuota(res.data);
         }
       }
@@ -326,16 +354,26 @@ const ZuuAIAssistant = ({ adminMode = false }) => {
     }
   }, [adminMode]);
 
-  // Fetch quota on initial mount & when assistant opens or periodically
+  // Persist the conversation for this browser session.
   useEffect(() => {
-    fetchQuota();
-  }, [fetchQuota]);
+    saveStoredChat(adminMode, messages);
+  }, [adminMode, messages]);
 
+  // First fetch happens when the panel is first opened (not on every page load).
   useEffect(() => {
-    if (isOpen) {
-      fetchQuota();
-    }
+    if (isOpen) fetchQuota();
   }, [isOpen, fetchQuota]);
+
+  // Lightweight badge state (exhausted ring) still needs quota once; do it idle, once per mount.
+  useEffect(() => {
+    const idle = 'requestIdleCallback' in window
+      ? window.requestIdleCallback(() => fetchQuota(), { timeout: 4000 })
+      : window.setTimeout(() => fetchQuota(), 1500);
+    return () => {
+      if ('cancelIdleCallback' in window && typeof idle === 'number') window.cancelIdleCallback(idle);
+      else window.clearTimeout(idle);
+    };
+  }, [fetchQuota]);
 
   const isZuuAiDisabled = Boolean(!adminMode && !quota?.isAdmin && quota?.disabled);
   const isDailyExhausted = Boolean(!quota?.isAdmin && !isZuuAiDisabled && quota?.dailyRemaining !== null && quota?.dailyRemaining !== undefined && quota.dailyRemaining <= 0);
@@ -353,10 +391,11 @@ const ZuuAIAssistant = ({ adminMode = false }) => {
       setResetRatio(info.ratio);
     };
 
+    if (!isQuotaExhausted && !popoverOpen) return undefined;
     updateCountdown();
     const timer = setInterval(updateCountdown, 15000);
     return () => clearInterval(timer);
-  }, [isDailyExhausted, isMonthlyExhausted]);
+  }, [isQuotaExhausted, isMonthlyExhausted, popoverOpen]);
 
   // Clean up toast timer on unmount
   useEffect(() => {
@@ -557,6 +596,19 @@ const ZuuAIAssistant = ({ adminMode = false }) => {
     }
   };
 
+  const handleRetry = () => {
+    if (!lastFailedText || loading) return;
+    const text = lastFailedText;
+    // drop the failed exchange (the error bubble and the user message that caused it) before resending
+    setMessages((prev) => {
+      const next = [...prev];
+      if (next.length && next[next.length - 1].isError) next.pop();
+      if (next.length && next[next.length - 1].role === 'user' && next[next.length - 1].text === text) next.pop();
+      return next;
+    });
+    handleSend(text);
+  };
+
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -619,9 +671,8 @@ const ZuuAIAssistant = ({ adminMode = false }) => {
       <div
         className={`zuuai-panel ${isOpen ? 'is-open' : 'is-closed'}`}
         role="dialog"
-        aria-modal="true"
         aria-label="ZuuAI Asistan Paneli"
-        aria-hidden={!isOpen}
+        inert={!isOpen}
       >
         {/* Header */}
         <div className="zuuai-header">

@@ -2,7 +2,7 @@ import { useEffect, useRef, lazy, Suspense } from 'react';
 import { initGA, trackPageView } from './utils/analytics';
 import { BrowserRouter as Router, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { isPanelSubdomain, isMainDomain, isLocalhost, redirectToPanelIfNeeded, getPanelUrl, isPanelPath, isPublicMenuPath } from './utils/domainHelpers';
+import { isPanelSubdomain, isMainDomain, isLocalhost, redirectToPanelIfNeeded, isPanelPath, isPublicMenuPath } from './utils/domainHelpers';
 
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));

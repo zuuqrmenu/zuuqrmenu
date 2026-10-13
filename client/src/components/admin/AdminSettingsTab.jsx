@@ -179,7 +179,7 @@ export default function AdminSettingsTab() {
       {/* ─── Sayfa Başlığı ──────────────────────────────────────── */}
       <header className="settings-page-header">
         <div className="settings-page-header__left">
-          <span className="settings-eyebrow">YÖNETİM PANELİ</span>
+          <span className="settings-eyebrow">Yönetim paneli</span>
           <h2>Sistem Ayarları</h2>
           <p>Yönetim paneli tema tercihlerinizi, dilinizi, bildirim ayarlarınızı ve sistem sağlığını yönetin.</p>
         </div>
@@ -323,7 +323,7 @@ export default function AdminSettingsTab() {
               <section className="settings-card">
                 <div className="settings-card__header">
                   <div>
-                    <span className="settings-eyebrow">Yönetici Hesabı</span>
+                    <span className="settings-eyebrow">Yönetici hesabı</span>
                     <h3 className="settings-card__title">Profil ve Oturum Detayları</h3>
                     <p className="settings-card__desc">
                       Sistem yönetim yetkilerine sahip aktif kullanıcı oturumunuz.
@@ -444,7 +444,7 @@ export default function AdminSettingsTab() {
               <section className="settings-card">
                 <div className="settings-card__header">
                   <div>
-                    <span className="settings-eyebrow">Platform Sağlığı</span>
+                    <span className="settings-eyebrow">Platform sağlığı</span>
                     <h3 className="settings-card__title">Sistem Durumu ve Çevre Bilgisi</h3>
                     <p className="settings-card__desc">
                       ZuuLab QR Menu altyapısına bağlı bulut servislerinin genel çalışma durumu.

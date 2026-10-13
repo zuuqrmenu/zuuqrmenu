@@ -114,7 +114,7 @@ const RestaurantSettings = () => {
         {/* Sayfa Başlığı */}
         <header className="settings-page-header">
           <div className="settings-page-header__left">
-            <span className="settings-eyebrow">Yönetim Paneli</span>
+            <span className="settings-eyebrow">Yönetim paneli</span>
             <h2>Restoran Ayarları</h2>
             <p>Restoranınızın marka kimliğini, profilinizi, tema tercihlerini ve hesap güvenliğini yönetin.</p>
           </div>
@@ -173,7 +173,7 @@ const RestaurantSettings = () => {
             )}
 
             {loading ? (
-              <DashboardSkeleton variant="panel" />
+              <DashboardSkeleton variant="settings" />
             ) : activeTab === 'brand' ? (
               <SettingsBrandTab
                 settings={settings}

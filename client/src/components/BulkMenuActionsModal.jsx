@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { menuService } from '../services/menuService';
+import '../styles/dashboard-pages.css';
 
 const FolderDeleteIcon = ({ size = 20, className = '' }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -41,29 +42,37 @@ const FolderIcon = ({ size = 16, className = '' }) => (
   </svg>
 );
 
-const BulkMenuActionsModal = ({
-  open,
-  categories = [],
-  products = [],
-  onClose,
-  onSuccess,
-  onError,
-}) => {
-  // Action type: 'DELETE_CATEGORIES' | 'DELETE_PRODUCTS' | 'CLEAR_DESCRIPTIONS'
-  const [actionType, setActionType] = useState('DELETE_CATEGORIES');
-  // Scope: 'ALL' | 'CATEGORY'
-  const [scope, setScope] = useState('ALL');
-  // Selected category for category-based scope
-  const [selectedCategoryId, setSelectedCategoryId] = useState(() => (categories[0]?._id || ''));
+const ACTIONS = [
+  { id: 'CLEAR_DESCRIPTIONS', title: 'Açıklamaları temizle', desc: 'Ürün adı ve fiyatı kalır, açıklama metinleri silinir.', tone: 'warn', Icon: EraserTextIcon },
+  { id: 'DELETE_PRODUCTS', title: 'Ürünleri sil', desc: 'Kategoriler kalır, içlerindeki ürünler silinir.', tone: 'danger', Icon: TrashIcon },
+  { id: 'DELETE_CATEGORIES', title: 'Kategorileri sil', desc: 'Kategoriler ve içindeki tüm ürünler silinir.', tone: 'danger', Icon: FolderDeleteIcon },
+];
+
+const countFor = (products, categoryId) => products.filter((p) => String(p.categoryId?._id || p.categoryId) === String(categoryId)).length;
+
+const BulkMenuActionsModal = ({ open, categories = [], products = [], onClose, onSuccess, onError }) => {
+  // Safest action first: nobody should land on "delete everything" by default.
+  const [actionType, setActionType] = useState('CLEAR_DESCRIPTIONS');
+  const [scope, setScope] = useState('ALL'); // 'ALL' | 'SELECTED'
+  const [selectedIds, setSelectedIds] = useState([]);
   const [isConfirmStep, setIsConfirmStep] = useState(false);
+  const [typed, setTyped] = useState('');
   const [processing, setProcessing] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
 
-  useEffect(() => {
-    if (categories.length > 0 && !selectedCategoryId) {
-      setSelectedCategoryId(categories[0]._id);
-    }
-  }, [categories, selectedCategoryId]);
+  const action = ACTIONS.find((a) => a.id === actionType);
+  const isDelete = actionType !== 'CLEAR_DESCRIPTIONS';
+  const deletesCategories = actionType === 'DELETE_CATEGORIES';
+  const allScope = scope === 'ALL';
+
+  const chosen = allScope ? categories : categories.filter((c) => selectedIds.includes(String(c._id)));
+  const productTotal = chosen.reduce((sum, c) => sum + countFor(products, c._id), 0);
+  const affectedLabel = deletesCategories
+    ? `${chosen.length} kategori, ${productTotal} ürün`
+    : `${productTotal} ürün`;
+  const needsTyping = isDelete && allScope;
+  const canContinue = (allScope ? categories.length > 0 : chosen.length > 0) && (deletesCategories || productTotal > 0 || allScope);
+  const canExecute = !processing && (!needsTyping || typed.trim().toLocaleUpperCase('tr-TR') === 'SİL');
 
   const handleClose = (callback) => {
     if (isClosing || processing) return;
@@ -71,66 +80,58 @@ const BulkMenuActionsModal = ({
     setTimeout(() => {
       setIsClosing(false);
       setIsConfirmStep(false);
+      setTyped('');
       if (typeof callback === 'function') callback();
       else onClose?.();
     }, 200);
   };
 
   useEffect(() => {
+    if (!open) return undefined;
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && !processing) {
-        if (isConfirmStep) {
-          setIsConfirmStep(false);
-        } else {
-          handleClose();
-        }
-      }
+      if (e.key !== 'Escape' || processing) return;
+      if (isConfirmStep) setIsConfirmStep(false);
+      else handleClose();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isClosing, isConfirmStep, processing]);
+  }, [open, isClosing, isConfirmStep, processing]);
 
   if (!open) return null;
 
-  const isDeleteCategoriesAction = actionType === 'DELETE_CATEGORIES';
-  const isDeleteProductsAction = actionType === 'DELETE_PRODUCTS';
-  const isClearDescriptionsAction = actionType === 'CLEAR_DESCRIPTIONS';
-  const isCategoryScope = scope === 'CATEGORY';
-
-  const selectedCategory = categories.find((c) => String(c._id) === String(selectedCategoryId));
-  const categoryProductsCount = selectedCategory
-    ? products.filter((p) => String(p.categoryId?._id || p.categoryId) === String(selectedCategory._id)).length
-    : 0;
+  const toggleCategory = (id) => {
+    setSelectedIds((current) => (current.includes(id) ? current.filter((x) => x !== id) : [...current, id]));
+  };
 
   const handleExecute = async () => {
+    if (!canExecute) return;
     setProcessing(true);
     try {
-      let result;
-      const catId = isCategoryScope ? selectedCategoryId : undefined;
-      const isAll = !isCategoryScope;
+      const call = actionType === 'DELETE_CATEGORIES'
+        ? menuService.bulkDeleteCategories
+        : actionType === 'DELETE_PRODUCTS'
+          ? menuService.bulkDeleteProducts
+          : menuService.bulkClearDescriptions;
 
-      if (isDeleteCategoriesAction) {
-        result = await menuService.bulkDeleteCategories({
-          categoryId: catId,
-          all: isAll,
-        });
-      } else if (isDeleteProductsAction) {
-        result = await menuService.bulkDeleteProducts({
-          categoryId: catId,
-          all: isAll,
-        });
+      let message;
+      if (allScope) {
+        const result = await call({ all: true });
+        message = result?.message;
       } else {
-        result = await menuService.bulkClearDescriptions({
-          categoryId: catId,
-          all: isAll,
-        });
+        for (const category of chosen) {
+          // one request per category; stops at the first failure so nothing is half-reported
+          // eslint-disable-next-line no-await-in-loop
+          await call({ categoryId: category._id, all: false });
+        }
+        message = deletesCategories
+          ? `${chosen.length} kategori ve ${productTotal} ürün silindi.`
+          : actionType === 'DELETE_PRODUCTS'
+            ? `${productTotal} ürün silindi.`
+            : `${productTotal} ürünün açıklaması temizlendi.`;
       }
-
-      handleClose(() => {
-        onSuccess?.(result?.message || 'İşlem başarıyla tamamlandı.');
-      });
+      handleClose(() => onSuccess?.(message || 'İşlem tamamlandı.'));
     } catch (err) {
-      onError?.(err.response?.data?.error || 'İşlem gerçekleştirilirken bir hata oluştu.');
+      onError?.(err.response?.data?.error || 'İşlem gerçekleştirilemedi.');
     } finally {
       setProcessing(false);
     }
@@ -138,287 +139,111 @@ const BulkMenuActionsModal = ({
 
   return createPortal(
     <div
-      className={`bulk-actions-modal-backdrop ${isClosing ? 'is-closing' : ''}`}
+      className={`bk-backdrop ${isClosing ? 'is-closing' : ''}`}
       role="presentation"
       onMouseDown={(e) => e.target === e.currentTarget && !processing && handleClose()}
     >
-      <div
-        className={`bulk-actions-modal-card ${isClosing ? 'is-closing' : ''}`}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="bulk-actions-title"
-      >
-        {/* Header */}
-        <div className="bulk-actions-modal-header">
-          <div className="bulk-actions-modal-header-left">
-            <div className={`bulk-actions-header-icon ${!isClearDescriptionsAction ? 'is-danger' : 'is-warning'}`}>
-              {isDeleteCategoriesAction ? (
-                <FolderDeleteIcon size={20} />
-              ) : isDeleteProductsAction ? (
-                <TrashIcon size={20} />
-              ) : (
-                <EraserTextIcon size={20} />
-              )}
-            </div>
-            <div>
-              <h3 id="bulk-actions-title" className="bulk-actions-modal-title">
-                {isConfirmStep ? 'İşlemi Onaylayın' : 'Toplu Menü İşlemleri'}
-              </h3>
-              <p className="bulk-actions-modal-desc">
-                {isConfirmStep
-                  ? 'Lütfen yapılacak işlemi dikkatlice kontrol edin'
-                  : 'Kategorileri, ürünleri veya ürün açıklamalarını toplu olarak yönetin'}
-              </p>
-            </div>
+      <div className={`bk-card ${isClosing ? 'is-closing' : ''}`} role="dialog" aria-modal="true" aria-labelledby="bk-title">
+        <header className="bk-head">
+          <div>
+            <h3 id="bk-title">{isConfirmStep ? 'Son bir kontrol' : 'Toplu işlemler'}</h3>
+            <p>{isConfirmStep ? 'İşlemi uygulamadan önce özeti inceleyin.' : 'Menünüzdeki içeriği tek seferde düzenleyin.'}</p>
           </div>
-          <button
-            type="button"
-            disabled={processing}
-            onClick={() => handleClose()}
-            className="bulk-actions-modal-close"
-            aria-label="Kapat"
-          >
-            ×
-          </button>
-        </div>
+          <button type="button" className="bk-x" onClick={() => handleClose()} disabled={processing} aria-label="Kapat">×</button>
+        </header>
 
-        {/* Step 1: Selection View */}
         {!isConfirmStep ? (
-          <div className="bulk-actions-body">
-            {/* 1. Primary Action Type Selector (3 Options) */}
-            <div className="bulk-actions-section">
-              <label className="bulk-actions-section-title">1. Yapılacak İşlemi Seçin</label>
-              <div className="bulk-actions-type-stack">
-                {/* Option 1: Kategorileri Sil (İlk Sırada) */}
-                <button
-                  type="button"
-                  onClick={() => setActionType('DELETE_CATEGORIES')}
-                  className={`bulk-action-type-btn is-danger ${isDeleteCategoriesAction ? 'is-active' : ''}`}
-                >
-                  <div className="bulk-action-type-btn__icon">
-                    <FolderDeleteIcon size={20} />
-                  </div>
-                  <div className="bulk-action-type-btn__content">
-                    <span className="bulk-action-type-btn__title">Kategorileri Sil</span>
-                    <span className="bulk-action-type-btn__desc">Kategorileri ve bağlı tüm ürünlerini menüden silin</span>
-                  </div>
-                  <span className={`bulk-action-type-btn__radio ${isDeleteCategoriesAction ? 'is-checked' : ''}`} />
-                </button>
-
-                {/* Option 2: Ürünleri Sil */}
-                <button
-                  type="button"
-                  onClick={() => setActionType('DELETE_PRODUCTS')}
-                  className={`bulk-action-type-btn is-danger ${isDeleteProductsAction ? 'is-active' : ''}`}
-                >
-                  <div className="bulk-action-type-btn__icon">
-                    <TrashIcon size={20} />
-                  </div>
-                  <div className="bulk-action-type-btn__content">
-                    <span className="bulk-action-type-btn__title">Ürünleri Sil</span>
-                    <span className="bulk-action-type-btn__desc">Kategorileri koruyarak ürünleri menüden silin</span>
-                  </div>
-                  <span className={`bulk-action-type-btn__radio ${isDeleteProductsAction ? 'is-checked' : ''}`} />
-                </button>
-
-                {/* Option 3: Açıklamaları Sil */}
-                <button
-                  type="button"
-                  onClick={() => setActionType('CLEAR_DESCRIPTIONS')}
-                  className={`bulk-action-type-btn is-warning ${isClearDescriptionsAction ? 'is-active' : ''}`}
-                >
-                  <div className="bulk-action-type-btn__icon">
-                    <EraserTextIcon size={20} />
-                  </div>
-                  <div className="bulk-action-type-btn__content">
-                    <span className="bulk-action-type-btn__title">Açıklamaları Sil</span>
-                    <span className="bulk-action-type-btn__desc">Ürünlerin metin açıklamalarını temizleyin</span>
-                  </div>
-                  <span className={`bulk-action-type-btn__radio ${isClearDescriptionsAction ? 'is-checked' : ''}`} />
-                </button>
+          <div className="bk-body">
+            <section aria-labelledby="bk-s1">
+              <h4 id="bk-s1" className="bk-step"><span>1</span> Ne yapmak istiyorsunuz?</h4>
+              <div className="bk-actions" role="radiogroup" aria-label="İşlem türü">
+                {ACTIONS.map(({ id, title, desc, tone, Icon }) => (
+                  <button key={id} type="button" role="radio" aria-checked={actionType === id} className={`bk-action bk-action--${tone} ${actionType === id ? 'is-on' : ''}`} onClick={() => setActionType(id)}>
+                    <span className="bk-action__icon"><Icon size={18} /></span>
+                    <b>{title}</b>
+                    <small>{desc}</small>
+                  </button>
+                ))}
               </div>
-            </div>
+            </section>
 
-            {/* 2. Scope Selector */}
-            <div className="bulk-actions-section">
-              <label className="bulk-actions-section-title">2. Kapsam Seçin</label>
-              <div className="bulk-actions-scope-selector">
-                <button
-                  type="button"
-                  onClick={() => setScope('ALL')}
-                  className={`bulk-actions-scope-pill ${scope === 'ALL' ? 'is-active' : ''}`}
-                >
-                  <GlobeIcon size={16} />
-                  <span>
-                    {isDeleteCategoriesAction
-                      ? `Tüm Kategoriler (${categories.length})`
-                      : `Tüm Menü (${products.length} ürün)`}
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setScope('CATEGORY')}
-                  className={`bulk-actions-scope-pill ${scope === 'CATEGORY' ? 'is-active' : ''}`}
-                >
-                  <FolderIcon size={16} />
-                  <span>
-                    {isDeleteCategoriesAction ? 'Seçili Kategori' : 'Kategori Bazlı'}
-                  </span>
-                </button>
+            <section aria-labelledby="bk-s2">
+              <h4 id="bk-s2" className="bk-step"><span>2</span> Nerede uygulansın?</h4>
+              <div className="bk-seg" role="radiogroup" aria-label="Kapsam">
+                <button type="button" role="radio" aria-checked={allScope} className={allScope ? 'is-on' : ''} onClick={() => setScope('ALL')}><GlobeIcon size={16} /> Tüm menü</button>
+                <button type="button" role="radio" aria-checked={!allScope} className={!allScope ? 'is-on' : ''} onClick={() => setScope('SELECTED')}><FolderIcon size={16} /> Seçtiğim kategoriler</button>
               </div>
-            </div>
 
-            {/* 3. Category Selector (Only if scope is CATEGORY) */}
-            {isCategoryScope && (
-              <div className="bulk-actions-section bulk-category-box animate-fadeIn">
-                <label htmlFor="bulk-category-select" className="bulk-category-label">
-                  Hedef Kategori:
-                </label>
-                {categories.length === 0 ? (
-                  <p className="bulk-category-empty">
-                    Menünüzde henüz bir kategori bulunmuyor.
-                  </p>
+              {!allScope && (
+                categories.length === 0 ? (
+                  <p className="bk-empty">Menünüzde henüz kategori yok.</p>
                 ) : (
-                  <select
-                    id="bulk-category-select"
-                    value={selectedCategoryId}
-                    onChange={(e) => setSelectedCategoryId(e.target.value)}
-                    className="bulk-category-select"
-                  >
-                    {categories.map((cat) => {
-                      const count = products.filter(
-                        (p) => String(p.categoryId?._id || p.categoryId) === String(cat._id)
-                      ).length;
-                      return (
-                        <option key={cat._id} value={cat._id}>
-                          {cat.name} ({count} ürün)
-                        </option>
-                      );
-                    })}
-                  </select>
-                )}
-              </div>
-            )}
+                  <div className="bk-list">
+                    <div className="bk-list__bar">
+                      <span>{chosen.length} / {categories.length} seçili</span>
+                      <button type="button" onClick={() => setSelectedIds(chosen.length === categories.length ? [] : categories.map((c) => String(c._id)))}>
+                        {chosen.length === categories.length ? 'Seçimi temizle' : 'Hepsini seç'}
+                      </button>
+                    </div>
+                    <ul>
+                      {categories.map((cat) => {
+                        const id = String(cat._id);
+                        const on = selectedIds.includes(id);
+                        return (
+                          <li key={id}>
+                            <label className={on ? 'is-on' : ''}>
+                              <input type="checkbox" checked={on} onChange={() => toggleCategory(id)} />
+                              <span className="bk-check" aria-hidden="true" />
+                              <span className="bk-list__name">{cat.name}</span>
+                              <span className="bk-list__count">{countFor(products, cat._id)} ürün</span>
+                            </label>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )
+              )}
+            </section>
 
-            {/* 4. Summary Preview Box */}
-            <div className="bulk-actions-summary">
-              <div className="bulk-actions-summary-row">
-                <span className="bulk-actions-summary-label">Seçilen İşlem:</span>
-                <span className={`bulk-actions-summary-value font-bold ${!isClearDescriptionsAction ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'}`}>
-                  {isDeleteCategoriesAction
-                    ? (isCategoryScope ? 'Seçili Kategori ve Ürünlerini Silme' : 'Tüm Kategorileri ve Ürünleri Silme')
-                    : isDeleteProductsAction
-                    ? (isCategoryScope ? 'Kategori Bazlı Ürün Silme' : 'Tüm Menüdeki Ürünleri Silme')
-                    : (isCategoryScope ? 'Kategori Bazlı Açıklama Temizleme' : 'Tüm Ürün Açıklamalarını Temizleme')}
-                </span>
-              </div>
-              <div className="bulk-actions-summary-row">
-                <span className="bulk-actions-summary-label">Etkilenecek Öğe:</span>
-                <span className="bulk-actions-summary-value font-medium">
-                  {isDeleteCategoriesAction ? (
-                    isCategoryScope
-                      ? `1 kategori ("${selectedCategory?.name || 'Seçili'}") + ${categoryProductsCount} ürün`
-                      : `${categories.length} kategori + ${products.length} ürün`
-                  ) : (
-                    isCategoryScope
-                      ? `${categoryProductsCount} ürün ("${selectedCategory?.name || 'Seçili'}")`
-                      : `${products.length} ürün (Tüm Menü)`
-                  )}
-                </span>
-              </div>
-            </div>
-
-            {/* Footer Buttons */}
-            <div className="bulk-actions-modal-footer">
-              <button
-                type="button"
-                onClick={() => handleClose()}
-                className="bulk-actions-cancel-btn"
-              >
-                Vazgeç
-              </button>
-              <button
-                type="button"
-                disabled={isCategoryScope && !selectedCategoryId}
-                onClick={() => setIsConfirmStep(true)}
-                className={`bulk-actions-next-btn ${!isClearDescriptionsAction ? 'is-danger-btn' : 'is-warning-btn'}`}
-              >
-                Devam Et →
-              </button>
+            <div className={`bk-impact ${isDelete ? 'is-danger' : 'is-warn'}`} aria-live="polite">
+              <span>Etkilenecek</span>
+              <b>{allScope ? (deletesCategories ? `${categories.length} kategori, ${products.length} ürün` : `${products.length} ürün`) : affectedLabel}</b>
             </div>
           </div>
         ) : (
-          /* Step 2: Confirmation View */
-          <div className="bulk-actions-body animate-fadeIn">
-            <div className={`bulk-action-confirm-box ${!isClearDescriptionsAction ? 'is-danger' : 'is-warning'}`}>
-              <div className="bulk-action-confirm-box__icon">
-                {!isClearDescriptionsAction ? '⚠️' : 'ℹ️'}
-              </div>
-              <div className="bulk-action-confirm-box__content">
-                <h4 className="bulk-action-confirm-box__title">
-                  {isDeleteCategoriesAction ? (
-                    isCategoryScope
-                      ? `"${selectedCategory?.name}" Kategorisini ve Bağlı Ürünlerini Sil`
-                      : 'Tüm Kategorileri ve Bağlı Bütün Ürünleri Sil'
-                  ) : isDeleteProductsAction ? (
-                    isCategoryScope
-                      ? `"${selectedCategory?.name}" Kategorisindeki Ürünleri Sil`
-                      : 'Tüm Menüdeki Ürünleri Sil'
-                  ) : (
-                    isCategoryScope
-                      ? `"${selectedCategory?.name}" Ürünlerinin Açıklamalarını Sil`
-                      : 'Tüm Ürünlerin Açıklamalarını Sil'
-                  )}
-                </h4>
-                <p className="bulk-action-confirm-box__text">
-                  {isDeleteCategoriesAction ? (
-                    isCategoryScope
-                      ? `"${selectedCategory?.name}" kategorisi ve altındaki ${categoryProductsCount} adet ürün menünüzden kalıcı olarak silinecektir. Bu işlem geri alınamaz!`
-                      : `Menünüzdeki toplam ${categories.length} kategori ve ${products.length} ürün kalıcı olarak silinecektir. Bu işlem geri alınamaz!`
-                  ) : isDeleteProductsAction ? (
-                    isCategoryScope
-                      ? `Kategori yapısı korunarak "${selectedCategory?.name}" altındaki ${categoryProductsCount} ürün silinecektir.`
-                      : `Kategorileriniz korunarak menünüzdeki ${products.length} ürün kalıcı olarak silinecektir.`
-                  ) : (
-                    isCategoryScope
-                      ? `"${selectedCategory?.name}" altındaki ${categoryProductsCount} ürünün açıklama metinleri temizlenecektir.`
-                      : `Menüdeki ${products.length} ürünün tüm açıklama metinleri temizlenecektir. Ürün adları ve fiyatları korunur.`
-                  )}
-                </p>
-              </div>
+          <div className="bk-body">
+            <div className={`bk-confirm ${isDelete ? 'is-danger' : 'is-warn'}`}>
+              <h4>{action.title}</h4>
+              <p>
+                {allScope ? 'Tüm menüde' : `${chosen.length} kategoride`}: <b>{allScope ? (deletesCategories ? `${categories.length} kategori, ${products.length} ürün` : `${products.length} ürün`) : affectedLabel}</b> etkilenecek.
+                {isDelete ? ' Bu işlem geri alınamaz.' : ' Ürün adı ve fiyatlar korunur.'}
+              </p>
             </div>
-
-            <p className="bulk-actions-confirm-note">
-              Onayladığınızda değişiklikler veritabanına uygulanacak ve menü içeriğiniz anında güncellenecektir.
-            </p>
-
-            <div className="bulk-actions-modal-footer">
-              <button
-                type="button"
-                disabled={processing}
-                onClick={() => setIsConfirmStep(false)}
-                className="bulk-actions-cancel-btn"
-              >
-                ← Geri Dön
-              </button>
-              <button
-                type="button"
-                disabled={processing}
-                onClick={handleExecute}
-                className={`bulk-actions-confirm-btn ${!isClearDescriptionsAction ? 'is-danger' : 'is-warning'}`}
-              >
-                {processing ? (
-                  <>
-                    <span className="bulk-action-spinner" />
-                    <span>Uygulanıyor...</span>
-                  </>
-                ) : (
-                  <span>Onayla ve Uygula</span>
-                )}
-              </button>
-            </div>
+            {needsTyping && (
+              <label className="bk-type">
+                <span>Devam etmek için <b>SİL</b> yazın</span>
+                <input value={typed} onChange={(e) => setTyped(e.target.value)} autoFocus autoComplete="off" spellCheck={false} placeholder="SİL" />
+              </label>
+            )}
           </div>
         )}
+
+        <footer className="bk-foot">
+          {!isConfirmStep ? (
+            <>
+              <button type="button" className="bk-btn" onClick={() => handleClose()}>Vazgeç</button>
+              <button type="button" className={`bk-btn bk-btn--primary ${isDelete ? 'is-danger' : ''}`} disabled={!canContinue} onClick={() => setIsConfirmStep(true)}>Devam et</button>
+            </>
+          ) : (
+            <>
+              <button type="button" className="bk-btn" onClick={() => { setIsConfirmStep(false); setTyped(''); }} disabled={processing}>Geri dön</button>
+              <button type="button" className={`bk-btn bk-btn--primary ${isDelete ? 'is-danger' : ''}`} disabled={!canExecute} onClick={handleExecute}>
+                {processing ? 'Uygulanıyor…' : isDelete ? 'Sil' : 'Temizle'}
+              </button>
+            </>
+          )}
+        </footer>
       </div>
     </div>,
     document.body
@@ -426,5 +251,3 @@ const BulkMenuActionsModal = ({
 };
 
 export default BulkMenuActionsModal;
-
-

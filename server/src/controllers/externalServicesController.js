@@ -16,24 +16,40 @@ const formatBytes = (bytes, decimals = 2) => {
 const CACHE_TTL_MS = 15 * 60 * 1000;
 
 // ─── Monthly Quota Renewal Helper ───────────────────────────
-const getMonthlyRenewalInfo = () => {
+// Providers reset on the account's billing day, not necessarily on the 1st.
+// Set CLOUDINARY_BILLING_DAY / VERCEL_BILLING_DAY (1-31) to make the date exact; otherwise it is flagged approximate.
+const MONTH_NAMES = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+
+const getMonthlyRenewalInfo = (envName) => {
+  const configured = Number.parseInt(process.env[envName] || '', 10);
+  const known = Number.isInteger(configured) && configured >= 1 && configured <= 31;
+  const day = known ? configured : 1;
+
   const now = new Date();
-  const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  const diffTime = nextMonth.getTime() - now.getTime();
-  const daysLeft = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
-  const monthNames = [
-    'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
-    'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'
-  ];
-  const nextMonthName = monthNames[nextMonth.getMonth()];
+  const buildDate = (year, month) => {
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    return new Date(year, month, Math.min(day, lastDay), 0, 0, 0, 0);
+  };
+  let next = buildDate(now.getFullYear(), now.getMonth());
+  if (next <= now) next = buildDate(now.getFullYear(), now.getMonth() + 1);
+
+  const daysLeft = Math.max(1, Math.ceil((next.getTime() - now.getTime()) / 86400000));
+  const nextMonthName = MONTH_NAMES[next.getMonth()];
+  const resetDate = next.getDate() + ' ' + nextMonthName + ' ' + next.getFullYear();
   return {
     cycle: 'monthly',
-    resetDate: `1 ${nextMonthName} ${nextMonth.getFullYear()}`,
+    resetDate,
+    resetISO: next.toISOString(),
     nextMonthName,
     daysLeft,
-    description: `Her ayın 1'inde sıfırlanır (${daysLeft} gün kaldı)`,
+    approximate: !known,
+    description: known
+      ? 'Her ayın ' + day + "'inde sıfırlanır (" + daysLeft + ' gün kaldı)'
+      : "Tahmini: ayın 1'inde (" + daysLeft + ' gün). Kesin gün için ' + envName + ' tanımlayın.',
   };
 };
+
+const ROLLING_RENEWAL = (description) => ({ cycle: 'rolling', resetDate: null, daysLeft: null, approximate: false, description });
 
 let servicesCache = {
   timestamp: null,
@@ -107,7 +123,9 @@ const fetchCloudinaryStats = async () => {
         maxImageSize: formatBytes(res.media_limits?.image_max_size_bytes || 10485760),
         maxVideoSize: formatBytes(res.media_limits?.video_max_size_bytes || 104857600),
       },
-      renewal: getMonthlyRenewalInfo(),
+      measured: true,
+      renewal: getMonthlyRenewalInfo('CLOUDINARY_BILLING_DAY'),
+      links: { console: 'https://console.cloudinary.com/', usage: 'https://console.cloudinary.com/settings/billing' },
     };
   } catch (error) {
     return {
@@ -135,25 +153,38 @@ const fetchFirebaseStats = async () => {
   }
 
   try {
-    const [usersResult, linkedCount, totalUsersInDb] = await Promise.all([
-      firebaseAdminAuth.listUsers(1000).catch(() => ({ users: [] })),
+    const listAllUsers = async () => {
+      const all = [];
+      let pageToken;
+      for (let page = 0; page < 20; page += 1) {
+        const result = await firebaseAdminAuth.listUsers(1000, pageToken);
+        all.push(...result.users);
+        pageToken = result.pageToken;
+        if (!pageToken) return { users: all, truncated: false };
+      }
+      return { users: all, truncated: true };
+    };
+
+    const [{ users, truncated }, linkedCount, totalUsersInDb] = await Promise.all([
+      listAllUsers().catch(() => ({ users: [], truncated: false })),
       User.countDocuments({ firebaseUid: { $exists: true, $ne: null } }),
       User.countDocuments(),
     ]);
 
-    const users = usersResult.users || [];
     let googleCount = 0;
     let passwordCount = 0;
-
+    let activeLast30 = 0;
+    const since = Date.now() - 30 * 86400000;
     users.forEach((u) => {
-      const hasGoogle = u.providerData?.some((p) => p.providerId === 'google.com');
-      if (hasGoogle) googleCount++;
-      else passwordCount++;
+      if (u.providerData?.some((p) => p.providerId === 'google.com')) googleCount += 1;
+      else passwordCount += 1;
+      const lastSeen = Date.parse(u.metadata?.lastRefreshTime || u.metadata?.lastSignInTime || '');
+      if (Number.isFinite(lastSeen) && lastSeen >= since) activeLast30 += 1;
     });
 
-    const sparkLimit = 50000; // Spark Free Tier 50k MAU
-    const totalFirebaseUsers = users.length;
-    const percent = Number(((totalFirebaseUsers / sparkLimit) * 100).toFixed(2));
+    const sparkLimit = 50000; // free tier: 50k monthly active users
+    const percent = Number(((activeLast30 / sparkLimit) * 100).toFixed(2));
+    const projectId = process.env.FIREBASE_PROJECT_ID;
 
     return {
       configured: true,
@@ -161,14 +192,17 @@ const fetchFirebaseStats = async () => {
       title: 'Firebase Auth',
       category: 'Kimlik Doğrulama & Oturum',
       plan: 'Spark (Ücretsiz Plan)',
-      projectId: process.env.FIREBASE_PROJECT_ID,
+      projectId,
       clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
       lastUpdated: new Date().toISOString(),
+      measured: true,
       users: {
-        total: totalFirebaseUsers,
+        total: users.length,
+        truncated,
+        activeLast30,
         limit: sparkLimit,
         percent,
-        unit: 'Aylık Aktif Kullanıcı (MAU)',
+        unit: 'Son 30 günde aktif kullanıcı (MAU yaklaşığı)',
         linkedWithDb: linkedCount,
         totalDbUsers: totalUsersInDb,
         providers: {
@@ -181,7 +215,11 @@ const fetchFirebaseStats = async () => {
         phoneAuthLimit: '10 SMS / gün (Ücretsiz)',
         securityRules: 'Aktif',
       },
-      renewal: getMonthlyRenewalInfo(),
+      renewal: ROLLING_RENEWAL('Kayan 30 günlük pencere: MAU her gün yeniden hesaplanır, belirli bir sıfırlanma günü yoktur.'),
+      links: {
+        console: projectId ? 'https://console.firebase.google.com/project/' + projectId + '/overview' : 'https://console.firebase.google.com/',
+        usage: projectId ? 'https://console.firebase.google.com/project/' + projectId + '/authentication/users' : 'https://console.firebase.google.com/',
+      },
     };
   } catch (error) {
     return {
@@ -248,6 +286,8 @@ const fetchMongoStats = async () => {
         sharedRam: '512 MB paylaşımlı RAM',
         maxConnections: '500 bağlantı',
       },
+      measured: true,
+      links: { console: 'https://cloud.mongodb.com/', usage: 'https://cloud.mongodb.com/' },
       renewal: {
         cycle: 'continuous',
         resetDate: null,
@@ -268,9 +308,19 @@ const fetchMongoStats = async () => {
 };
 
 // ─── Vercel Fetcher ─────────────────────────────────────────
+// Vercel exposes no usage endpoint for Hobby projects, so usage is reported as "not measured"
+// instead of showing made-up figures. Plan limits are listed for reference only.
+const VERCEL_PLAN_LIMITS = [
+  { key: 'bandwidth', label: 'Hızlı veri aktarımı', limit: '100 GB / ay' },
+  { key: 'edgeRequests', label: 'Edge istekleri', limit: '1.000.000 / ay' },
+  { key: 'serverless', label: 'Fonksiyon çalışma süresi', limit: '100 saat / ay' },
+  { key: 'builds', label: 'Build süresi', limit: '6.000 dk / ay' },
+  { key: 'deployments', label: 'Dağıtım sınırı', limit: '100 / gün' },
+];
+
 const fetchVercelStats = async () => {
   const token = process.env.VERCEL_TOKEN;
-  const defaultHobby = {
+  const base = {
     configured: Boolean(token),
     status: token ? 'HEALTHY' : 'READY_TO_CONNECT',
     title: 'Vercel',
@@ -278,89 +328,56 @@ const fetchVercelStats = async () => {
     plan: 'Hobby (Ücretsiz Plan)',
     lastUpdated: new Date().toISOString(),
     hasToken: Boolean(token),
-    bandwidth: {
-      used: token ? '0.4 GB' : '~0.4 GB',
-      limit: '100 GB',
-      percent: 0.4,
-      unit: 'GB / Ay',
-    },
-    limits: {
-      bandwidth: { used: '~0.4 GB', limit: '100 GB / ay', percent: 0.4 },
-      serverlessExecution: { used: '< 1 saat', limit: '100 saat / ay', percent: 0.5 },
-      buildMinutes: { used: '15 dk', limit: '6.000 dk / ay', percent: 0.25 },
-      deploymentsPerDay: { used: '1', limit: '100 / gün', percent: 1 },
-      edgeRequests: { used: '—', limit: '1.000.000 / ay', percent: 0.1 },
-    },
-    renewal: getMonthlyRenewalInfo(),
+    measured: false,
+    planLimits: VERCEL_PLAN_LIMITS,
+    renewal: getMonthlyRenewalInfo('VERCEL_BILLING_DAY'),
+    links: { console: 'https://vercel.com/dashboard', usage: 'https://vercel.com/dashboard' },
     message: token
-      ? 'Vercel canlı bağlantısı aktif.'
-      : 'Vercel canlı kullanım ve dağıtım metrikleri için VERCEL_TOKEN ortam değişkeni eklenebilir.',
+      ? 'Dağıtım bilgisi canlı. Kullanım (trafik, süre) Vercel panelinden izlenir.'
+      : 'Kullanım ölçümü yok. Son dağıtımı görmek için VERCEL_TOKEN ekleyebilirsiniz.',
   };
 
-  if (!token) {
-    return defaultHobby;
-  }
+  if (!token) return base;
 
   try {
-    const res = await fetch('https://api.vercel.com/v6/deployments?limit=5', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!res.ok) {
-      return {
-        ...defaultHobby,
-        status: 'WARNING',
-        message: `Vercel API yanıtı: ${res.status} ${res.statusText}`,
-      };
-    }
+    const res = await fetch('https://api.vercel.com/v6/deployments?limit=5', { headers: { Authorization: 'Bearer ' + token } });
+    if (!res.ok) return { ...base, status: 'WARNING', message: 'Vercel API yanıtı: ' + res.status + ' ' + res.statusText };
 
     const json = await res.json();
     const deployments = json.deployments || [];
     const latest = deployments[0] || null;
-
     return {
-      ...defaultHobby,
-      status: 'HEALTHY',
+      ...base,
       latestDeployment: latest
-        ? {
-          name: latest.name,
-          url: latest.url ? `https://${latest.url}` : null,
-          state: latest.state,
-          created: latest.created,
-          creator: latest.creator?.username || latest.creator?.email || '—',
-        }
+        ? { name: latest.name, url: latest.url ? 'https://' + latest.url : null, state: latest.state, created: latest.created, creator: latest.creator?.username || latest.creator?.email || '—' }
         : null,
       recentDeploymentsCount: deployments.length,
     };
   } catch (error) {
-    return {
-      ...defaultHobby,
-      status: 'WARNING',
-      message: `Vercel verisi alınırken hata: ${error.message}`,
-    };
+    return { ...base, status: 'WARNING', message: 'Vercel verisi alınırken hata: ' + error.message };
   }
 };
 
 // ─── Google Analytics (GA4) Fetcher ─────────────────────────
+// GA4 usage is not queried (it needs the Data API); only the standard free-property limits are listed.
 const fetchGA4Stats = async () => {
-  const measurementId = process.env.VITE_GA_MEASUREMENT_ID || 'G-7M5T6LFX20';
+  const measurementId = process.env.VITE_GA_MEASUREMENT_ID || process.env.GA_MEASUREMENT_ID || '';
   return {
     configured: Boolean(measurementId),
-    status: 'HEALTHY',
+    status: measurementId ? 'HEALTHY' : 'NOT_CONFIGURED',
     title: 'Google Analytics 4',
     category: 'Ziyaretçi & Etkinlik Analizi',
     plan: 'Standart GA4 (Ücretsiz)',
     measurementId,
     lastUpdated: new Date().toISOString(),
-    limits: {
-      monthlyEvents: '10.000.000 etkinlik / ay',
-      retentionPeriod: '14 ay veri saklama',
-      customEvents: '500 benzersiz etkinlik adı',
-      status: 'Etkinlik akışı aktif',
-    },
-    renewal: getMonthlyRenewalInfo(),
+    measured: false,
+    planLimits: [
+      { key: 'events', label: 'Aylık etkinlik', limit: '10.000.000 / ay' },
+      { key: 'retention', label: 'Veri saklama', limit: '14 ay' },
+      { key: 'custom', label: 'Özel etkinlik adı', limit: '500' },
+    ],
+    renewal: ROLLING_RENEWAL('Etkinlik kotası aylık değerlendirilir; kullanım GA4 panelinden izlenir.'),
+    links: { console: 'https://analytics.google.com/', usage: 'https://analytics.google.com/' },
   };
 };
 

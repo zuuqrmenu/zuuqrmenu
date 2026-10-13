@@ -72,9 +72,11 @@
   width: 2.3rem;
   height: 2.3rem;
   border-radius: 50%;
-  transition: transform 0.5s var(--spring);
 }
-.lp4-btn:hover .lp4-btn__icon { transform: translate(2px, -2px) scale(1.06); }
+/* the circle never leaves its pill: only the arrow inside it moves */
+.lp4-btn__icon { overflow: hidden; }
+.lp4-btn__icon svg { transition: transform 0.5s var(--spring); }
+.lp4-btn:hover .lp4-btn__icon svg { transform: translate(1.5px, -1.5px); }
 .lp4-btn:active { transform: scale(0.98); }
 
 .lp4-btn--solid { background: var(--lp-ink); color: var(--lp-bg); }

@@ -447,7 +447,7 @@ const SettingsBrandTab = ({ settings, setSettings, profile, setProfile, onNotice
       <form onSubmit={saveBranding} className="settings-card">
         <div className="settings-card__header">
           <div>
-            <span className="settings-eyebrow">Marka Kimliği</span>
+            <span className="settings-eyebrow">Marka kimliği</span>
             <h3 className="settings-card__title">Restoran ve Marka Bilgileri</h3>
             <p className="settings-card__desc">
               Menünüzde ve QR sayfalarınızda müşterilerinize gösterilen marka kimliğini yönetin.
@@ -624,7 +624,7 @@ const SettingsBrandTab = ({ settings, setSettings, profile, setProfile, onNotice
       <section className="settings-card">
         <div className="settings-card__header">
           <div>
-            <span className="settings-eyebrow">Sosyal Medya</span>
+            <span className="settings-eyebrow">Sosyal medya</span>
             <h3 className="settings-card__title">Sosyal Ağ Bağlantıları</h3>
             <p className="settings-card__desc">
               Menünüzde ve mağaza detaylarınızda yer alacak resmi sosyal medya bağlantılarınızı ekleyin.
