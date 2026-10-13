@@ -1,9 +1,11 @@
 import { useMemo } from 'react';
 import ProductCard from './ProductCard';
 import BlurImage from '../common/BlurImage';
+import { StudioProductCard } from './StudioParts';
 
 const CategorySection = ({ category, onProductSelect, layout, themeKey }) => {
   const isGridTheme = themeKey === 'GRID';
+  const isStudioTheme = themeKey === 'STUDIO';
   const showStories = Boolean(layout?.showStories);
   
   // Find products that have images for the top rectangular story highlight cards in randomized order
@@ -19,9 +21,10 @@ const CategorySection = ({ category, onProductSelect, layout, themeKey }) => {
   }, [category.id, category.products, isGridTheme, showStories]);
 
   return (
-    <section id={`category-${category.id}`} className={`public-category ${isGridTheme ? 'public-category--grid' : ''}`}>
+    <section id={`category-${category.id}`} className={`public-category ${isGridTheme ? 'public-category--grid' : ''} ${isStudioTheme ? 'public-category--studio' : ''}`}>
       <div className="public-category__heading">
         <h2>{category.name}</h2>
+        {isStudioTheme && <span className="studio-count">{category.products.length} ürün</span>}
       </div>
 
       {isGridTheme && showStories && highlightProducts.length > 0 && (
@@ -53,7 +56,9 @@ const CategorySection = ({ category, onProductSelect, layout, themeKey }) => {
       )}
 
       <div className="public-products">
-        {category.products.map((product) => (
+        {category.products.map((product) => (isStudioTheme ? (
+          <StudioProductCard key={product.id} product={product} layout={layout} onSelect={onProductSelect} />
+        ) : (
           <ProductCard
             key={product.id}
             product={product}
@@ -61,7 +66,7 @@ const CategorySection = ({ category, onProductSelect, layout, themeKey }) => {
             onSelect={onProductSelect}
             themeKey={themeKey}
           />
-        ))}
+        )))}
       </div>
     </section>
   );

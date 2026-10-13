@@ -61,7 +61,10 @@ const tabs = [
 
 const RestaurantSettings = () => {
   const { user, restaurant } = useAuth();
-  const [activeTab, setActiveTab] = useState('brand');
+  const [activeTab, setActiveTab] = useState(() => {
+    const requested = new URLSearchParams(window.location.search).get('tab');
+    return tabs.some((tab) => tab.id === requested) ? requested : 'brand';
+  });
   const [settings, setSettings] = useState(initialSettings);
   const [profile, setProfile] = useState({ ...initialProfile, name: restaurant?.name || '' });
   const [account, setAccount] = useState({ name: user?.name || '', username: user?.username || '', email: user?.email || '' });

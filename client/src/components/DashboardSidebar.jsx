@@ -9,6 +9,7 @@ export const NAV_ICONS = {
   overview: <svg {...ICON_PROPS}><rect x="3" y="3" width="7" height="9" rx="1.5" /><rect x="14" y="3" width="7" height="5" rx="1.5" /><rect x="14" y="12" width="7" height="9" rx="1.5" /><rect x="3" y="16" width="7" height="5" rx="1.5" /></svg>,
   menu: <svg {...ICON_PROPS}><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5Z" /><path d="M8 7h8M8 11h8" /></svg>,
   qr: <svg {...ICON_PROPS}><rect x="3" y="3" width="6" height="6" rx="1" /><rect x="15" y="3" width="6" height="6" rx="1" /><rect x="3" y="15" width="6" height="6" rx="1" /><path d="M15 15h2v2h-2zM19 19h2M19 15h2M15 19h.01" /></svg>,
+  billing: <svg {...ICON_PROPS}><rect x="2.5" y="5" width="19" height="14" rx="2.5" /><path d="M2.5 10h19M6.5 15h4" /></svg>,
   stats: <svg {...ICON_PROPS}><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></svg>,
   restaurants: <svg {...ICON_PROPS}><path d="M4 21V9l8-6 8 6v12" /><path d="M9 21v-6h6v6" /></svg>,
   resources: <svg {...ICON_PROPS}><ellipse cx="12" cy="6" rx="8" ry="3" /><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6" /><path d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6" /></svg>,

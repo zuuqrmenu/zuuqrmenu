@@ -39,6 +39,26 @@ export const publicMenuThemes = {
       shadow: '0 20px 50px rgba(0, 0, 0, 0.5)',
     },
   },
+  STUDIO: {
+    light: {
+      background: '#f3f2ee',
+      surface: '#fbfaf7',
+      text: '#15161a',
+      muted: '#6a6d76',
+      border: 'rgba(21, 22, 26, 0.09)',
+      radius: '1.35rem',
+      shadow: '0 18px 50px rgba(21, 22, 26, 0.08)',
+    },
+    dark: {
+      background: '#0d0e11',
+      surface: '#15161b',
+      text: '#f4f4f1',
+      muted: '#9a9ca6',
+      border: 'rgba(255, 255, 255, 0.09)',
+      radius: '1.35rem',
+      shadow: '0 22px 60px rgba(0, 0, 0, 0.55)',
+    },
+  },
   MINIMAL: {
     light: {
       background: '#f7f5f0',

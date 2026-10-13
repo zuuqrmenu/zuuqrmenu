@@ -7,6 +7,7 @@ import MenuView from '../models/MenuView.js';
 import User from '../models/User.js';
 import { findPublicRestaurant } from '../utils/publicRestaurant.js';
 import { optimizeCloudinaryUrl } from '../utils/imageOptimizer.js';
+import { blogPosts } from '../config/blogPosts.js';
 
 const escapeXml = (value) => String(value).replace(/[<>&'\"]/g, (character) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' }[character]));
 
@@ -24,8 +25,15 @@ export const getPublicSitemap = async (req, res, next) => {
       })
       .join('\n');
     const homepage = '  <url><loc>https://zuuqrmenu.com/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>';
+    const staticPages = ['/fiyatlandirma', '/hakkimizda', '/iletisim', '/mesafeli-satis-sozlesmesi', '/on-bilgilendirme-formu', '/iptal-iade-kosullari', '/satici-bilgileri', '/gizlilik', '/kullanim-kosullari', '/kvkk', '/cerez']
+      .map((path) => `  <url><loc>https://zuuqrmenu.com${path}</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>`)
+      .join('\n');
+    const blogIndex = '  <url><loc>https://zuuqrmenu.com/blog</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>';
+    const blogUrls = blogPosts
+      .map((post) => `  <url><loc>https://zuuqrmenu.com/blog/${post.slug}</loc><lastmod>${post.date}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>`)
+      .join('\n');
     const showcasePage = '  <url><loc>https://zuuqrmenu.com/menu</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>';
-    res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${homepage}\n${showcasePage}${urls ? `\n${urls}` : ''}\n</urlset>`);
+    res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${homepage}\n${showcasePage}\n${blogIndex}\n${blogUrls}\n${staticPages}${urls ? `\n${urls}` : ''}\n</urlset>`);
   } catch (error) {
     next(error);
   }

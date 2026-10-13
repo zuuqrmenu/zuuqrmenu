@@ -1802,7 +1802,7 @@
 /* Perks Strip with Vector Icon Box */
 .lp3-showcase-perks {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1.5rem;
   padding: 2.5rem 2rem;
   background: #ffffff;

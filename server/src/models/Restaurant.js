@@ -78,6 +78,13 @@ const restaurantSchema = new mongoose.Schema({
     type: Date,
     default: null,
   },
+  subscription: {
+    plan: { type: String, enum: ['starter', 'professional', null], default: null },
+    period: { type: String, enum: ['monthly', 'yearly', null], default: null },
+    status: { type: String, enum: ['NONE', 'ACTIVE', 'EXPIRED'], default: 'NONE' },
+    currentPeriodEnd: { type: Date, default: null },
+    lastOrderId: { type: mongoose.Schema.Types.ObjectId, ref: 'Order', default: null },
+  },
   zuuai: {
     enabled: {
       type: Boolean,

@@ -10,7 +10,7 @@ const sanitizeError = (error, apiKey) => {
   return message;
 };
 
-export const generateText = async ({ prompt, systemInstruction, restaurantContext, model, images = [], providerTimeoutMs }) => {
+export const generateText = async ({ prompt, systemInstruction, restaurantContext, model, images = [], providerTimeoutMs, history = [] }) => {
   dotenv.config({ override: true });
   const apiKey = process.env.NVIDIA_API_KEY;
 
@@ -40,6 +40,7 @@ export const generateText = async ({ prompt, systemInstruction, restaurantContex
       }))]
       : contextText;
   }
+  history.forEach((turn) => messages.push({ role: turn.role === 'assistant' ? 'assistant' : 'user', content: turn.text }));
   messages.push({ role: 'user', content: userContent });
 
   try {

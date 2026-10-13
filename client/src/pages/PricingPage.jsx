@@ -24,6 +24,7 @@ const comparisonData = [
       { name: 'Varsayılan (Klasik) Tema', starter: true, pro: true, enterprise: true },
       { name: 'Hikaye (Story) Halka Modülü', starter: false, pro: true, enterprise: true },
       { name: 'Modern Bento Grid Teması', starter: false, pro: true, enterprise: true },
+      { name: 'Stüdyo (Fotoğraflı Vitrin) Teması', starter: false, pro: true, enterprise: true },
       { name: 'Özel Logo & Renk Paleti', starter: true, pro: true, enterprise: true },
       { name: 'Özel Restoran Teması Geliştirme', starter: false, pro: false, enterprise: true },
     ],

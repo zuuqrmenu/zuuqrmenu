@@ -1,0 +1,33 @@
+export default [
+  ['p', 'Kağıt menü ucuz görünür, çünkü maliyeti tek seferde bir matbaa faturası olarak karşınıza çıkar. Oysa asıl maliyet; güncelleme, yıpranma, yeniden baskı ve kaçırılan fırsatların toplamıdır. Bu yazıda iki yöntemi kalem kalem karşılaştırıyoruz.'],
+  ['h2', 'Kağıt menünün gerçek maliyeti'],
+  ['ul', [
+    'Tasarım ve baskı: Her menü değişikliğinde yeniden tasarım ve matbaa ücreti.',
+    'Laminasyon ve ciltleme: Sık kullanılan menüler hızla yıpranır, birkaç ayda bir yenilenmesi gerekir.',
+    'Adet maliyeti: Her masa için birden fazla menü ve yedek menü gerekir.',
+    'Güncelleme gecikmesi: Fiyatı değiştirdiniz ama yeni baskı gelene kadar eski fiyatlar masada kalır; üstü bantla kapatılmış fiyatlar profesyonel görünmez.',
+    'Zaman: Personelin menüleri toplaması, silmesi, kontrol etmesi gibi görünmeyen emek.',
+    'Dil ve içerik sınırı: Yabancı misafirler için çeviri eklemek, sayfa sayısını ve maliyeti artırır.',
+  ]],
+  ['h2', 'QR menünün maliyet kalemleri'],
+  ['ul', [
+    'Platform aboneliği: Aylık veya yıllık sabit bir ücret.',
+    'QR kod baskısı: Masa standı ya da çıkartma; tek seferlik ve düşük bir tutar.',
+    'Fotoğraf çekimi: İsteğe bağlı; yine de kağıt menüde de aynı fotoğraflara ihtiyaç duyulabilir.',
+  ]],
+  ['p', 'Bu kalemlerin çoğu tek seferliktir ve işletmeniz büyüdükçe artmaz. Kağıt menüde ise masa, şube ve dil sayısı arttıkça maliyet de doğrusal olarak artar.'],
+  ['h2', 'Basit bir karşılaştırma örneği'],
+  ['p', 'Varsayımsal bir örnek: yirmi masalı bir kafe, yılda dört kez fiyat güncellemesi yapıyor ve her seferinde yeni menü bastırıyor olsun. Tasarım, baskı ve laminasyon giderleri her turda tekrar eder, yıllık toplam hızla büyür. QR menüde aynı dört güncelleme panelden dakikalar içinde yapılır ve ek maliyet doğurmaz. Rakamlar işletmeden işletmeye değişir; kendi baskı faturalarınızı toplayıp bir yıllık abonelik ücretiyle yan yana koyarak net bir karşılaştırma yapabilirsiniz.'],
+  ['h2', 'Parayla ölçülmeyen kazançlar'],
+  ['ul', [
+    'Fiyatlar her zaman güncel olduğu için müşteri ile hesap sırasında yaşanan tartışmalar azalır.',
+    'Tükenen ürünü menüden anında kapatarak sipariş sonrası hayal kırıklığını önlersiniz.',
+    'Fotoğraflı ve açıklamalı ürünler, müşterinin daha pahalı ürünlere de bakmasını kolaylaştırır.',
+    'Hangi ürünün ne kadar görüntülendiğini öğrenerek menü kararlarını veriye dayandırırsınız.',
+  ]],
+  ['h2', 'Kağıt menü hâlâ mantıklı olabilir mi?'],
+  ['p', 'Çok küçük, menüsü yıllardır hiç değişmeyen ve teknolojiyi kullanmayan bir müşteri kitlesine hizmet eden işletmelerde kağıt menü yeterli olabilir. Ancak çoğu işletme için en iyi yaklaşım, QR menüyü ana kanal yapıp özel durumlar için sınırlı sayıda basılı menü bulundurmaktır.'],
+  ['tip', 'zuuqrmenu Başlangıç paketi tek şubeli kafeler ve butik işletmeler için tasarlandı. Güncel fiyatları fiyatlandırma sayfamızdan görebilir, 7 gün ücretsiz deneyebilirsiniz.'],
+  ['h2', 'Sonuç'],
+  ['p', 'Karar verirken yalnızca matbaa faturasına değil, güncelleme sıklığınıza, şube ve masa sayınıza ve müşteri deneyimine bakın. Çoğu işletmede QR menü, ilk yıl içinde kendini amorti eder.'],
+];

@@ -29,7 +29,7 @@
 .reg-page--center { display: grid; grid-template-columns: 1fr; place-items: center; padding: 1.5rem; }
 .reg-page :where(h1, h2, p, ul) { margin: 0; }
 .reg-page :where(ul) { padding: 0; list-style: none; }
-.reg-page :where(a, button, input, select):focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+.reg-page :where(a, button):focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 
 /* ─── Left panel ─────────────────────────────────────────────── */
 .reg-panel {

@@ -408,3 +408,85 @@ body[data-dashboard-theme='dark'] .dp-chip--bad, body[data-dashboard-theme='dark
 
 @media (max-width: 900px) { .dp-toolbar { grid-template-columns: minmax(0, 1fr); } .dp-select select { width: 100%; } }
 @media (max-width: 640px) { .dp-apps li { flex-wrap: wrap; } .dp-apps__actions { width: 100%; justify-content: flex-end; } .dp-pager { justify-content: center; } }
+
+/* ─── Billing (PayTR) ─────────────────────────────────────────── */
+.dp .bill-period { display: flex; justify-content: flex-start; }
+.dp .bill-plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); gap: 1rem; }
+.dp .bill-plan { position: relative; display: flex; flex-direction: column; gap: 0.75rem; padding: 1.4rem; border: 1px solid var(--glass-line, rgba(17, 17, 14, 0.1)); border-radius: 24px; background: var(--dashboard-surface); }
+.dp .bill-plan.is-featured { border-color: var(--dashboard-text); box-shadow: 0 0 0 1px var(--dashboard-text); }
+.dp .bill-plan.is-selected { box-shadow: 0 0 0 3px var(--brand-accent-glow); }
+.dp .bill-plan h3 { margin: 0; font: 650 1.2rem/1.2 'Bricolage Grotesque', sans-serif; }
+.dp .bill-plan > p { margin: 0; color: var(--dashboard-secondary); font-size: 0.92rem; line-height: 1.5; }
+.dp .bill-plan__badge { position: absolute; top: 1rem; right: 1rem; padding: 0.2rem 0.65rem; border-radius: 999px; background: var(--brand-accent-subtle); font-size: 0.76rem; font-weight: 650; }
+.dp .bill-plan__price { display: flex; align-items: baseline; gap: 0.4rem; }
+.dp .bill-plan__price b { font: 700 1.9rem/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.03em; }
+.dp .bill-plan__price span { color: var(--dashboard-muted); }
+.dp .bill-plan ul { display: grid; gap: 0.45rem; margin: 0 0 0.5rem; padding: 0; list-style: none; flex: 1; }
+.dp .bill-plan li { display: flex; gap: 0.5rem; align-items: flex-start; font-size: 0.92rem; }
+.dp .bill-plan li svg { flex: none; margin-top: 0.15rem; }
+.dp .bill-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.dp .bill-form label { display: grid; gap: 0.4rem; font-size: 0.9rem; font-weight: 600; }
+.dp .bill-form input:not([type='checkbox']), .dp .bill-form textarea { width: 100%; padding: 0.7rem 0.85rem; border: 1px solid var(--glass-line, rgba(17, 17, 14, 0.14)); border-radius: 12px; background: transparent; color: inherit; font: inherit; font-weight: 400; }
+.dp .bill-form__wide, .dp .bill-form__email, .dp .bill-form__consent, .dp .bill-form__actions { grid-column: 1 / -1; }
+.dp .bill-form__email { margin: 0; color: var(--dashboard-secondary); font-size: 0.9rem; }
+.dp .bill-form__consent { display: flex !important; align-items: flex-start; gap: 0.6rem; font-weight: 400 !important; line-height: 1.5; }
+.dp .bill-form__consent input { margin-top: 0.25rem; flex: none; }
+.dp .bill-form__consent a { text-decoration: underline; }
+.dp .bill-form__actions { display: flex; gap: 0.75rem; justify-content: flex-end; flex-wrap: wrap; }
+.dp .bill-frame { width: 100%; min-height: 720px; border: 0; border-radius: 16px; background: #fff; }
+.dp .bill-table-wrap { overflow-x: auto; }
+.dp .bill-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+.dp .bill-table th { padding: 0.6rem 0.75rem; text-align: left; color: var(--dashboard-muted); font-weight: 600; border-bottom: 1px solid var(--glass-line, rgba(17, 17, 14, 0.1)); }
+.dp .bill-table td { padding: 0.75rem; border-bottom: 1px solid var(--glass-line, rgba(17, 17, 14, 0.06)); }
+@media (max-width: 640px) {
+  .dp .bill-form { grid-template-columns: minmax(0, 1fr); }
+  .dp .bill-form__actions > * { flex: 1; }
+  .dp .bill-table thead { display: none; }
+  .dp .bill-table, .dp .bill-table tbody, .dp .bill-table tr, .dp .bill-table td { display: block; width: 100%; }
+  .dp .bill-table tr { padding: 0.6rem 0; border-bottom: 1px solid var(--glass-line, rgba(17, 17, 14, 0.1)); }
+  .dp .bill-table td { display: flex; justify-content: space-between; gap: 1rem; padding: 0.3rem 0; border: 0; }
+  .dp .bill-table td::before { content: attr(data-label); color: var(--dashboard-muted); }
+}
+
+/* Payment result page shown inside PayTR's iframe */
+.pay-result { display: grid; place-items: center; align-content: center; gap: 0.9rem; min-height: 100dvh; padding: 2rem 1.25rem; text-align: center; font-family: 'Instrument Sans', system-ui, sans-serif; background: #fff; color: #11110e; }
+.pay-result__icon { display: grid; place-items: center; width: 4rem; height: 4rem; border-radius: 50%; background: #deff36; font-size: 1.8rem; font-weight: 700; }
+.pay-result[data-state='fail'] .pay-result__icon { background: #ffd9d2; }
+.pay-result h1 { margin: 0; font-size: 1.6rem; }
+.pay-result p { margin: 0; max-width: 28rem; color: #5a5a52; line-height: 1.55; }
+.pay-result__btn { padding: 0.8rem 1.4rem; border-radius: 999px; background: #11110e; color: #fff; font-weight: 600; text-decoration: none; }
+
+/* Tables become stacked cards on phones (cells carry data-label) */
+@media (max-width: 700px) {
+  .dp-table { min-width: 0; }
+  .dp-table thead { display: none; }
+  .dp-table, .dp-table tbody, .dp-table tr, .dp-table td { display: block; width: 100%; }
+  .dp-table tbody tr { position: relative; padding: 0.9rem 1rem; border-top: 1px solid var(--glass-line); }
+  .dp-table thead + tbody tr:first-child { border-top: 0; }
+  .dp-table td { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.4rem 0; border: 0; }
+  .dp-table td[data-label]::before { content: attr(data-label); flex: none; color: var(--dashboard-muted); font-size: 0.82rem; font-weight: 600; }
+  .dp-table td:first-child { padding: 0 2.6rem 0.5rem 0; }
+  .dp-table td.dp-table__end { position: absolute; top: 0.65rem; right: 0.6rem; width: auto; padding: 0; }
+}
+
+/* Very narrow phones: header controls shrink and scroll instead of widening the page */
+.dp-header, .dp-header__text, .dp-actions, .dp-range { min-width: 0; max-width: 100%; }
+.dp-range .dp-seg { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+
+/* Menu design card: wireframe of the live theme + a compact summary */
+.dp-theme__live { align-items: stretch; gap: 1.1rem; }
+.dp-theme__art { flex: none; width: 7.6rem; overflow: hidden; border-radius: 14px; box-shadow: inset 0 0 0 1px var(--glass-line); }
+.dp-theme__art .mcz-art { display: block; width: 100%; height: auto; }
+.dp-theme__text { align-content: center; gap: 0.15rem; }
+.dp-theme__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; margin: 0.45rem 0 0; padding: 0; list-style: none; }
+.dp-theme__meta li { padding: 0.18rem 0.6rem; border-radius: 999px; background: var(--dashboard-hover); color: var(--dashboard-secondary); font-size: 0.78rem; font-weight: 600; }
+.dp-theme__colors { display: inline-flex; gap: 0; padding: 0.18rem 0.35rem !important; }
+.dp-theme__colors i { width: 1rem; height: 1rem; border-radius: 50%; border: 2px solid var(--dashboard-surface); box-shadow: 0 0 0 1px var(--glass-line); }
+.dp-theme__colors i + i { margin-left: -0.3rem; }
+.dp-theme__count { align-self: flex-start; }
+@media (max-width: 520px) {
+  .dp-theme__live { flex-wrap: wrap; }
+  .dp-theme__art { width: 100%; max-width: 12rem; }
+  .dp-theme__count { position: absolute; top: 0.9rem; right: 0.9rem; }
+  .dp-theme__live { position: relative; }
+}

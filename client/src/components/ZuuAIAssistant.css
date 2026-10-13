@@ -748,6 +748,22 @@ body[data-dashboard-theme='dark'] .zuuai-msg-avatar {
   background: #c7e82f;
 }
 
+.zuuai-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.65rem;
+}
+
+.zuuai-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0;
+  text-align: left;
+}
+
+
 .menu-import-spinner {
   width: 2.35rem;
   height: 2.35rem;

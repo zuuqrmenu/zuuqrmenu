@@ -1,152 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import FeaturedStories from './public-menu/FeaturedStories';
-import CategoryNavigation from './public-menu/CategoryNavigation';
-import CategorySection from './public-menu/CategorySection';
-import MenuHeader from './public-menu/MenuHeader';
-import CategoryCardGrid from './public-menu/CategoryCardGrid';
-import { getPublicMenuTheme, publicMenuFonts, publicMenuThemes } from '../utils/publicMenuTheme';
+import ThemePreview from './menu-customizer/ThemePreview';
+import ThemeArt from './menu-customizer/ThemeArt';
 import useBodyScrollLock from '../hooks/useBodyScrollLock';
-import { useAuth } from '../context/AuthContext';
-import './CategorySuggester.css';
+import { publicMenuFonts } from '../utils/publicMenuTheme';
+import { menuFontMeta, menuFonts, menuLayoutOptions, menuPalettes, menuThemeOptions, menuToggleOptions } from '../utils/menuThemeMeta';
+import '../styles/menu-customizer.css';
 
-const previewDemoRestaurant = {
-  name: 'Demo Restoran',
-  description: 'Geleneksel & Modern Lezzetler',
-  coverImage: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80',
-  logo: null,
-  primaryColor: '#1F2937',
-  secondaryColor: '#FFFFFF',
-  menuViewCount: 12480,
-};
+export { ThemePreview };
 
-const previewDemoCategories = [
-  {
-    id: 'baslangiclar',
-    name: 'Başlangıçlar',
-    image: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80',
-    products: [
-      { id: 'p1', name: 'Çıtır Tavuk Parçaları', shortDescription: 'Kızarmış patates, özel dip sos ve taze yeşillik', price: 280, oldPrice: 320, image: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80', isFeatured: true, isAvailable: true },
-      { id: 'p2', name: 'Akdeniz Salatası', shortDescription: 'Zeytin, domates, tulum peyniri ve fesleğenli zeytinyağı sosu', price: 240, oldPrice: null, image: 'https://images.unsplash.com/photo-1546793665-c74683f339c1?auto=format&fit=crop&w=600&q=80', isFeatured: false, isAvailable: true },
-    ],
-  },
-  {
-    id: 'ana-yemekler',
-    name: 'Ana Yemekler',
-    image: 'https://images.unsplash.com/photo-1555949258-eb67b1ef0ceb?auto=format&fit=crop&w=800&q=80',
-    products: [
-      { id: 'p3', name: 'Trüflü Makarna', shortDescription: 'Parmesan, taze mantar ve trüf yağı', price: 420, oldPrice: 450, image: 'https://images.unsplash.com/photo-1555949258-eb67b1ef0ceb?auto=format&fit=crop&w=600&q=80', isFeatured: true, isAvailable: true },
-      { id: 'p4', name: 'Izgara Somon & Kuşkonmaz', shortDescription: 'Limonlu tereyağı sosu ve fırınlanmış bebek patates', price: 490, oldPrice: 530, image: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=600&q=80', isFeatured: false, isAvailable: true },
-    ],
-  },
-  {
-    id: 'burger-wrap',
-    name: 'Burger & Dürüm',
-    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80',
-    products: [
-      { id: 'p7', name: 'Trüflü Dana Burger', shortDescription: 'Karamelize soğan, trüf mayonez ve patates kızartması', price: 380, oldPrice: null, image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=600&q=80', isFeatured: true, isAvailable: true },
-      { id: 'p8', name: 'Çıtır Tavuk Dürüm', shortDescription: 'Cheddar sos, turşu ve taze yeşillikler', price: 270, oldPrice: 295, image: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?auto=format&fit=crop&w=600&q=80', isFeatured: false, isAvailable: true },
-    ],
-  },
-  {
-    id: 'pizza-firin',
-    name: 'Taş Fırın & Pizza',
-    image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80',
-    products: [
-      { id: 'p9', name: 'Odun Ateşinde Margherita', shortDescription: 'San Marzano domates, taze mozzarella ve fesleğen', price: 340, oldPrice: null, image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=600&q=80', isFeatured: true, isAvailable: true },
-      { id: 'p10', name: 'Dört Peynirli İtalyan Pizza', shortDescription: 'Mozzarella, gorgonzola, parmesan ve gouda peyniri', price: 390, oldPrice: 420, image: 'https://images.unsplash.com/photo-1573821663912-569905455b1c?auto=format&fit=crop&w=600&q=80', isFeatured: false, isAvailable: true },
-    ],
-  },
-  {
-    id: 'tatlilar',
-    name: 'Tatlılar',
-    image: 'https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=800&q=80',
-    products: [
-      { id: 'p5', name: 'San Sebastian Cheesecake', shortDescription: 'Karamelize kremalı enfes klasik tatlı', price: 190, oldPrice: null, image: 'https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=600&q=80', isFeatured: false, isAvailable: true },
-      { id: 'p6', name: 'Bourbon Brownie', shortDescription: 'Ceviz, bitter çikolata ve vanilyalı dondurma', price: 170, oldPrice: 200, image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80', isFeatured: false, isAvailable: true },
-    ],
-  },
-  {
-    id: 'icecekler',
-    name: 'İçecekler & Kahve',
-    image: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=800&q=80',
-    products: [
-      { id: 'p11', name: 'Ev Yapımı Çilekli Limonata', shortDescription: 'Taze nane yaprakları ve çilek taneleri', price: 120, oldPrice: null, image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=600&q=80', isFeatured: true, isAvailable: true },
-      { id: 'p12', name: 'Karamel Macchiato', shortDescription: 'Espresso, vanilya şurubu, süt kreması ve karamel', price: 135, oldPrice: null, image: 'https://images.unsplash.com/photo-1517256064527-09c73fc73e38?auto=format&fit=crop&w=600&q=80', isFeatured: false, isAvailable: true },
-    ],
-  },
-];
-
-const themeOptions = [
-  { value: 'DEFAULT', label: 'Varsayılan', accent: '#1F2937', description: 'Temel ve güvenli', kind: 'Standart görünüm' },
-  { value: 'GRID', label: 'Modern', accent: '#f97316', description: 'Büyük görsel kapak & bento kartlar', kind: 'Kategori kartları' },
-];
-const fonts = ['Inter', 'DM Sans', 'Playfair Display', 'Lora'];
-const fontMeta = {
-  Inter: 'Modern & temiz',
-  'DM Sans': 'Yumuşak & modern',
-  'Playfair Display': 'Zarif & klasik',
-  Lora: 'Editoryal & sıcak',
-};
-const structures = [
-  {
-    value: 'STANDARD',
-    label: 'Görsel Odaklı Standart',
-    description: 'Büyük ürün görselleri, detaylı açıklamalar ve öne çıkan rozetleri.',
-    highlights: ['Kart formatı', 'Geniş fotoğraf alanı', 'Açıklama & fiyat vurgusu'],
-  },
-  {
-    value: 'COMPACT',
-    label: 'Kompakt Hızlı Liste',
-    description: 'Daha sıkı aralıklar, hızlı taranabilir küçük görseller ve fiyat satırları.',
-    highlights: ['Yoğun yerleşim', 'Hızlı sipariş akışı', 'Daha az dikey kaydırma'],
-  },
-  {
-    value: 'EDITORIAL',
-    label: 'Geniş Kart Editoryal',
-    description: 'Dergi benzeri tipografi, ferah boşluklar ve güçlü ürün kartları.',
-    highlights: ['Geniş başlıklar', 'Ferah boşluklar', 'Premium restoran hissi'],
-  },
-];
-
-const palettePresets = [
-  {
-    name: 'Sıcak Amber',
-    badge: 'Popüler',
-    preview: ['#1F2937', '#B45309', '#FFFDF8'],
-    themes: [
-      { name: 'Koyu Menü', mode: 'DARK', primaryColor: '#F59E0B', secondaryColor: '#1F2937' },
-      { name: 'Açık Menü', mode: 'LIGHT', primaryColor: '#B45309', secondaryColor: '#FFFDF8' },
-    ],
-  },
-  {
-    name: 'Modern Adaçayı',
-    badge: 'Sakin',
-    preview: ['#132A13', '#31572C', '#F7F9F6'],
-    themes: [
-      { name: 'Orman Koyu', mode: 'DARK', primaryColor: '#90A955', secondaryColor: '#132A13' },
-      { name: 'Adaçayı Açık', mode: 'LIGHT', primaryColor: '#31572C', secondaryColor: '#F7F9F6' },
-    ],
-  },
-  {
-    name: 'Gece Mavisi',
-    badge: 'Premium',
-    preview: ['#0F172A', '#2563EB', '#F8FAFC'],
-    themes: [
-      { name: 'Gece Koyu', mode: 'DARK', primaryColor: '#60A5FA', secondaryColor: '#0F172A' },
-      { name: 'Buzul Açık', mode: 'LIGHT', primaryColor: '#1D4ED8', secondaryColor: '#F8FAFC' },
-    ],
-  },
-  {
-    name: 'Zarif Şarap',
-    badge: 'Şık',
-    preview: ['#3B0910', '#881337', '#FFF5F5'],
-    themes: [
-      { name: 'Kadife Koyu', mode: 'DARK', primaryColor: '#FB7185', secondaryColor: '#2A060C' },
-      { name: 'Gül Açık', mode: 'LIGHT', primaryColor: '#881337', secondaryColor: '#FFF5F5' },
-    ],
-  },
-];
+const MAX_CUSTOM_THEMES = 3;
 
 const defaults = {
   name: '',
@@ -172,395 +35,125 @@ export const buildDefaultMenuTemplate = (overrides = {}) => ({
 
 const normalize = (theme) => ({ ...defaults, ...(theme || {}), mode: theme?.mode || 'LIGHT', layout: { ...defaults.layout, ...((theme && theme.layout) || {}) } });
 
-export const ThemePreview = ({ draft, restaurant: propRestaurant }) => {
-  const auth = useAuth();
-  const currentRestaurant = propRestaurant || auth?.restaurant || null;
-  const restaurant = {
-    ...previewDemoRestaurant,
-    ...(currentRestaurant || {}),
-    name: currentRestaurant?.name || previewDemoRestaurant.name,
-    coverImage: currentRestaurant?.coverImage || currentRestaurant?.storeImage || previewDemoRestaurant.coverImage,
-    logo: currentRestaurant?.logo || previewDemoRestaurant.logo,
-    menuViewCount: currentRestaurant?.menuViewCount ?? previewDemoRestaurant.menuViewCount,
-  };
-  const previewShellRef = useRef(null);
-  const [previewGridCategory, setPreviewGridCategory] = useState(null);
-  const [previewDefaultCategory, setPreviewDefaultCategory] = useState(previewDemoCategories[0].id);
-  const previewTheme = getPublicMenuTheme(draft.theme || 'DEFAULT', draft.mode || 'LIGHT');
-  const previewMode = draft.mode || 'LIGHT';
-  const previewLayout = draft.layout || defaults.layout;
-  const previewPrimary = draft.primaryColor || restaurant.primaryColor || '#1F2937';
-  const previewSecondary = draft.secondaryColor || (draft.mode === 'DARK' ? '#f4efe8' : '#fffdf8');
-  const previewStyle = {
-    '--menu-primary': previewPrimary,
-    '--menu-secondary': previewSecondary,
-    '--menu-background': previewTheme.background,
-    '--menu-bg': previewTheme.background,
-    '--menu-surface': previewTheme.surface,
-    '--menu-text': previewTheme.text,
-    '--menu-muted': previewTheme.muted,
-    '--menu-border': previewTheme.border,
-    '--menu-radius': previewTheme.radius,
-    '--menu-shadow': previewTheme.shadow,
-    '--menu-font': publicMenuFonts[draft.font] || publicMenuFonts.Inter,
-  };
-
-  const isGridTheme = draft.theme === 'GRID';
-
-  useEffect(() => {
-    if (previewShellRef.current) {
-      previewShellRef.current.scrollTop = 0;
-    }
-  }, [draft.theme, draft.mode, previewGridCategory]);
-
-  const handleDefaultCategorySelect = (id) => {
-    setPreviewDefaultCategory(id);
-    const container = previewShellRef.current;
-    if (!container) return;
-
-    if (id === previewDemoCategories[0]?.id) {
-      container.scrollTo({ top: 0, behavior: 'smooth' });
-      return;
-    }
-
-    const target = container.querySelector(`#preview-cat-${id}`);
-    if (target) {
-      const containerRect = container.getBoundingClientRect();
-      const targetRect = target.getBoundingClientRect();
-      const offsetTop = targetRect.top - containerRect.top + container.scrollTop;
-      container.scrollTo({
-        top: Math.max(0, offsetTop - 52),
-        behavior: 'smooth',
-      });
-    }
-  };
-
-  return (
-    <div ref={previewShellRef} className="public-menu-shell preview-menu-shell" data-theme={draft.theme || 'DEFAULT'} data-mode={previewMode} data-layout={previewLayout.style || 'STANDARD'} data-show-featured={previewLayout.emphasizeFeatured !== false} style={previewStyle}>
-      <div className="public-menu-page preview-public-page">
-        {isGridTheme ? (
-          <>
-            <header className={`public-header public-header--grid-category ${!previewGridCategory ? 'is-grid-home' : ''}`} data-mode={previewMode}>
-              <div className="public-header--grid__top-bar">
-                <button
-                  type="button"
-                  className="header-control header-control--hamburger"
-                  onClick={() => {
-                    setPreviewGridCategory(null);
-                    if (previewShellRef.current) previewShellRef.current.scrollTop = 0;
-                  }}
-                  aria-label="Kategorileri aç"
-                >
-                  <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" strokeWidth="2.4" fill="none" strokeLinecap="round">
-                    <line x1="3.5" y1="6" x2="20.5" y2="6" />
-                    <line x1="3.5" y1="12" x2="20.5" y2="12" />
-                    <line x1="3.5" y1="18" x2="20.5" y2="18" />
-                  </svg>
-                </button>
-
-                <div
-                  className="public-header--grid__identity"
-                  onClick={() => {
-                    setPreviewGridCategory(null);
-                    if (previewShellRef.current) previewShellRef.current.scrollTop = 0;
-                  }}
-                  role="button"
-                  tabIndex="0"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      setPreviewGridCategory(null);
-                      if (previewShellRef.current) previewShellRef.current.scrollTop = 0;
-                    }
-                  }}
-                  aria-label="Kategorilere dön"
-                >
-                  {restaurant.logo ? (
-                    <img
-                      src={restaurant.logo}
-                      alt={restaurant.name}
-                      className="public-header--grid__logo-img"
-                    />
-                  ) : (
-                    <span className="public-header--grid__title">{restaurant.name}</span>
-                  )}
-                </div>
-
-                <button
-                  type="button"
-                  className="header-control header-control--search"
-                  onClick={() => {}}
-                  aria-label="Restoran bilgileri"
-                >
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="9" />
-                    <line x1="12" y1="8" x2="12" y2="8.01" strokeWidth="2.8" />
-                    <line x1="12" y1="12" x2="12" y2="16" />
-                  </svg>
-                </button>
-              </div>
-
-              {previewGridCategory && (
-                <div className="grid-category-nav-wrapper">
-                  <CategoryNavigation
-                    categories={previewDemoCategories}
-                    activeCategory={previewGridCategory}
-                    onSelect={(id) => {
-                      setPreviewGridCategory(id);
-                      if (previewShellRef.current) previewShellRef.current.scrollTop = 0;
-                    }}
-                  />
-                </div>
-              )}
-            </header>
-
-            {!previewGridCategory && (
-              <CategoryCardGrid
-                categories={previewDemoCategories}
-                onSelectCategory={(id) => {
-                  setPreviewGridCategory(id);
-                  if (previewShellRef.current) previewShellRef.current.scrollTop = 0;
-                }}
-              />
-            )}
-          </>
-        ) : (
-          <>
-            <MenuHeader
-              restaurant={restaurant}
-              onOpenCategories={() => {}}
-              onOpenInfo={() => {}}
-            />
-            <CategoryNavigation
-              categories={previewDemoCategories}
-              activeCategory={previewDefaultCategory}
-              onSelect={handleDefaultCategorySelect}
-            />
-            {previewLayout.showStories && (
-              <FeaturedStories
-                products={previewDemoCategories.flatMap((category) => category.products)}
-                onSelect={() => {}}
-              />
-            )}
-          </>
-        )}
-
-        {(!isGridTheme || previewGridCategory) && (
-          <main className="public-menu-content preview-menu-content">
-            {isGridTheme ? (
-              (() => {
-                const activeCat = previewDemoCategories.find((c) => c.id === previewGridCategory) || previewDemoCategories[0];
-                return activeCat ? (
-                  <CategorySection key={activeCat.id} category={activeCat} layout={previewLayout} onProductSelect={() => {}} themeKey={draft.theme} />
-                ) : null;
-              })()
-            ) : (
-              previewDemoCategories.map((category) => (
-                <div key={category.id} id={`preview-cat-${category.id}`}>
-                  <CategorySection category={category} layout={previewLayout} onProductSelect={() => {}} themeKey={draft.theme} />
-                </div>
-              ))
-            )}
-          </main>
-        )}
-
-        <footer className="public-footer">
-          <p className="public-footer__powered">Powered by zuuqrmenu</p>
-          {previewLayout?.showEcoBadge !== false && (
-            <div className="eco-leaf-banner" aria-label="Çevre dostu dijital menü">
-              <div className="eco-ambient-leaves" aria-hidden="true">
-                <span className="eco-ambient-leaf eco-ambient-leaf--1">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor">
-                    <path
-                      d="M19 3C15 4 8.5 8.5 7.5 14c-.8 4.2 1.8 7.5 5.2 7.5 4.5 0 7.5-5 8-10 .3-4-.5-7.5-1.7-8.5z"
-                      fill="currentColor"
-                      fillOpacity="0.45"
-                      strokeWidth="1.2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M8.5 19.5C11.5 16 14.5 10.5 19 3"
-                      stroke="currentColor"
-                      strokeWidth="1.1"
-                      strokeLinecap="round"
-                      opacity="0.8"
-                    />
-                    <path d="M11.5 15.5c-1.5-.6-2.5-1.4-3-2.2" stroke="currentColor" strokeWidth="0.8" opacity="0.6" strokeLinecap="round" />
-                    <path d="M14 12c1.8-.4 3.2-1.2 3.8-2" stroke="currentColor" strokeWidth="0.8" opacity="0.6" strokeLinecap="round" />
-                  </svg>
-                </span>
-                <span className="eco-ambient-leaf eco-ambient-leaf--2">
-                  <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor">
-                    <path
-                      d="M20 4c-3.8 2-9 6-11 11.5-1.2 3.3.4 6 3 6 4 0 7.2-4.5 8.8-10.5.8-3 .2-6-.8-7z"
-                      fill="currentColor"
-                      fillOpacity="0.4"
-                      strokeWidth="1.1"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M10 20C12.5 16.5 15.5 11 20 4"
-                      stroke="currentColor"
-                      strokeWidth="1"
-                      strokeLinecap="round"
-                      opacity="0.75"
-                    />
-                  </svg>
-                </span>
-                <span className="eco-ambient-leaf eco-ambient-leaf--3">
-                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor">
-                    <path
-                      d="M18.5 4.5c-3.2 1.5-7 5.2-7.8 9.5-.7 3.5 1.4 6.5 4.3 6.5 3.6 0 6-3.8 6.5-8.2.4-3.2-.3-6.5-3-7.8z"
-                      fill="currentColor"
-                      fillOpacity="0.45"
-                      strokeWidth="1.2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M12.5 19c2.2-3 4.8-7.5 6-14.5"
-                      stroke="currentColor"
-                      strokeWidth="1"
-                      strokeLinecap="round"
-                      opacity="0.8"
-                    />
-                    <path d="M14.5 15c-1.2-.5-2-1.2-2.5-1.8" stroke="currentColor" strokeWidth="0.8" opacity="0.6" strokeLinecap="round" />
-                  </svg>
-                </span>
-              </div>
-              <span className="eco-leaf-banner__text">
-                Bu menü kağıda basılmadı. Birlikte <strong>{Number(restaurant?.menuViewCount || 12480).toLocaleString('tr-TR')}</strong> yaprak koruduk.
-              </span>
-            </div>
-          )}
-        </footer>
-      </div>
-    </div>
-  );
+const ICONS = {
+  theme: <><rect x="3" y="3" width="7.5" height="7.5" rx="2" /><rect x="13.5" y="3" width="7.5" height="7.5" rx="2" /><rect x="3" y="13.5" width="7.5" height="7.5" rx="2" /><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2" /></>,
+  color: <><path d="M12 3a9 9 0 1 0 0 18c1.3 0 2-.9 2-1.8 0-1.3-1-1.6-1-2.7 0-1 .8-1.5 1.8-1.5H17a4 4 0 0 0 4-4c0-4.4-4-8-9-8Z" /><circle cx="7.5" cy="11" r="1" /><circle cx="10.5" cy="7" r="1" /><circle cx="15" cy="7.5" r="1" /></>,
+  type: <><path d="M4 7V5h16v2M12 5v14M9 19h6" /></>,
+  layout: <><path d="M4 7h10M18 7h2M4 17h2M10 17h10" /><circle cx="16" cy="7" r="2" /><circle cx="8" cy="17" r="2" /></>,
+  close: <><path d="M18 6 6 18M6 6l12 12" /></>,
+  trash: <><path d="M4 7h16M10 11v6M14 11v6" /><path d="m6 7 .8 12.2a1 1 0 0 0 1 .8h8.4a1 1 0 0 0 1-.8L18 7M9 7V4h6v3" /></>,
+  check: <path d="m5 12.5 4.5 4.5L19 7.5" />,
+  sun: <><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></>,
+  moon: <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5Z" />,
+  eye: <><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /></>,
+  sliders: <><path d="M4 7h10M18 7h2M4 17h2M10 17h10" /><circle cx="16" cy="7" r="2" /><circle cx="8" cy="17" r="2" /></>,
 };
+
+const Icon = ({ name, size = 18 }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">{ICONS[name]}</svg>
+);
+
+const TABS = [
+  ['theme', 'Tema', 'theme'],
+  ['color', 'Renk', 'color'],
+  ['type', 'Yazı tipi', 'type'],
+  ['layout', 'Düzen', 'layout'],
+];
+
+const Section = ({ title, hint, children }) => (
+  <section className="mcz-section">
+    <div className="mcz-section__head">
+      <h3>{title}</h3>
+      {hint && <p>{hint}</p>}
+    </div>
+    {children}
+  </section>
+);
+
+const ColorField = ({ label, hint, value, onChange }) => (
+  <label className="mcz-color">
+    <span className="mcz-color__swatch" style={{ background: value }}>
+      <input type="color" value={value} onChange={(event) => onChange(event.target.value.toUpperCase())} aria-label={label} />
+    </span>
+    <span className="mcz-color__text">
+      <b>{label}</b>
+      <small>{hint}</small>
+    </span>
+    <code>{value}</code>
+  </label>
+);
 
 const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, onDelete = null, editingIndex = null, initialMenu = null, restaurant = null }) => {
   useBodyScrollLock(true);
   const [savedThemes, setSavedThemes] = useState(Array.isArray(themes) ? themes : []);
   const [draft, setDraft] = useState(() => (initialMenu ? normalize(initialMenu) : buildDefaultMenuTemplate({ name: '' })));
-  const [feedback, setFeedback] = useState({ kind: 'idle', message: '', id: 0, isHiding: false });
-  const [siteToast, setSiteToast] = useState(null);
+  const [activeTab, setActiveTab] = useState('theme');
+  const [mobileView, setMobileView] = useState('settings');
+  const [toast, setToast] = useState(null);
   const [nameError, setNameError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [error, setError] = useState('');
-  const [showMobilePreview, setShowMobilePreview] = useState(false);
-  const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
-  const feedbackTimeoutRef = useRef(null);
-  const toastTimeoutRef = useRef(null);
-  const initialDraftSnapshotRef = useRef('');
-
-  const showToast = (message, type = 'error') => {
-    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
-    setSiteToast({ message, type, id: Date.now() });
-    toastTimeoutRef.current = setTimeout(() => {
-      setSiteToast(null);
-    }, 3000);
-  };
+  const toastTimer = useRef(null);
+  const snapshotRef = useRef('');
+  const nameRef = useRef(null);
 
   const isEditingExisting = Boolean(initialMenu && (initialMenu._id || initialMenu.id || typeof editingIndex === 'number'));
+  const isDirty = useMemo(() => JSON.stringify(draft) !== snapshotRef.current, [draft]);
+
+  const showToast = (message, type = 'error') => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast({ message, type, id: Date.now() });
+    toastTimer.current = setTimeout(() => setToast(null), 3000);
+  };
 
   const handleClose = () => {
     if (isClosing) return;
     setIsClosing(true);
-    setTimeout(() => {
-      if (typeof onClose === 'function') {
-        onClose();
-      }
-    }, 220);
+    setTimeout(() => { if (typeof onClose === 'function') onClose(); }, 200);
   };
 
   useEffect(() => {
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') {
-        handleClose();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isClosing]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return undefined;
-
-    const mediaQuery = window.matchMedia('(max-width: 767px)');
-    const updateViewport = () => setIsMobileViewport(mediaQuery.matches);
-
-    updateViewport();
-
-    if (typeof mediaQuery.addEventListener === 'function') {
-      mediaQuery.addEventListener('change', updateViewport);
-      return () => mediaQuery.removeEventListener('change', updateViewport);
-    }
-
-    mediaQuery.addListener(updateViewport);
-    return () => mediaQuery.removeListener(updateViewport);
-  }, []);
+    const onKey = (event) => { if (event.key === 'Escape' && !deleteConfirmOpen) handleClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isClosing, deleteConfirmOpen]);
 
   // The saved list follows the parent; the draft only restarts when a different theme is opened.
-  useEffect(() => {
-    setSavedThemes(Array.isArray(themes) ? themes : []);
-  }, [themes]);
+  useEffect(() => { setSavedThemes(Array.isArray(themes) ? themes : []); }, [themes]);
 
   useEffect(() => {
     const initial = initialMenu ? normalize(initialMenu) : buildDefaultMenuTemplate({ name: '' });
     setDraft(initial);
-    initialDraftSnapshotRef.current = JSON.stringify(initial);
+    snapshotRef.current = JSON.stringify(initial);
   }, [initialMenu]);
 
-  useEffect(() => () => {
-    if (feedbackTimeoutRef.current) window.clearTimeout(feedbackTimeoutRef.current);
-    if (toastTimeoutRef.current) window.clearTimeout(toastTimeoutRef.current);
-  }, []);
+  useEffect(() => () => { if (toastTimer.current) window.clearTimeout(toastTimer.current); }, []);
 
-  const triggerFeedback = (kind, message) => {
-    showToast(message, kind === 'error' ? 'error' : kind === 'warning' ? 'warning' : 'success');
-  };
-
-  const update = (field, value) => {
-    setDraft((current) => ({ ...current, [field]: value }));
-    setError('');
-  };
+  const update = (field, value) => setDraft((current) => ({ ...current, [field]: value }));
   const updateLayout = (field, value) => setDraft((current) => ({ ...current, layout: { ...current.layout, [field]: value } }));
+  const applyPalette = (palette) => setDraft((current) => ({ ...current, primaryColor: palette.primary, secondaryColor: palette.secondary }));
 
   const save = async () => {
-    // Hiçbir değişiklik yapılmadan kaydede basılırsa direkt onaylayıp modalı kapat (sadece mevcut bir tema düzenleniyorsa)
-    const isUnchanged = Boolean(isEditingExisting && initialDraftSnapshotRef.current && JSON.stringify(draft) === initialDraftSnapshotRef.current);
-    if (isUnchanged) {
-      triggerFeedback('success', 'Tema kaydedildi.');
-      setTimeout(() => {
-        handleClose();
-      }, 150);
-      return;
-    }
-
     const cleanName = draft.name?.trim() || '';
     if (!cleanName) {
       setNameError(true);
-      showToast('Lütfen bir tema adı girin.', 'error');
+      nameRef.current?.focus();
+      showToast('Lütfen tasarıma bir ad verin.', 'error');
+      return;
+    }
+    // Nothing changed on an existing design: just confirm and close.
+    if (isEditingExisting && !isDirty) {
+      showToast('Tasarım kaydedildi.', 'success');
+      setTimeout(handleClose, 150);
       return;
     }
 
     setNameError(false);
     setSaving(true);
-    setError('');
-    setFeedback((current) => ({ ...current, kind: 'idle', message: '', id: current.id + 1 }));
-
     try {
-      const payload = {
-        ...normalize(draft),
-        name: cleanName,
-        mode: draft.mode || 'LIGHT',
-        layout: { ...defaults.layout, ...(draft.layout || {}) },
-      };
+      const payload = { ...normalize(draft), name: cleanName, mode: draft.mode || 'LIGHT', layout: { ...defaults.layout, ...(draft.layout || {}) } };
       const next = Array.isArray(savedThemes) ? [...savedThemes] : [];
       const hasEditingIndex = typeof editingIndex === 'number' && editingIndex >= 0 && editingIndex < next.length;
       const targetId = draft?._id || draft?.id || initialMenu?._id || initialMenu?.id;
@@ -569,409 +162,285 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, onDelete = nu
         : (targetId ? next.findIndex((item) => String(item?._id || item?.id) === String(targetId)) : -1);
 
       if (existingIndex >= 0) {
-        const existingItem = next[existingIndex];
-        const existingId = existingItem?._id || existingItem?.id;
-        next[existingIndex] = {
-          ...payload,
-          ...(existingId ? { _id: existingId } : {}),
-        };
-      } else if (next.length >= 3) {
-        throw Object.assign(new Error('limit'), { response: { status: 400, data: { error: 'En fazla 3 özel tema kaydedebilirsiniz. Yeni tema için önce birini silin.' } } });
+        const existingId = next[existingIndex]?._id || next[existingIndex]?.id;
+        next[existingIndex] = { ...payload, ...(existingId ? { _id: existingId } : {}) };
+      } else if (next.length >= MAX_CUSTOM_THEMES) {
+        throw Object.assign(new Error('limit'), { response: { status: 400, data: { error: 'En fazla 3 özel tasarım kaydedebilirsiniz. Yeni tasarım için önce birini silin.' } } });
       } else {
-        const { _id, id, ...newThemePayload } = payload;
-        next.push(newThemePayload);
+        const { _id, id, ...fresh } = payload;
+        next.push(fresh);
       }
 
-      let lastSaveError = null;
-      for (let attempt = 0; attempt < 2; attempt++) {
+      let lastError = null;
+      for (let attempt = 0; attempt < 2; attempt += 1) {
         try {
           await onSaved(next, payload, existingIndex >= 0 ? existingIndex : -1);
-          lastSaveError = null;
+          lastError = null;
           break;
-        } catch (attemptErr) {
-          lastSaveError = attemptErr;
-          // If this is a client validation error (400), don't retry, throw immediately
-          if (attemptErr?.response?.status === 400) {
-            break;
-          }
-          // On network/socket wake-up transient errors (500, timeout, network error), wait 400ms and retry once
-          if (attempt === 0) {
-            await new Promise((res) => setTimeout(res, 400));
-          }
+        } catch (attemptError) {
+          lastError = attemptError;
+          if (attemptError?.response?.status === 400) break; // validation errors will not succeed on retry
+          if (attempt === 0) await new Promise((resolve) => setTimeout(resolve, 400)); // one retry for a waking server
         }
       }
-      if (lastSaveError) throw lastSaveError;
+      if (lastError) throw lastError;
 
-      triggerFeedback('success', existingIndex >= 0 ? 'Tema güncellendi.' : 'Tema kaydedildi.');
-      setTimeout(() => {
-        handleClose();
-      }, 150);
+      showToast(existingIndex >= 0 ? 'Tasarım güncellendi.' : 'Tasarım kaydedildi.', 'success');
+      setTimeout(handleClose, 150);
     } catch (err) {
-      const message = err?.response?.data?.error || 'Menü kaydedilemedi. Lütfen tekrar deneyin.';
-      setError(message);
-      setNameError(false);
-      triggerFeedback('error', message);
+      showToast(err?.response?.data?.error || 'Tasarım kaydedilemedi. Lütfen tekrar deneyin.', 'error');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDeleteTheme = async () => {
-    if (typeof onDelete !== 'function') {
-      setDeleteConfirmOpen(false);
-      return;
-    }
+  const handleDelete = async () => {
+    if (typeof onDelete !== 'function') { setDeleteConfirmOpen(false); return; }
     setDeleting(true);
     try {
       const next = Array.isArray(savedThemes) ? [...savedThemes] : [];
       const targetId = draft?._id || draft?.id || initialMenu?._id || initialMenu?.id;
       const hasEditingIndex = typeof editingIndex === 'number' && editingIndex >= 0 && editingIndex < next.length;
-      const targetIndex = hasEditingIndex
-        ? editingIndex
-        : (targetId ? next.findIndex((item) => String(item?._id || item?.id) === String(targetId)) : -1);
-
+      const targetIndex = hasEditingIndex ? editingIndex : (targetId ? next.findIndex((item) => String(item?._id || item?.id) === String(targetId)) : -1);
       if (targetIndex >= 0) {
-        const deletedItem = next[targetIndex];
-        const deletedId = deletedItem?._id || deletedItem?.id || targetId;
+        const deletedId = next[targetIndex]?._id || next[targetIndex]?.id || targetId;
         next.splice(targetIndex, 1);
         await onDelete(next, deletedId, targetIndex);
       }
       setDeleteConfirmOpen(false);
       handleClose();
     } catch (err) {
-      const message = err?.response?.data?.error || 'Tema silinemedi. Lütfen tekrar deneyin.';
-      setError(message);
-      triggerFeedback('error', message);
+      showToast(err?.response?.data?.error || 'Tasarım silinemedi. Lütfen tekrar deneyin.', 'error');
       setDeleteConfirmOpen(false);
     } finally {
       setDeleting(false);
     }
   };
 
-  const preview = getPublicMenuTheme(draft.theme, draft.mode || 'LIGHT');
-  const fontStack = publicMenuFonts[draft.font] || publicMenuFonts.Inter;
-  const showPreviewSection = !isMobileViewport || showMobilePreview;
+  const activeThemeOption = menuThemeOptions.find((option) => option.value === draft.theme) || menuThemeOptions[0];
 
-  return (
-    <>
-      {siteToast && typeof document !== 'undefined' && createPortal(
-        <div
-          key={siteToast.id}
-          className={`site-global-toast site-global-toast--${siteToast.type}`}
-          role="alert"
-        >
-          <span>{siteToast.type === 'error' ? '⚠️' : siteToast.type === 'warning' ? '💡' : '✓'}</span>
-          <span>{siteToast.message}</span>
-        </div>,
-        document.body
-      )}
-      <div className={`menu-compact-backdrop ${isClosing ? 'is-closing' : ''}`} role="presentation" onMouseDown={(event) => event.target === event.currentTarget && handleClose()}>
-        <div className={`menu-compact-modal ${isClosing ? 'is-closing' : ''}`} role="dialog" aria-modal="true" aria-labelledby="menu-compact-title">
-        <header className="menu-compact-header">
-          <div className="menu-compact-header__title-wrap">
-            <span className="menu-compact-kicker">Menü tasarımı</span>
-            <h2 id="menu-compact-title">Menü Tasarımı</h2>
-            <p>Menünüzün görünümünü ve sunumunu özelleştirin.</p>
-          </div>
-
-          <div className="menu-compact-header__actions">
-            <div className={`menu-theme-name-box ${nameError ? 'is-invalid' : ''}`}>
-              <span className="menu-theme-name-box__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 20h9" />
-                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-                </svg>
-              </span>
-              <input
-                type="text"
-                value={draft.name || ''}
-                onChange={(event) => {
-                  setDraft((current) => ({ ...current, name: event.target.value }));
-                  setNameError(false);
-                  setError('');
-                  setFeedback({ kind: 'idle', message: '', id: Date.now() + Math.random() });
-                }}
-                className="menu-theme-name-box__input"
-                aria-label="Tema adı"
-                aria-invalid={nameError}
-                placeholder="Tema adı girin..."
-              />
+  const renderTab = () => {
+    if (activeTab === 'theme') {
+      return (
+        <>
+          <Section title="Menü teması" hint="Menünün genel düzeni ve gezinme biçimi.">
+            <div className="mcz-theme-list" role="radiogroup" aria-label="Menü teması">
+              {menuThemeOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={draft.theme === option.value}
+                  className={`mcz-theme ${draft.theme === option.value ? 'is-selected' : ''}`}
+                  onClick={() => update('theme', option.value)}
+                >
+                  <ThemeArt theme={option.value} mode={draft.mode} accent={draft.primaryColor} />
+                  <span className="mcz-theme__text">
+                    <b>{option.label}</b>
+                    <small>{option.kind}</small>
+                    <em>{option.description}</em>
+                  </span>
+                  <span className="mcz-theme__check" aria-hidden="true"><Icon name="check" size={14} /></span>
+                </button>
+              ))}
             </div>
+          </Section>
+          <Section title="Menü modu" hint="Müşterinin telefonunda açık ya da koyu görünüm.">
+            <div className="mcz-seg" role="radiogroup" aria-label="Menü modu">
+              {[['LIGHT', 'Açık', 'sun'], ['DARK', 'Koyu', 'moon']].map(([value, label, icon]) => (
+                <button key={value} type="button" role="radio" aria-checked={draft.mode === value} className={draft.mode === value ? 'is-active' : ''} onClick={() => update('mode', value)}>
+                  <Icon name={icon} size={16} />{label}
+                </button>
+              ))}
+            </div>
+          </Section>
+        </>
+      );
+    }
 
-            {isEditingExisting && (
-              <button
-                type="button"
-                className="menu-compact-delete-btn"
-                onClick={() => setDeleteConfirmOpen(true)}
-                disabled={saving || deleting}
-                title="Temayı Sil"
-                aria-label="Temayı Sil"
-              >
-                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <polyline points="3 6 5 6 21 6" />
-                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                  <line x1="10" y1="11" x2="10" y2="17" />
-                  <line x1="14" y1="11" x2="14" y2="17" />
-                </svg>
-                <span>Sil</span>
+    if (activeTab === 'color') {
+      return (
+        <>
+          <Section title="Hazır paletler" hint="Tek dokunuşla vurgu ve ikincil rengi birlikte ayarlayın.">
+            <div className="mcz-palettes">
+              {menuPalettes.map((palette) => {
+                const selected = palette.primary.toLowerCase() === draft.primaryColor?.toLowerCase() && palette.secondary.toLowerCase() === draft.secondaryColor?.toLowerCase();
+                return (
+                  <button key={palette.name} type="button" className={`mcz-palette ${selected ? 'is-selected' : ''}`} onClick={() => applyPalette(palette)} aria-pressed={selected}>
+                    <span className="mcz-palette__dots"><i style={{ background: palette.primary }} /><i style={{ background: palette.secondary }} /></span>
+                    <b>{palette.name}</b>
+                  </button>
+                );
+              })}
+            </div>
+          </Section>
+          <Section title="Kendi renkleriniz" hint="Marka renginizi seçin; önizleme anında güncellenir.">
+            <div className="mcz-colors">
+              <ColorField label="Vurgu rengi" hint="Seçili sekme, rozet, düğmeler" value={draft.primaryColor || '#1F2937'} onChange={(value) => update('primaryColor', value)} />
+              <ColorField label="İkincil renk" hint="Yardımcı yüzeyler ve detaylar" value={draft.secondaryColor || '#FFFFFF'} onChange={(value) => update('secondaryColor', value)} />
+            </div>
+          </Section>
+        </>
+      );
+    }
+
+    if (activeTab === 'type') {
+      return (
+        <Section title="Yazı tipi" hint="Menünün sesini belirleyen karakter.">
+          <div className="mcz-fonts" role="radiogroup" aria-label="Yazı tipi">
+            {menuFonts.map((font) => (
+              <button key={font} type="button" role="radio" aria-checked={draft.font === font} className={`mcz-font ${draft.font === font ? 'is-selected' : ''}`} onClick={() => update('font', font)}>
+                <span className="mcz-font__sample" style={{ fontFamily: publicMenuFonts[font] }}>Aa</span>
+                <span className="mcz-font__text">
+                  <b style={{ fontFamily: publicMenuFonts[font] }}>{font}</b>
+                  <small>{menuFontMeta[font]}</small>
+                </span>
+                <span className="mcz-theme__check" aria-hidden="true"><Icon name="check" size={14} /></span>
               </button>
-            )}
-
-            <button
-              type="button"
-              className="menu-compact-save"
-              onClick={save}
-              disabled={saving}
-              aria-label="Kaydet"
-              title={saving ? 'Kaydediliyor...' : 'Kaydet'}
-            >
-              {saving ? (
-                <>
-                  <span className="menu-compact-spinner" aria-hidden="true" />
-                  <span>Kaydediliyor...</span>
-                </>
-              ) : (
-                <>
-                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                    <polyline points="17 21 17 13 7 13 7 21" />
-                    <polyline points="7 3 7 8 15 8" />
-                  </svg>
-                  <span>Kaydet</span>
-                </>
-              )}
-            </button>
-
-            <button
-              type="button"
-              className="menu-compact-close-btn"
-              onClick={handleClose}
-              aria-label="Kapat"
-              title="Kapat"
-            >
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
+            ))}
           </div>
-        </header>
+        </Section>
+      );
+    }
 
-        {isMobileViewport && (
-          <button
-            type="button"
-            className={`menu-compact-mobile-preview-fab ${showMobilePreview ? 'is-active' : ''}`}
-            onClick={() => setShowMobilePreview((current) => !current)}
-            aria-label={showMobilePreview ? 'Canlı önizlemeyi kapat' : 'Canlı önizlemeyi aç'}
-            title={showMobilePreview ? 'Canlı önizlemeyi kapat' : 'Canlı önizlemeyi aç'}
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6-9.5-6Z" />
-              <circle cx="12" cy="12" r="2.5" />
-            </svg>
-          </button>
-        )}
+    return (
+      <>
+        <Section title="Ürün yerleşimi" hint="Ürünlerin listede nasıl dizileceği.">
+          <div className="mcz-layouts" role="radiogroup" aria-label="Ürün yerleşimi">
+            {menuLayoutOptions.map((option) => (
+              <button key={option.value} type="button" role="radio" aria-checked={draft.layout.style === option.value} className={`mcz-layout ${draft.layout.style === option.value ? 'is-selected' : ''}`} onClick={() => updateLayout('style', option.value)}>
+                <span className={`mcz-layout__art mcz-layout__art--${option.value.toLowerCase()}`} aria-hidden="true"><i /><i /><i /></span>
+                <span className="mcz-layout__text"><b>{option.label}</b><small>{option.description}</small></span>
+              </button>
+            ))}
+          </div>
+        </Section>
+        <Section title="Gösterilecekler" hint="Menüde hangi unsurların yer alacağını seçin.">
+          <div className="mcz-toggles">
+            {menuToggleOptions.map(([field, title, helper]) => (
+              <label key={field} className="mcz-toggle">
+                <span className="mcz-toggle__text"><b>{title}</b><small>{helper}</small></span>
+                <span className="mcz-switch">
+                  <input type="checkbox" checked={draft.layout[field] !== false} onChange={(event) => updateLayout(field, event.target.checked)} />
+                  <i aria-hidden="true" />
+                </span>
+              </label>
+            ))}
+          </div>
+        </Section>
+      </>
+    );
+  };
 
-        <div className={`menu-compact-layout ${isMobileViewport ? 'is-mobile' : ''} ${showMobilePreview && isMobileViewport ? 'is-mobile-preview' : ''}`}>
-          {(!isMobileViewport || !showMobilePreview) && (
-            <aside className="menu-compact-sidebar">
-              <section className="menu-compact-panel">
-                <div className="menu-compact-panel__header">
-                  <div>
-                    <h3>Tema</h3>
-                    <p>Menünüzün temel görünümünü seçin.</p>
-                  </div>
-                </div>
+  // Rendered in <body> so the dashboard's global form/heading overrides never leak into the dialog.
+  return createPortal(
+    <>
+      {toast && <div key={toast.id} className={`mcz-toast mcz-toast--${toast.type}`} role="status">{toast.message}</div>}
+      <div className={`mcz-backdrop ${isClosing ? 'is-closing' : ''}`} role="presentation" onMouseDown={(event) => event.target === event.currentTarget && handleClose()}>
+        <div className={`mcz-dialog ${isClosing ? 'is-closing' : ''}`} role="dialog" aria-modal="true" aria-labelledby="mcz-title">
+          <header className="mcz-head">
+            <div className="mcz-head__title">
+              <p className="mcz-kicker">{isEditingExisting ? 'Tasarımı düzenle' : 'Yeni tasarım'}</p>
+              <label className={`mcz-name ${nameError ? 'is-invalid' : ''}`}>
+                <span className="mcz-visually-hidden" id="mcz-title">Tasarım adı</span>
+                <input
+                  ref={nameRef}
+                  type="text"
+                  value={draft.name || ''}
+                  onChange={(event) => { update('name', event.target.value); setNameError(false); }}
+                  placeholder="Tasarıma bir ad verin"
+                  maxLength={60}
+                  aria-invalid={nameError}
+                />
+              </label>
+            </div>
+            <div className="mcz-head__actions">
+              {isEditingExisting && typeof onDelete === 'function' && (
+                <button type="button" className="mcz-icon-btn mcz-icon-btn--danger" onClick={() => setDeleteConfirmOpen(true)} disabled={saving || deleting} aria-label="Tasarımı sil" title="Tasarımı sil"><Icon name="trash" /></button>
+              )}
+              <button type="button" className="mcz-icon-btn" onClick={handleClose} aria-label="Kapat" title="Kapat"><Icon name="close" /></button>
+            </div>
+          </header>
 
-                <div className="menu-theme-grid">
-                  {themeOptions.map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      className={`menu-theme-card ${draft.theme === option.value ? 'is-selected' : ''}`}
-                      onClick={() => update('theme', option.value)}
-                      title={`${option.label} teması`}
-                    >
-                      {option.value === 'GRID' ? (
-                        <span className="menu-theme-card__art" style={{ background: '#0f172a' }}>
-                          <span style={{ display: 'block', height: '0.6rem', width: '38%', borderRadius: '4px', background: '#f97316' }} />
-                          <span style={{ display: 'block', height: '1.5rem', width: '100%', borderRadius: '6px', background: 'linear-gradient(90deg, #1e293b, #334155)', margin: '2px 0' }} />
-                          <span style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px', width: '100%' }}>
-                            <span style={{ height: '1.5rem', borderRadius: '5px', background: 'linear-gradient(90deg, #1e293b, #334155)' }} />
-                            <span style={{ height: '1.5rem', borderRadius: '5px', background: 'linear-gradient(90deg, #1e293b, #334155)' }} />
-                          </span>
-                        </span>
-                      ) : (
-                        <span className="menu-theme-card__art" style={{ background: '#f7f5f0' }}>
-                          <span className="menu-theme-card__header" style={{ background: '#1f2937' }} />
-                          <span className="menu-theme-card__nav" style={{ background: '#eef2f7' }} />
-                          <span className="menu-theme-card__item" style={{ background: '#dfe6ef' }} />
-                          <span className="menu-theme-card__item menu-theme-card__item--secondary" style={{ background: '#f3f6fb' }} />
-                        </span>
-                      )}
-                      <span className="menu-theme-card__meta">
-                        <strong>{option.label}</strong>
-                        <small>{option.kind}</small>
-                      </span>
-                      {draft.theme === option.value && <span className="menu-theme-card__indicator" aria-hidden="true" />}
-                    </button>
-                  ))}
-                </div>
+          <div className="mcz-mobile-switch" role="tablist" aria-label="Görünüm">
+            <button type="button" role="tab" aria-selected={mobileView === 'settings'} className={mobileView === 'settings' ? 'is-active' : ''} onClick={() => setMobileView('settings')}><Icon name="sliders" size={16} />Ayarlar</button>
+            <button type="button" role="tab" aria-selected={mobileView === 'preview'} className={mobileView === 'preview' ? 'is-active' : ''} onClick={() => setMobileView('preview')}><Icon name="eye" size={16} />Önizleme</button>
+          </div>
 
-                <div className="menu-mode-row">
-                  <span>Menü modu</span>
-                  <div className="menu-mode-group" role="group" aria-label="Menü modu">
-                    {['LIGHT', 'DARK'].map((mode) => (
-                      <button
-                        key={mode}
-                        type="button"
-                        className={draft.mode === mode ? 'is-selected' : ''}
-                        onClick={() => update('mode', mode)}
-                      >
-                        {mode === 'LIGHT' ? '☀ Açık' : '◐ Koyu'}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </section>
-
-              <section className="menu-compact-panel">
-                <div className="menu-compact-panel__header">
-                  <div>
-                    <h3>Tipografi</h3>
-                    <p>Menünüzde kullanılacak yazı karakterini seçin.</p>
-                  </div>
-                </div>
-
-                <div className="menu-font-grid">
-                  {fonts.map((font) => (
-                    <button
-                      type="button"
-                      key={font}
-                      className={draft.font === font ? 'menu-font-card is-selected' : 'menu-font-card'}
-                      onClick={() => update('font', font)}
-                      title={`${font} — ${fontMeta[font]}`}
-                    >
-                      <span className="menu-font-sample" style={{ fontFamily: publicMenuFonts[font] }}>Aa</span>
-                      <strong>{font}</strong>
-                      <small>{fontMeta[font]}</small>
-                    </button>
-                  ))}
-                </div>
-              </section>
-
-              <section className="menu-compact-panel">
-                <div className="menu-compact-panel__header">
-                  <div>
-                    <h3>Görünüm</h3>
-                    <p>Menüde hangi unsurları göstereceğinizi belirleyin.</p>
-                  </div>
-                </div>
-
-                <div className="menu-switch-list">
-                  {[
-                    ['showImages', 'Ürün görsellerini göster', 'Ürün fotoğraflarını menüde göster.'],
-                    ['showDescriptions', 'Ürün açıklamasını göster', 'Ürün açıklamalarını görünür tut.'],
-                    ['showPrices', 'Fiyatları göster', 'Ürün fiyatlarını göstermek için açık tut.'],
-                    ['emphasizeFeatured', 'Öne çıkan ürünü vurgula', 'Öne çıkan ürünleri daha belirgin göster.'],
-                    ['showStories', 'Hikayeler alanını göster', 'Öne çıkan ürünleri menüde hikaye kartları olarak göster.'],
-                    ['showEcoBadge', 'Doğa dostu rozeti göster', 'Alt kısımdaki yeşil yaprak ve kağıt tasarrufu sayacını göster.'],
-                  ].map(([field, title, helper]) => (
-                    <label key={field} className="menu-toggle-row">
-                      <span className="menu-toggle-copy">
-                        <b>{title}</b>
-                        <small>{helper}</small>
-                      </span>
-                      <span className="menu-toggle-switch">
-                        <input type="checkbox" checked={draft.layout[field] !== false} onChange={(event) => updateLayout(field, event.target.checked)} />
-                        <i aria-hidden="true" />
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </section>
-            </aside>
-          )}
-
-          {(!isMobileViewport || showMobilePreview) && (
-            <div className="menu-compact-preview-shell">
-              <div className="menu-compact-preview__eyebrow">Canlı önizleme</div>
-              <div className="menu-compact-preview">
-                <ThemePreview draft={draft} restaurant={restaurant} />
+          <div className={`mcz-body is-${mobileView}`}>
+            <div className="mcz-controls">
+              <div className="mcz-tabs" role="tablist" aria-label="Tasarım ayarları">
+                {TABS.map(([id, label, icon]) => (
+                  <button key={id} type="button" role="tab" id={`mcz-tab-${id}`} aria-selected={activeTab === id} aria-controls="mcz-panel" className={activeTab === id ? 'is-active' : ''} onClick={() => setActiveTab(id)}>
+                    <Icon name={icon} size={17} /><span>{label}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="mcz-panel" id="mcz-panel" role="tabpanel" aria-labelledby={`mcz-tab-${activeTab}`} key={activeTab}>
+                {renderTab()}
               </div>
             </div>
-          )}
-        </div>
 
-        <ThemeDeleteConfirmDialog
-          open={deleteConfirmOpen}
-          themeName={draft.name}
-          deleting={deleting}
-          onCancel={() => setDeleteConfirmOpen(false)}
-          onConfirm={handleDeleteTheme}
-        />
+            <div className="mcz-stage">
+              <div className="mcz-stage__label">
+                <span>Canlı önizleme</span>
+                <b>{activeThemeOption.label} · {draft.mode === 'DARK' ? 'Koyu' : 'Açık'}</b>
+              </div>
+              <div className="mcz-phone">
+                <div className="mcz-phone__screen">
+                  <ThemePreview draft={draft} restaurant={restaurant} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <footer className="mcz-foot">
+            <p className={`mcz-status ${isDirty || !isEditingExisting ? 'is-dirty' : ''}`}>
+              <i aria-hidden="true" />
+              {isEditingExisting ? (isDirty ? 'Kaydedilmemiş değişiklikler var' : 'Tüm değişiklikler kaydedildi') : 'Yeni tasarım henüz kaydedilmedi'}
+            </p>
+            <div className="mcz-foot__actions">
+              <button type="button" className="mcz-btn mcz-btn--ghost" onClick={handleClose}>Vazgeç</button>
+              <button type="button" className="mcz-btn mcz-btn--primary" onClick={save} disabled={saving}>
+                {saving ? <><span className="mcz-spinner" aria-hidden="true" />Kaydediliyor…</> : 'Tasarımı kaydet'}
+              </button>
+            </div>
+          </footer>
+
+          <ThemeDeleteConfirmDialog open={deleteConfirmOpen} themeName={draft.name} deleting={deleting} onCancel={() => setDeleteConfirmOpen(false)} onConfirm={handleDelete} />
+        </div>
       </div>
-    </div>
-    </>
+    </>,
+    document.body,
   );
 };
 
 export const ThemeDeleteConfirmDialog = ({ open, themeName, deleting, onCancel, onConfirm }) => {
   const [isClosing, setIsClosing] = useState(false);
 
-  useEffect(() => {
-    if (!open) {
-      setIsClosing(false);
-      return;
-    }
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape' && !deleting) {
-        handleClose();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [open, deleting]);
-
-  if (!open) return null;
-
   const handleClose = () => {
     if (deleting || isClosing) return;
     setIsClosing(true);
-    setTimeout(() => {
-      setIsClosing(false);
-      onCancel();
-    }, 200);
+    setTimeout(() => { setIsClosing(false); onCancel(); }, 200);
   };
 
+  useEffect(() => {
+    if (!open) { setIsClosing(false); return undefined; }
+    const onKey = (event) => { if (event.key === 'Escape' && !deleting) { event.stopPropagation(); handleClose(); } };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [open, deleting, isClosing]);
+
+  if (!open) return null;
+
   return (
-    <div
-      className={`publish-dialog-backdrop ${isClosing ? 'is-closing' : ''}`}
-      role="presentation"
-      onMouseDown={(event) => event.target === event.currentTarget && handleClose()}
-    >
+    <div className={`publish-dialog-backdrop ${isClosing ? 'is-closing' : ''}`} role="presentation" onMouseDown={(event) => event.target === event.currentTarget && handleClose()}>
       <div className={`publish-dialog ${isClosing ? 'is-closing' : ''}`} role="dialog" aria-modal="true" aria-labelledby="theme-delete-confirm-title">
-        <h2 id="theme-delete-confirm-title">Temayı Sil</h2>
-        <p>
-          <strong>{themeName || 'Bu temayı'}</strong> silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
-        </p>
+        <h2 id="theme-delete-confirm-title">Tasarımı sil</h2>
+        <p><strong>{themeName || 'Bu tasarımı'}</strong> silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.</p>
         <div className="publish-dialog__actions">
-          <button
-            type="button"
-            className="publish-dialog__cancel"
-            onClick={handleClose}
-            disabled={deleting}
-          >
-            Vazgeç
-          </button>
-          <button
-            type="button"
-            className="publish-dialog__confirm publish-dialog__confirm--danger"
-            onClick={onConfirm}
-            disabled={deleting}
-          >
-            {deleting ? 'Siliniyor...' : 'Temayı Sil'}
-          </button>
+          <button type="button" className="publish-dialog__cancel" onClick={handleClose} disabled={deleting}>Vazgeç</button>
+          <button type="button" className="publish-dialog__confirm publish-dialog__confirm--danger" onClick={onConfirm} disabled={deleting}>{deleting ? 'Siliniyor...' : 'Tasarımı sil'}</button>
         </div>
       </div>
     </div>
@@ -979,4 +448,3 @@ export const ThemeDeleteConfirmDialog = ({ open, themeName, deleting, onCancel, 
 };
 
 export default MenuCustomizationCompactModal;
-

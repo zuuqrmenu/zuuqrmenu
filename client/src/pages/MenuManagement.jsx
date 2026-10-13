@@ -6,6 +6,8 @@ import MenuStructureEditor from '../components/MenuStructureEditor';
 import DashboardSkeleton from '../components/DashboardSkeleton';
 import { PageHeader, Card, Button } from '../components/dashboard/ui';
 import PublicMenuButton from '../components/PublicMenuButton';
+import ThemeArt from '../components/menu-customizer/ThemeArt';
+import { getMenuThemeOption } from '../utils/menuThemeMeta';
 import MenuCustomizationCompactModal, { buildDefaultMenuTemplate, ThemeDeleteConfirmDialog } from '../components/MenuCustomizationCompactModal';
 import MenuImportPanel from '../components/MenuImportPanel';
 import { useAuth } from '../context/AuthContext';
@@ -364,37 +366,11 @@ const CategoryModal = ({ category, nextOrder, onClose, onSaved }) => {
     : modalContent;
 };
 
-const ThemeArtCard = ({ theme }) => {
-  const isGrid = theme?.theme === 'GRID';
-  const isDark = theme?.mode === 'DARK';
-  const primary = theme?.primaryColor || '#1F2937';
-  const bg = isDark ? '#0f172a' : '#f7f5f0';
-  const surface = isDark ? '#1e293b' : '#dfe6ef';
-  const surface2 = isDark ? '#334155' : '#f3f6fb';
-  const accent = isGrid ? (theme?.primaryColor || '#f97316') : primary;
-
-  if (isGrid) {
-    return (
-      <span className="stsm-art" style={{ background: bg }}>
-        <span style={{ display: 'block', height: '.55rem', width: '40%', borderRadius: '4px', background: accent, marginBottom: '3px' }} />
-        <span style={{ display: 'block', height: '1.4rem', width: '100%', borderRadius: '5px', background: `linear-gradient(90deg, ${surface}, ${surface2})`, marginBottom: '3px' }} />
-        <span style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px' }}>
-          <span style={{ height: '1.4rem', borderRadius: '5px', background: `linear-gradient(90deg, ${surface}, ${surface2})` }} />
-          <span style={{ height: '1.4rem', borderRadius: '5px', background: `linear-gradient(90deg, ${surface}, ${surface2})` }} />
-        </span>
-      </span>
-    );
-  }
-
-  return (
-    <span className="stsm-art" style={{ background: bg }}>
-      <span style={{ display: 'block', height: '.85rem', width: '48%', borderRadius: '999px', background: primary, marginBottom: '3px' }} />
-      <span style={{ display: 'block', height: '.35rem', width: '80%', borderRadius: '999px', background: surface, marginBottom: '4px' }} />
-      <span style={{ display: 'block', height: '.65rem', width: '78%', borderRadius: '6px', background: surface, marginBottom: '2px' }} />
-      <span style={{ display: 'block', height: '.65rem', width: '55%', borderRadius: '6px', background: surface2 }} />
-    </span>
-  );
-};
+const ThemeArtCard = ({ theme }) => (
+  <span className="stsm-art stsm-art--svg">
+    <ThemeArt theme={theme?.theme} mode={theme?.mode} accent={theme?.primaryColor} />
+  </span>
+);
 
 const SavedThemeSelectionModal = ({ themes, activeThemeId, onClose, onApply, applying, onNewTheme, onEditTheme, onDeleteTheme }) => {
   const [selectedThemeId, setSelectedThemeId] = useState(activeThemeId ? String(activeThemeId) : '');
@@ -429,8 +405,8 @@ const SavedThemeSelectionModal = ({ themes, activeThemeId, onClose, onApply, app
   }, [activeThemeId]);
 
   const options = [
-    { id: '', name: 'Varsayılan', theme: buildDefaultMenuTemplate({ name: 'Varsayılan' }), description: 'Klasik menü' },
-    ...themes.map((theme, index) => ({ id: String(theme._id || theme.id), name: theme.name, theme, description: theme.theme === 'GRID' ? 'Modern tema' : 'Varsayılan tema', index })),
+    { id: '', name: 'Varsayılan', theme: buildDefaultMenuTemplate({ name: 'Varsayılan' }), description: 'Klasik · Liste görünümü' },
+    ...themes.map((theme, index) => ({ id: String(theme._id || theme.id), name: theme.name, theme, description: `${getMenuThemeOption(theme.theme).label} · ${getMenuThemeOption(theme.theme).kind}`, index })),
   ];
 
   const canAddNewTheme = themes.length < 3; // En fazla 3 özel tema + 1 varsayılan = 4 tema
@@ -869,6 +845,18 @@ const MenuManagement = () => {
     setCustomizationOpen(true);
   };
 
+  // Deep links used by the ZuuAI assistant: ?customize=1, ?designs=1, ?newCategory=1
+  useEffect(() => {
+    if (loading) return;
+    const params = new URLSearchParams(location.search);
+    if (params.get('customize') === '1') handleEditActiveOrNew();
+    else if (params.get('designs') === '1') setThemeSelectionOpen(true);
+    else if (params.get('newCategory') === '1') { setEditingCategory(null); setModalOpen(true); }
+    else return;
+    window.history.replaceState(null, '', location.pathname);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search, loading]);
+
   return (
     <RestaurantLayout>
       <div className="dp">
@@ -950,15 +938,23 @@ const MenuManagement = () => {
             sub="Menünüzün görünümünü seçin ya da kendi tasarımınızı oluşturun."
           >
             <div className="dp-theme__live">
-              <span className="dp-theme__swatch" style={{ background: activeTheme?.primaryColor || '#1F2937' }} aria-hidden="true">
-                <i style={{ background: activeTheme?.secondaryColor || '#FFFFFF' }} />
+              <span className="dp-theme__art" aria-hidden="true">
+                <ThemeArt theme={activeTheme?.theme || 'DEFAULT'} mode={activeTheme?.mode || 'LIGHT'} accent={activeTheme?.primaryColor || '#1F2937'} />
               </span>
               <div className="dp-theme__text">
                 <small>Şu an yayında</small>
                 <b>{activeTheme?.name || 'Varsayılan'}</b>
-                <span>{activeTheme ? (activeTheme.theme === 'GRID' ? 'Modern görünüm' : 'Klasik görünüm') + ' · ' + (activeTheme.mode === 'DARK' ? 'Koyu' : 'Açık') : 'Klasik görünüm · Açık'}</span>
+                <ul className="dp-theme__meta" aria-label="Tasarım özeti">
+                  <li>{getMenuThemeOption(activeTheme?.theme).label}</li>
+                  <li>{activeTheme?.mode === 'DARK' ? 'Koyu' : 'Açık'}</li>
+                  <li>{activeTheme?.font || 'Inter'}</li>
+                  <li className="dp-theme__colors" aria-label="Renkler">
+                    <i style={{ background: activeTheme?.primaryColor || '#1F2937' }} />
+                    <i style={{ background: activeTheme?.secondaryColor || '#FFFFFF' }} />
+                  </li>
+                </ul>
               </div>
-              <span className="dp-chip dp-chip--neutral">{menuThemes.length + 1}/4 tasarım</span>
+              <span className="dp-chip dp-chip--neutral dp-theme__count">{menuThemes.length + 1}/4</span>
             </div>
             <div className="dp-theme__actions">
               <Button variant="ghost" icon="palette" onClick={() => setThemeSelectionOpen(true)}>Tasarımlarım</Button>

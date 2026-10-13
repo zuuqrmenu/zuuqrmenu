@@ -209,6 +209,11 @@ const QUICK_ACTIONS = [
     reply: MENU_UPLOAD_REPLY,
   },
   {
+    label: 'Menümü özelleştirmek istiyorum',
+    action: 'send',
+    text: 'Menümü özelleştirmek istiyorum.',
+  },
+  {
     label: 'Menümü nasıl geliştirebilirim?',
     action: 'send',
     text: 'Menümü nasıl geliştirebilirim?',
@@ -537,9 +542,14 @@ const ZuuAIAssistant = ({ adminMode = false }) => {
     setLoading(true);
 
     try {
+      // Recent turns give the assistant memory of the conversation (errors and empty bubbles are skipped).
+      const history = messages
+        .filter((item) => !item.isError && item.text)
+        .slice(-8)
+        .map((item) => ({ role: item.role, text: item.text }));
       const response = adminMode
         ? await sendAdminChatMessage(textToSend, undefined, imagesToSend)
-        : await sendChatMessage(textToSend, undefined, imagesToSend);
+        : await sendChatMessage(textToSend, undefined, imagesToSend, history);
 
       if (response && response.success === false) {
         throw new Error(response.error || 'ZuuAI şu anda yanıt veremiyor.');
@@ -564,6 +574,7 @@ const ZuuAIAssistant = ({ adminMode = false }) => {
         id: `assistant-${replyId}`,
         role: 'assistant',
         text: reply.trim(),
+        actions: Array.isArray(response?.actions) ? response.actions : [],
         showMenuImportAction: !adminMode && /menu(y)?m(ü|u)?\s*(yukle|aktar)|menümü yüklemek|menü görsel/i.test(textToSend),
       };
       setMessages((prev) => [...prev, assistantMsg]);
@@ -594,6 +605,17 @@ const ZuuAIAssistant = ({ adminMode = false }) => {
       setLoading(false);
       setImageRequestActive(false);
     }
+  };
+
+  const handleAssistantAction = (action) => {
+    if (!action?.to) return;
+    if (/^https?:\/\//.test(action.to)) {
+      window.open(action.to, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    navigate(action.to);
+    // On phones the panel covers the page the user was just sent to.
+    if (window.innerWidth < 768) setIsOpen(false);
   };
 
   const handleRetry = () => {
@@ -751,6 +773,16 @@ const ZuuAIAssistant = ({ adminMode = false }) => {
                     </div>
                   )}
                   {msg.text && <span>{msg.text}</span>}
+                  {msg.actions?.length > 0 && (
+                    <div className="zuuai-action-row">
+                      {msg.actions.map((action) => (
+                        <button key={action.id} type="button" className="zuuai-menu-import-action zuuai-action-btn" onClick={() => handleAssistantAction(action)}>
+                          <span>{action.label}</span>
+                          <IconChevron size={12} />
+                        </button>
+                      ))}
+                    </div>
+                  )}
                   {msg.showMenuImportAction && (
                     <button
                       type="button"

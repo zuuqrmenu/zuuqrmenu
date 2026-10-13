@@ -86,12 +86,12 @@ const MenuHeader = ({
 
   return (
     <header
-      className={`public-header ${lightBackground ? 'public-header--light' : 'public-header--dark'}`}
+      className={`public-header ${lightBackground ? 'public-header--light' : 'public-header--dark'} ${restaurant.coverImage ? '' : 'public-header--plain'}`}
       style={restaurant.coverImage ? { backgroundImage: `url(${restaurant.coverImage})` } : undefined}
     >
       <div className="public-header__bar">
         <button type="button" className="header-control" onClick={onOpenCategories} aria-label="Kategorileri aç">
-          ☰
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
         </button>
         <div
           className="public-header__identity"
@@ -103,7 +103,7 @@ const MenuHeader = ({
           {restaurant.description && <p className="public-header__description">{restaurant.description}</p>}
         </div>
         <button type="button" className="header-control" onClick={onOpenInfo} aria-label="Restoran bilgilerini aç">
-          ⓘ
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></svg>
         </button>
       </div>
     </header>

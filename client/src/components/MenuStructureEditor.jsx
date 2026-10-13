@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   closestCenter,
   DndContext,
+  pointerWithin,
   DragOverlay,
   KeyboardSensor,
   PointerSensor,
@@ -40,115 +42,113 @@ export const ProductIcon = ({ name }) => {
   return <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">{paths[name]}</svg>;
 };
 
-const OverflowActionMenu = ({ label, items, disabled = false, placement = 'auto', onOpenChange }) => {
+const MENU_WIDTH = 188;
+
+const OverflowActionMenu = ({ label, items, disabled = false }) => {
   const [open, setOpen] = useState(false);
-  const [openUpwards, setOpenUpwards] = useState(false);
+  const [position, setPosition] = useState(null);
+  const triggerRef = useRef(null);
   const menuRef = useRef(null);
 
-  const calculateDirection = () => {
-    if (!menuRef.current) return;
-    const rect = menuRef.current.getBoundingClientRect();
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const spaceAbove = rect.top;
+  const close = useCallback(() => setOpen(false), []);
 
-    if (placement === 'up') {
-      setOpenUpwards(spaceAbove > 140 || spaceAbove >= spaceBelow);
-    } else if (placement === 'down') {
-      setOpenUpwards(false);
-    } else {
-      setOpenUpwards(spaceBelow < 220 && spaceAbove > spaceBelow);
-    }
-  };
+  const place = useCallback(() => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const menuHeight = menuRef.current?.offsetHeight || items.length * 40 + 16;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const openUp = spaceBelow < menuHeight + 12 && rect.top > spaceBelow;
+    const left = Math.min(Math.max(8, rect.right - MENU_WIDTH), window.innerWidth - MENU_WIDTH - 8);
+    const top = openUp ? Math.max(8, rect.top - menuHeight - 6) : rect.bottom + 6;
+    setPosition({ top, left, openUp });
+  }, [items.length]);
+
+  useLayoutEffect(() => {
+    if (open) place();
+    else setPosition(null);
+  }, [open, place]);
 
   useEffect(() => {
-    onOpenChange?.(open);
     if (!open) return undefined;
-    calculateDirection();
     const closeOnPointerDown = (event) => {
-      if (!menuRef.current?.contains(event.target)) setOpen(false);
+      if (triggerRef.current?.contains(event.target) || menuRef.current?.contains(event.target)) return;
+      close();
     };
-    const closeOnEscape = (event) => {
-      if (event.key === 'Escape') setOpen(false);
-    };
-    const closeOtherMenus = (event) => {
-      if (event.detail !== menuRef.current) setOpen(false);
-    };
+    const closeOnEscape = (event) => { if (event.key === 'Escape') close(); };
+    const closeOtherMenus = (event) => { if (event.detail !== triggerRef.current) close(); };
     document.addEventListener('pointerdown', closeOnPointerDown);
     document.addEventListener('keydown', closeOnEscape);
     document.addEventListener('menu-structure-overflow-open', closeOtherMenus);
-    window.addEventListener('resize', calculateDirection);
-    window.addEventListener('scroll', calculateDirection, true);
+    window.addEventListener('resize', close);
+    window.addEventListener('scroll', close, true);
     return () => {
       document.removeEventListener('pointerdown', closeOnPointerDown);
       document.removeEventListener('keydown', closeOnEscape);
       document.removeEventListener('menu-structure-overflow-open', closeOtherMenus);
-      window.removeEventListener('resize', calculateDirection);
-      window.removeEventListener('scroll', calculateDirection, true);
+      window.removeEventListener('resize', close);
+      window.removeEventListener('scroll', close, true);
     };
-  }, [open, placement, onOpenChange]);
+  }, [open, close]);
 
   return (
-    <div ref={menuRef} className={`menu-structure-overflow ${open ? 'is-open' : ''} ${openUpwards ? 'opens-up' : ''}`}>
+    <div className={`menu-structure-overflow ${open ? 'is-open' : ''}`}>
       <button
+        ref={triggerRef}
         type="button"
         className="menu-structure-overflow__trigger"
         aria-label={label}
+        aria-haspopup="menu"
         aria-expanded={open}
         title={label}
         disabled={disabled}
         onPointerDown={(event) => event.stopPropagation()}
         onClick={(event) => {
           event.stopPropagation();
-          setOpen((current) => {
-            if (!current) {
-              calculateDirection();
-              document.dispatchEvent(new CustomEvent('menu-structure-overflow-open', { detail: menuRef.current }));
-            }
-            return !current;
-          });
+          if (!open) document.dispatchEvent(new CustomEvent('menu-structure-overflow-open', { detail: triggerRef.current }));
+          setOpen((current) => !current);
         }}
       >
         <ProductIcon name="more" />
       </button>
-      {open && <div className="menu-structure-overflow__menu" role="menu">
-        {items.map((item) => (
-          <button
-            type="button"
-            role="menuitem"
-            key={item.label}
-            className={`menu-structure-overflow__item ${item.tone ? `is-${item.tone}` : ''}`}
-            onPointerDown={(event) => event.stopPropagation()}
-            onClick={(event) => { event.stopPropagation(); setOpen(false); item.onSelect(); }}
-          >
-            <ProductIcon name={item.icon} />
-            <span>{item.label}</span>
-          </button>
-        ))}
-      </div>}
+      {open && createPortal(
+        <div
+          ref={menuRef}
+          className={`menu-structure-overflow__menu ${position?.openUp ? 'opens-up' : ''}`}
+          role="menu"
+          aria-label={label}
+          style={{ top: position?.top ?? -9999, left: position?.left ?? -9999, width: MENU_WIDTH, visibility: position ? 'visible' : 'hidden' }}
+        >
+          {items.map((item) => (
+            <button
+              type="button"
+              role="menuitem"
+              key={item.label}
+              className={`menu-structure-overflow__item ${item.tone ? `is-${item.tone}` : ''}`}
+              onClick={(event) => { event.stopPropagation(); setOpen(false); item.onSelect(); }}
+            >
+              <ProductIcon name={item.icon} />
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </div>,
+        document.body,
+      )}
     </div>
   );
 };
 
 const SortableProduct = ({ product, disabled, onEdit, onToggleAvailability, onToggleFeatured, onDelete }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: `product:${getId(product)}` });
-  const [menuOpen, setMenuOpen] = useState(false);
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: menuOpen ? 60 : undefined,
-    position: menuOpen ? 'relative' : undefined,
-  };
+  const style = { transform: CSS.Transform.toString(transform), transition };
 
   return (
-    <article ref={setNodeRef} style={style} className={`menu-structure-product ${isDragging ? 'is-dragging' : ''} ${menuOpen ? 'has-open-menu' : ''}`}>
+    <article ref={setNodeRef} style={style} className={`menu-structure-product ${isDragging ? 'is-dragging' : ''}`}>
       <button type="button" className="menu-structure-product__handle" {...attributes} {...listeners} aria-label={`${product.name} ürününü taşı`}><DragHandle label="Ürünü taşı" /></button>
       {product.image ? <img className="menu-structure-product__image" src={product.image} alt={`${product.name} görseli`} /> : <span className="menu-structure-product__image menu-structure-product__image--empty" aria-hidden="true">✦</span>}
       <div className="menu-structure-product__content"><div className="menu-structure-product__title-row"><h4>{product.name}</h4><span className={product.isAvailable ? 'is-available' : 'is-unavailable'}>{product.isAvailable ? 'Mevcut' : 'Tükendi'}</span>{product.isFeatured && <span className="is-featured">Öne çıkan</span>}</div>{product.shortDescription && <small>{product.shortDescription}</small>}</div><p className="menu-structure-product__price">₺{Number(product.price).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
       <OverflowActionMenu
         label={`${product.name} işlemleri`}
         disabled={disabled}
-        placement="up"
-        onOpenChange={setMenuOpen}
         items={[
           { label: 'Düzenle', icon: 'edit', onSelect: () => onEdit(product) },
           { label: product.isAvailable ? 'Pasifleştir' : 'Aktifleştir', icon: product.isAvailable ? 'pause' : 'play', tone: product.isAvailable ? 'neutral' : 'success', onSelect: () => onToggleAvailability(product) },
@@ -163,12 +163,10 @@ const SortableProduct = ({ product, disabled, onEdit, onToggleAvailability, onTo
 const SortableCategory = ({ column, actionId, onEdit, onToggle, onDelete, onAddProduct }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: `category:${getId(column.category)}` });
   const { setNodeRef: setDropRef, isOver } = useDroppable({ id: `category-drop:${getId(column.category)}` });
-  const [menuOpen, setMenuOpen] = useState(false);
-  const setRefs = (node) => { setNodeRef(node); setDropRef(node); };
 
   return (
-    <section ref={setRefs} style={{ transform: CSS.Transform.toString(transform), transition, zIndex: menuOpen ? 50 : undefined, position: menuOpen ? 'relative' : undefined }} className={`menu-structure-category ${isDragging ? 'is-dragging' : ''} ${isOver ? 'is-drop-target' : ''} ${menuOpen ? 'has-open-menu' : ''}`}>
-      <header className="menu-structure-category__header"><div className="menu-structure-category__identity"><button type="button" className="menu-structure-category__handle" {...attributes} {...listeners} aria-label={`${column.category.name} kategorisini taşı`}><DragHandle label="Kategoriyi taşı" /></button><div><h3>{column.category.name}</h3>{column.category.description && <p>{column.category.description}</p>}<small>{column.products.length} ürün</small></div></div><OverflowActionMenu label={`${column.category.name} işlemleri`} disabled={!!actionId} onOpenChange={setMenuOpen} items={[{ label: 'Düzenle', icon: 'edit', onSelect: () => onEdit(column.category) }, { label: column.category.isActive ? 'Pasifleştir' : 'Aktifleştir', icon: column.category.isActive ? 'pause' : 'play', tone: column.category.isActive ? 'neutral' : 'success', onSelect: () => onToggle(column.category) }, { label: 'Sil', icon: 'trash', tone: 'danger', onSelect: () => onDelete(column.category) }]} />
+    <section ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition }} className={`menu-structure-category ${isDragging ? 'is-dragging' : ''} ${isOver ? 'is-drop-target' : ''}`}>
+      <header className="menu-structure-category__header"><div className="menu-structure-category__identity"><button type="button" className="menu-structure-category__handle" {...attributes} {...listeners} aria-label={`${column.category.name} kategorisini taşı`}><DragHandle label="Kategoriyi taşı" /></button><div><h3>{column.category.name}</h3>{column.category.description && <p>{column.category.description}</p>}<small>{column.products.length} ürün</small></div></div><OverflowActionMenu label={`${column.category.name} işlemleri`} disabled={!!actionId} items={[{ label: 'Düzenle', icon: 'edit', onSelect: () => onEdit(column.category) }, { label: column.category.isActive ? 'Pasifleştir' : 'Aktifleştir', icon: column.category.isActive ? 'pause' : 'play', tone: column.category.isActive ? 'neutral' : 'success', onSelect: () => onToggle(column.category) }, { label: 'Sil', icon: 'trash', tone: 'danger', onSelect: () => onDelete(column.category) }]} />
       </header>
       <div ref={setDropRef} className={`menu-structure-category__products ${isOver ? 'is-drop-target' : ''}`}><SortableContext items={column.products.map((product) => `product:${getId(product)}`)} strategy={verticalListSortingStrategy}>{column.products.map((product) => <SortableProduct key={getId(product)} product={product} disabled={!!actionId} onEdit={onAddProduct.edit} onToggleAvailability={onAddProduct.toggleAvailability} onToggleFeatured={onAddProduct.toggleFeatured} onDelete={onAddProduct.delete} />)}</SortableContext>{column.products.length === 0 && <p className="menu-structure-empty">Bu kategoride henüz ürün yok.</p>}</div>
     </section>
@@ -273,23 +271,8 @@ const MenuStructureEditor = ({ categories, products, actionId, onEditCategory, o
     return productIndex === -1 ? found : { columnIndex, productIndex };
   }, null);
 
-  const moveProduct = (currentColumns, activeProductId, overId) => {
-    const source = findProductLocation(currentColumns, activeProductId);
-    if (!source) return currentColumns;
-    const targetProductId = overId.startsWith('product:') ? overId.slice(8) : null;
-    const targetCategoryId = overId.startsWith('category-drop:') ? overId.slice(15) : overId.startsWith('category:') ? overId.slice(9) : targetProductId ? getCategoryId(currentColumns.flatMap((column) => column.products).find((product) => getId(product) === targetProductId)) : null;
-    if (!targetCategoryId) return currentColumns;
-    const targetColumnIndex = currentColumns.findIndex((column) => getId(column.category) === targetCategoryId);
-    if (targetColumnIndex === -1 || targetColumnIndex === source.columnIndex) return currentColumns;
-    const targetProductIndex = targetProductId ? currentColumns[targetColumnIndex].products.findIndex((product) => getId(product) === targetProductId) : currentColumns[targetColumnIndex].products.length;
-    const nextColumns = currentColumns.map((column) => ({ ...column, products: [...column.products] }));
-    const [movingProduct] = nextColumns[source.columnIndex].products.splice(source.productIndex, 1);
-    nextColumns[targetColumnIndex].products.splice(Math.max(0, targetProductIndex), 0, movingProduct);
-    return nextColumns;
-  };
-
   const getTargetCategoryId = (currentColumns, overId) => {
-    if (overId.startsWith('category-drop:')) return overId.slice(15);
+    if (overId.startsWith('category-drop:')) return overId.slice(14);
     if (overId.startsWith('category:')) return overId.slice(9);
     if (overId.startsWith('product:')) {
       const target = currentColumns.flatMap((column) => column.products).find((product) => getId(product) === overId.slice(8));
@@ -298,69 +281,91 @@ const MenuStructureEditor = ({ categories, products, actionId, onEditCategory, o
     return null;
   };
 
-  const reorderWithinCategory = (currentColumns, activeProductId, overId) => {
-    const source = findProductLocation(currentColumns, activeProductId);
+  // Moves a product into another category column (used while hovering over it).
+  const moveProduct = (currentColumns, productId, overId) => {
+    const source = findProductLocation(currentColumns, productId);
     const targetCategoryId = getTargetCategoryId(currentColumns, overId);
-    if (!source || !targetCategoryId || getId(currentColumns[source.columnIndex].category) !== targetCategoryId) return currentColumns;
-    const targetIndex = overId.startsWith('product:') ? currentColumns[source.columnIndex].products.findIndex((product) => getId(product) === overId.slice(8)) : currentColumns[source.columnIndex].products.length - 1;
-    if (targetIndex < 0 || targetIndex === source.productIndex) return currentColumns;
-    return currentColumns.map((column, index) => index === source.columnIndex ? { ...column, products: arrayMove(column.products, source.productIndex, targetIndex) } : column);
+    if (!source || !targetCategoryId) return currentColumns;
+    const targetColumnIndex = currentColumns.findIndex((column) => getId(column.category) === targetCategoryId);
+    if (targetColumnIndex === -1 || targetColumnIndex === source.columnIndex) return currentColumns;
+    const targetProducts = currentColumns[targetColumnIndex].products;
+    const overIndex = overId.startsWith('product:') ? targetProducts.findIndex((product) => getId(product) === overId.slice(8)) : -1;
+    const insertAt = overIndex === -1 ? targetProducts.length : overIndex;
+    const nextColumns = currentColumns.map((column) => ({ ...column, products: [...column.products] }));
+    const [movingProduct] = nextColumns[source.columnIndex].products.splice(source.productIndex, 1);
+    nextColumns[targetColumnIndex].products.splice(insertAt, 0, movingProduct);
+    return nextColumns;
   };
 
+  const reorderWithinCategory = (currentColumns, productId, overId) => {
+    const source = findProductLocation(currentColumns, productId);
+    if (!source) return currentColumns;
+    const column = currentColumns[source.columnIndex];
+    let targetIndex = column.products.length - 1;
+    if (overId.startsWith('product:')) targetIndex = column.products.findIndex((product) => getId(product) === overId.slice(8));
+    if (targetIndex < 0 || targetIndex === source.productIndex) return currentColumns;
+    return currentColumns.map((item, index) => index === source.columnIndex ? { ...item, products: arrayMove(item.products, source.productIndex, targetIndex) } : item);
+  };
+
+  // Categories only collide with categories; products collide with products first, then with a category's drop area.
+  const collisionDetection = useCallback((args) => {
+    const isCategoryDrag = String(args.active.id).startsWith('category:');
+    const droppableContainers = args.droppableContainers.filter((container) => String(container.id).startsWith('category:') === isCategoryDrag);
+    if (isCategoryDrag) {
+      // The overlay is a small chip, so follow the pointer: the category under it wins (keyboard drags fall back to centers).
+      const underPointer = pointerWithin({ ...args, droppableContainers });
+      return underPointer.length ? underPointer : closestCenter({ ...args, droppableContainers });
+    }
+    const pointerHits = pointerWithin({ ...args, droppableContainers });
+    const hits = pointerHits.length ? pointerHits : closestCenter({ ...args, droppableContainers });
+    const productHit = hits.find((hit) => String(hit.id).startsWith('product:'));
+    return productHit ? [productHit] : hits.slice(0, 1);
+  }, []);
+
   const handleDragStart = ({ active }) => { dragStartColumns.current = columns; setActiveId(String(active.id)); };
+
   const handleDragOver = ({ active, over }) => {
     if (!over || !String(active.id).startsWith('product:')) return;
-    const activeProductId = String(active.id).slice(8);
+    const productId = String(active.id).slice(8);
     const overId = String(over.id);
-    setColumns((current) => {
-      const source = findProductLocation(current, activeProductId);
-      const targetCategoryId = getTargetCategoryId(current, overId);
-      if (!source || !targetCategoryId) return current;
-      const sourceCategoryId = getId(current[source.columnIndex].category);
-      const originalLocation = findProductLocation(dragStartColumns.current, activeProductId);
-      const originalCategoryId = originalLocation ? getId(dragStartColumns.current[originalLocation.columnIndex].category) : sourceCategoryId;
-      if (sourceCategoryId === targetCategoryId) return originalCategoryId === sourceCategoryId ? current : reorderWithinCategory(current, activeProductId, overId);
-      return moveProduct(current, activeProductId, overId);
-    });
+    setColumns((current) => moveProduct(current, productId, overId));
   };
+
   const handleDragEnd = async ({ active, over }) => {
     setActiveId(null);
-    if (!over) return;
     const activeKey = String(active.id);
+    if (!over) {
+      setColumns(dragStartColumns.current);
+      return;
+    }
+    const overKey = String(over.id);
+
     if (activeKey.startsWith('category:')) {
       const fromIndex = columns.findIndex((column) => `category:${getId(column.category)}` === activeKey);
-      const overCategoryId = String(over.id).startsWith('category-drop:') ? String(over.id).slice(15) : String(over.id).slice(9);
-      const toIndex = columns.findIndex((column) => getId(column.category) === overCategoryId);
+      const toIndex = columns.findIndex((column) => `category:${getId(column.category)}` === overKey);
       if (fromIndex === -1 || toIndex === -1 || fromIndex === toIndex) return;
       const previous = columns;
-      const next = [...columns];
-      const [moved] = next.splice(fromIndex, 1);
-      next.splice(toIndex, 0, moved);
+      const next = arrayMove(columns, fromIndex, toIndex);
       setColumns(next);
       await persistCategoryOrder(next, previous);
       return;
     }
+
     if (!activeKey.startsWith('product:')) return;
+    const productId = activeKey.slice(8);
     const previous = dragStartColumns.current;
-    const next = columns;
+    const next = reorderWithinCategory(columns, productId, overKey);
+    setColumns(next);
+
+    const signature = (list) => list.map((column) => `${getId(column.category)}:${column.products.map(getId).join(',')}`).join('|');
+    if (signature(previous) === signature(next)) return;
+
     const affected = new Set();
-    const originalLocation = findProductLocation(previous, activeKey.slice(8));
+    const originalLocation = findProductLocation(previous, productId);
     if (originalLocation) affected.add(getId(previous[originalLocation.columnIndex].category));
-    const location = findProductLocation(next, activeKey.slice(8));
-    if (location) affected.add(getId(next[location.columnIndex].category));
-    const overKey = String(over.id);
-    const destination = overKey.startsWith('category-drop:') || overKey.startsWith('category:')
-      ? (overKey.startsWith('category-drop:') ? overKey.slice(15) : overKey.slice(9))
-      : findProductLocation(next, overKey.slice(8))?.columnIndex;
-    if (typeof destination === 'string') affected.add(destination);
-    const targetCategoryId = getTargetCategoryId(next, String(over.id));
-    const originalCategoryId = originalLocation ? getId(previous[originalLocation.columnIndex].category) : null;
-    const currentCategoryId = location ? getId(next[location.columnIndex].category) : null;
-    const resolvedNext = originalCategoryId === targetCategoryId && currentCategoryId === originalCategoryId
-      ? reorderWithinCategory(next, activeKey.slice(8), String(over.id))
-      : currentCategoryId === targetCategoryId ? next : moveProduct(next, activeKey.slice(8), String(over.id));
-    setColumns(resolvedNext);
-    await persistProductOrder(resolvedNext, previous, affected);
+    const finalLocation = findProductLocation(next, productId);
+    if (finalLocation) affected.add(getId(next[finalLocation.columnIndex].category));
+    await persistProductOrder(next, previous, affected);
   };
 
   const handleProductMessage = async (message, isError = false) => {
@@ -438,7 +443,7 @@ const MenuStructureEditor = ({ categories, products, actionId, onEditCategory, o
   };
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd} onDragCancel={() => setActiveId(null)}>
+    <DndContext sensors={sensors} collisionDetection={collisionDetection} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd} onDragCancel={() => { setActiveId(null); setColumns(dragStartColumns.current); }}>
       <section className="menu-structure-section">
         <header className="menu-structure-section__header">
           <div>

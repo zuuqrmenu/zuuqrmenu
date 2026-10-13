@@ -1,0 +1,38 @@
+export default [
+  ['p', 'QR menünüz ne kadar güzel olursa olsun, kod telefonla okunmuyorsa müşteri için yok hükmündedir. Baskı detayları küçük görünür ama deneyimi doğrudan etkiler. İşte dikkat edilmesi gerekenler.'],
+  ['h2', 'Boyut ve mesafe'],
+  ['p', 'Genel kural: kodu okutma mesafesinin yaklaşık onda biri kadar bir boyut kullanın. Masa üzerinde yarım metreden okutulacak bir kod için 4–5 cm genişlik minimumdur; masa standı ve A5/A6 kartlarda 5–8 cm daha rahat bir okuma sağlar. Duvar ya da kapı camında uzaktan okutulacak kodlar için çok daha büyük basım gerekir.'],
+  ['h2', 'Kontrast ve renk'],
+  ['ul', [
+    'En güvenli seçenek açık zemin üzerine koyu kod rengidir.',
+    'Ters renk (koyu zemin, açık kod) bazı telefonlarda okunmayabilir; kullanacaksanız test edin.',
+    'Marka renginizi kullanacaksanız, kodun yeterince koyu ve zeminle arasında net fark olduğundan emin olun.',
+    'Kodun çevresinde “sessiz bölge” adı verilen boş çerçeveyi bozmayın; kenarlara metin ya da çizgi yaklaştırmayın.',
+  ]],
+  ['h2', 'Dosya formatı'],
+  ['p', 'Ekran paylaşımı için PNG, büyük baskılar için SVG (vektörel) tercih edin. SVG büyütüldüğünde bozulmaz. Küçük A4 çıktılar için PDF de yeterlidir.'],
+  ['h2', 'Malzeme ve dayanıklılık'],
+  ['ul', [
+    'Akrilik stand: Şık ve kalıcıdır; kafe ve restoranlar için en yaygın seçenek.',
+    'Laminasyonlu kart: Ekonomik; su ve kire dayanıklı olması için parlak olmayan mat laminasyon yansıma sorununu azaltır.',
+    'Masa üstü çıkartma: Hızlı çözüm; zamanla yıpranabilir.',
+  ]],
+  ['p', 'Parlak yüzeyler ışığı yansıtarak okutmayı zorlaştırabilir; mat yüzeyi tercih edin.'],
+  ['h2', 'Yerleşim'],
+  ['ul', [
+    'Masanın ortasında, müşterinin göz hizasına yakın bir yere koyun.',
+    'Mum, çiçek ya da şişe gibi nesnelerin kodu kapatmadığından emin olun.',
+    'Kapı girişi ve kasa yanı gibi bekleme noktalarına ayrıca bir kod ekleyin.',
+    'Kodun üstüne kısa bir çağrı yazın: “Menü için okutun”.',
+  ]],
+  ['h2', 'Basımdan önce test edin'],
+  ['p', 'Kodu yayınlamadan önce en az iki farklı telefon (biri eski model) ve farklı ışık koşullarıyla test edin. Çıktıyı masa mesafesinden okutun.'],
+  ['tip', 'zuuqrmenu panelinde QR kodunuzu PNG, SVG ve PDF olarak indirebilir, hazır masa standı şablonlarıyla renk ve düzen seçip baskıya hazır dosya oluşturabilirsiniz.'],
+  ['h2', 'Sık yapılan hatalar'],
+  ['ul', [
+    'Çok küçük basılmış kod.',
+    'Kodun üzerine logo koyup okunabilirliği bozmak.',
+    'Su damlasına duyarlı ucuz kağıt kullanmak.',
+    'Masalarda aynı kodu kullanıp masa bazlı takibi yapmamak.',
+  ]],
+];

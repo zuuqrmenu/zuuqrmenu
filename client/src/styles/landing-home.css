@@ -597,7 +597,7 @@
 .lp4-chart { padding: clamp(1.4rem, 2.6vw, 2.2rem); border-radius: 28px; background: #fff; box-shadow: 0 0 0 1px var(--lp-border), 0 40px 60px -40px rgba(13, 26, 18, 0.35); }
 .lp4-chart figcaption { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.25rem 1rem; font-weight: 650; }
 .lp4-chart figcaption small { color: var(--lp-ink-3); font-size: 0.74rem; font-weight: 500; }
-.lp4-chart__stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1.6rem 0 2rem; }
+.lp4-chart__stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin: 1.6rem 0 2rem; }
 .lp4-chart__stats dt { color: var(--lp-ink-3); font-size: 0.78rem; }
 .lp4-chart__stats dd { margin-top: 0.2rem; font: 650 clamp(1.7rem, 3vw, 2.5rem) / 1 var(--font-display); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
 .lp4-chart__bars { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; align-items: end; gap: clamp(0.4rem, 1.2vw, 0.9rem); height: 190px; }

@@ -5,6 +5,7 @@ import restaurantContextService from '../services/ai/restaurantContextService.js
 import { checkTopicScope } from '../services/ai/scopeGuard.js';
 import aiConfigService from '../services/ai/aiConfigService.js';
 import Restaurant from '../models/Restaurant.js';
+import { extractActions, resolveActions } from '../services/ai/assistantActions.js';
 
 /**
  * Strips sensitive values like the Gemini API key from error messages
@@ -86,7 +87,7 @@ export const getQuotaStatus = async (req, res, next) => {
  * POST /api/ai/chat
  */
 export const handleChat = async (req, res) => {
-  const { message, context, images = [] } = req.body || {};
+  const { message, context, images = [], history = [] } = req.body || {};
   const restaurantId = req.restaurant?._id || req.user?.restaurantId;
   const userId = req.user?.userId;
   const isAdmin = req.user?.role === 'ADMIN';
@@ -152,9 +153,13 @@ export const handleChat = async (req, res) => {
       images,
       restaurantContext,
       context,
+      history,
       restaurantId,
       userId,
     });
+
+    const { text: replyText, ids: actionIds } = extractActions(result.text);
+    const actions = resolveActions({ ids: actionIds, userMessage: message });
 
     // 5. Compute updated usage only on successful completion
     const updatedUsage = isAdmin ? quota : {
@@ -167,7 +172,8 @@ export const handleChat = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: result.text,
+      message: replyText || result.text,
+      actions,
       usage: updatedUsage,
     });
   } catch (error) {

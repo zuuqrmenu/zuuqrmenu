@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import AdminLayout from '../components/AdminLayout';
 import { adminService } from '../services/adminService';
@@ -185,20 +186,39 @@ const RowActionMenu = ({
   onReject,
 }) => {
   const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState(null);
   const menuRef = useRef(null);
+  const triggerRef = useRef(null);
+  const popRef = useRef(null);
+
+  // The list is rendered in a portal with fixed coordinates so table wrappers (overflow) can never clip it.
+  useLayoutEffect(() => {
+    if (!open || !triggerRef.current) { setPos(null); return; }
+    const rect = triggerRef.current.getBoundingClientRect();
+    const height = popRef.current?.offsetHeight || 280;
+    const openUp = window.innerHeight - rect.bottom < height + 12 && rect.top > height + 12;
+    setPos({
+      top: openUp ? Math.max(8, rect.top - height - 6) : rect.bottom + 6,
+      left: Math.max(8, Math.min(rect.right - 192, window.innerWidth - 200)),
+    });
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
     const handleClickOutside = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
-        setOpen(false);
-      }
+      if (menuRef.current?.contains(e.target) || popRef.current?.contains(e.target)) return;
+      setOpen(false);
     };
+    const close = () => setOpen(false);
     window.addEventListener('mousedown', handleClickOutside);
     window.addEventListener('touchstart', handleClickOutside);
+    window.addEventListener('resize', close);
+    window.addEventListener('scroll', close, true);
     return () => {
       window.removeEventListener('mousedown', handleClickOutside);
       window.removeEventListener('touchstart', handleClickOutside);
+      window.removeEventListener('resize', close);
+      window.removeEventListener('scroll', close, true);
     };
   }, [open]);
 
@@ -209,6 +229,7 @@ const RowActionMenu = ({
     <div className="relative inline-block text-left" ref={menuRef}>
       <button
         type="button"
+        ref={triggerRef}
         onClick={() => setOpen((prev) => !prev)}
         className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors focus:outline-none"
         title="İşlemler"
@@ -222,8 +243,8 @@ const RowActionMenu = ({
         </svg>
       </button>
 
-      {open && (
-        <div className="absolute right-0 top-full z-40 mt-1 w-48 rounded-2xl border border-slate-200 bg-white py-1.5 shadow-xl animate-fadeIn">
+      {open && createPortal(
+        <div ref={popRef} style={{ top: pos?.top ?? -9999, left: pos?.left ?? -9999, visibility: pos ? 'visible' : 'hidden' }} className="fixed z-[1000] w-48 rounded-2xl border border-slate-200 bg-white py-1.5 shadow-xl animate-fadeIn">
           {/* 1. Detayları Gör */}
           <button
             type="button"
@@ -353,7 +374,8 @@ const RowActionMenu = ({
             </svg>
             <span>Restoranı Sil</span>
           </button>
-        </div>
+        </div>,
+        triggerRef.current?.closest('.dashboard-shell') || document.body,
       )}
     </div>
   );
@@ -1564,15 +1586,15 @@ const AdminDashboard = () => {
                                             </div>
                                           </div>
                                         </td>
-                                        <td><BusinessTypeBadge type={restaurant.businessType} /></td>
-                                        <td>
+                                        <td data-label="İşletme türü"><BusinessTypeBadge type={restaurant.businessType} /></td>
+                                        <td data-label="Yetkili">
                                           <div className="dp-cell__text">
                                             <b>{restaurant.ownerId?.email || restaurant.ownerId?.name || '—'}</b>
                                             <small>{restaurant.city || 'Şehir belirtilmedi'}</small>
                                           </div>
                                         </td>
-                                        <td><StatusBadge status={restaurant.status} /></td>
-                                        <td>
+                                        <td data-label="Durum"><StatusBadge status={restaurant.status} /></td>
+                                        <td data-label="Kayıt">
                                           <div className="dp-cell__text">
                                             <b>{formatDate(restaurant.createdAt)}</b>
                                             <small>{formatTimeAgo(restaurant.createdAt)}</small>

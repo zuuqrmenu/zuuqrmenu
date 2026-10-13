@@ -6,10 +6,10 @@ import api from './api';
  * @param {Object} [context] - Optional context
  * @returns {Promise<{ success: boolean, message: string }>}
  */
-export const sendChatMessage = async (message, context, images = []) => {
+export const sendChatMessage = async (message, context, images = [], history = []) => {
   const response = await api.post(
     '/ai/chat',
-    { message, context, images },
+    { message, context, images, history },
     { timeout: 270000 }
   );
   return response.data;

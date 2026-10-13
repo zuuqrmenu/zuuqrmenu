@@ -52,6 +52,20 @@ const validateImages = (images) => {
   });
 };
 
+const MAX_HISTORY_TURNS = 8;
+const MAX_HISTORY_TEXT = 1500;
+
+/** Keeps only well-formed text turns, newest last, starting with a user turn. */
+const sanitizeHistory = (history) => {
+  if (!Array.isArray(history)) return [];
+  const turns = history
+    .filter((turn) => turn && (turn.role === 'user' || turn.role === 'assistant') && typeof turn.text === 'string' && turn.text.trim())
+    .map((turn) => ({ role: turn.role, text: turn.text.trim().slice(0, MAX_HISTORY_TEXT) }))
+    .slice(-MAX_HISTORY_TURNS);
+  while (turns.length && turns[0].role !== 'user') turns.shift();
+  return turns;
+};
+
 /**
  * Validates a user chat message
  * @param {string} message
@@ -128,6 +142,7 @@ export const generateResponse = async ({
   images = [],
   restaurantContext,
   context,
+  history,
   restaurantId,
   userId,
   systemInstruction: customSystemInstruction,
@@ -161,6 +176,7 @@ export const generateResponse = async ({
       images: cleanImages,
       responseMimeType,
       providerTimeoutMs,
+      history: sanitizeHistory(history),
     });
 
     const durationMs = Date.now() - startTime;

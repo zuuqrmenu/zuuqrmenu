@@ -6,6 +6,7 @@ import { getPanelUrl } from '../utils/domainHelpers';
 import { useAuth } from '../context/AuthContext';
 import { publicMenuService } from '../services/publicMenuService';
 import LandingZuuAI from '../components/LandingZuuAI';
+import BlogSection from './blog/BlogSection';
 import useScrollScene from '../hooks/useScrollScene';
 import {
   Hero, ProblemSection, ScrollStory, UploadSection, AnalyticsSection,
@@ -80,6 +81,7 @@ export const LandingHeader = () => {
             <a href="/#temalar" className="lp3-nav__link" onClick={(e) => handleHashClick(e, 'temalar')}>Temalar</a>
             <a href="/#fiyatlandirma" className="lp3-nav__link" onClick={(e) => handleHashClick(e, 'fiyatlandirma')}>Fiyatlandırma</a>
             <a href="/#yorumlar" className="lp3-nav__link" onClick={(e) => handleHashClick(e, 'yorumlar')}>Restoranlar</a>
+            <a href="/#blog" className="lp3-nav__link" onClick={(e) => handleHashClick(e, 'blog')}>Blog</a>
             <Link to="/menu" className="lp3-nav__link" onMouseEnter={prefetchDemo}>Demo Menüler</Link>
           </nav>
 
@@ -126,6 +128,7 @@ export const LandingHeader = () => {
         <a href="/#temalar" className="lp3-mobile-nav__link" onClick={(e) => handleHashClick(e, 'temalar')}>Temalar</a>
         <a href="/#fiyatlandirma" className="lp3-mobile-nav__link" onClick={(e) => handleHashClick(e, 'fiyatlandirma')}>Fiyatlandırma</a>
         <a href="/#yorumlar" className="lp3-mobile-nav__link" onClick={(e) => handleHashClick(e, 'yorumlar')}>Restoranlar</a>
+        <a href="/#blog" className="lp3-mobile-nav__link" onClick={(e) => handleHashClick(e, 'blog')}>Blog</a>
         <Link to="/menu" className="lp3-mobile-nav__link" onClick={close} onMouseEnter={prefetchDemo}>Demo Menüler</Link>
         {isAuthenticated ? (
           <a href={dashUrl} className="lp3-mobile-nav__link" onClick={close}>Yönetim Paneli</a>
@@ -350,6 +353,7 @@ export const LandingFooter = () => {
           <h4 className="lp3-footer__col-title">Şirket</h4>
           <nav className="lp3-footer__links" aria-label="Şirket bağlantıları">
             <Link to="/hakkimizda" className="lp3-footer__link">Hakkımızda</Link>
+            <Link to="/blog" className="lp3-footer__link">Blog</Link>
             <Link to="/iletisim" className="lp3-footer__link">İletişim</Link>
           </nav>
         </div>
@@ -362,6 +366,10 @@ export const LandingFooter = () => {
             <Link to="/kullanim-kosullari" className="lp3-footer__link">Kullanım Koşulları</Link>
             <Link to="/kvkk" className="lp3-footer__link">KVKK</Link>
             <Link to="/cerez" className="lp3-footer__link">Çerez Politikası</Link>
+            <Link to="/mesafeli-satis-sozlesmesi" className="lp3-footer__link">Mesafeli Satış Sözleşmesi</Link>
+            <Link to="/on-bilgilendirme-formu" className="lp3-footer__link">Ön Bilgilendirme Formu</Link>
+            <Link to="/iptal-iade-kosullari" className="lp3-footer__link">İptal ve İade Koşulları</Link>
+            <Link to="/satici-bilgileri" className="lp3-footer__link">Satıcı Bilgileri</Link>
           </nav>
         </div>
       </div>
@@ -384,6 +392,14 @@ export const LandingFooter = () => {
 const LandingPage = () => {
   const pageRef = useRef(null);
   useScrollScene(pageRef);
+
+  // Arriving from another page via /#section (e.g. the blog nav link): the section only exists once this page mounts.
+  useEffect(() => {
+    const id = window.location.hash.slice(1);
+    if (!id) return undefined;
+    const timer = window.setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }), 350);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const reveals = document.querySelectorAll('.lp3-reveal');
@@ -476,6 +492,7 @@ const LandingPage = () => {
         <HowItWorks />
         <PricingSection />
         <Testimonials />
+        <BlogSection />
         <FaqSection />
         <FinalCta prefetch={prefetchDemo} />
       </main>

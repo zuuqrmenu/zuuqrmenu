@@ -97,7 +97,9 @@ body[data-dashboard-theme='dark'] .dashboard-shell.dashboard-shell::before {
 }
 S :is(h1, h2, h3, h4) { font-family: 'Bricolage Grotesque', 'Instrument Sans', system-ui, sans-serif; letter-spacing: -0.03em; }
 S :is(button, input, select, textarea) { font-family: inherit; }
-S :is(a, button, input, select, textarea, [tabindex]):focus-visible { outline: 2px solid var(--dashboard-text); outline-offset: 2px; }
+S :is(a, button, input[type='checkbox'], input[type='radio'], [tabindex]):focus-visible { outline: 2px solid var(--dashboard-text); outline-offset: 2px; }
+/* text fields show a single focus ring (border + glow below), never a second outline */
+S :is(input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):not([type='file']), select, textarea):focus-visible { outline: 0; }
 S .uppercase { text-transform: none; }
 S :is(.tracking-wider, .tracking-widest, .tracking-wide) { letter-spacing: 0; }
 
@@ -510,3 +512,15 @@ S :is(.analytics-rank-badge, .analytics-rank-2-badge, .analytics-rank-3-badge) {
 S :is(a, button):is(.text-emerald-700, .text-emerald-600, .text-emerald-800) { color: var(--dashboard-text) !important; text-decoration: underline; text-decoration-color: var(--brand-primary); text-decoration-thickness: 2px; text-underline-offset: 4px; }
 body[data-dashboard-theme='dark'] .dashboard-shell.dashboard-shell :is(a, button):is(.text-emerald-700, .text-emerald-600, .text-emerald-800) { color: var(--brand-primary) !important; }
 S :is(.bg-slate-50, .bg-slate-50/50) { background: var(--glass-strong) !important; }
+
+/* ─── Phones: give the menu editor its width back (nested paddings were eating the product name column) ─── */
+@media (max-width: 640px) {
+  S :is(.menu-structure-section, .menu-import-panel) { padding: 1rem; }
+  S .menu-structure-board { gap: 0.75rem; padding-top: 0.9rem; }
+  S .menu-structure-category__header { padding: 0.7rem 0.4rem 0.7rem 0.5rem; gap: 0.4rem; }
+  S .menu-structure-category__products { padding: 0.3rem; gap: 0.25rem; }
+  S .menu-structure-product { padding: 0.5rem 0.2rem 0.5rem 0; gap: 0.45rem; }
+  S .menu-structure-product__image { width: 2.8rem; height: 2.8rem; border-radius: 12px; }
+  S :is(.menu-structure-category__handle, .menu-structure-product__handle) { min-width: 1.9rem; }
+  S .menu-structure-product__title-row h4 { font-size: 0.96rem; }
+}

@@ -2,7 +2,7 @@ import Restaurant from '../models/Restaurant.js';
 import RestaurantSettings from '../models/RestaurantSettings.js';
 import { cloudinary, cloudinaryConfigured } from '../config/cloudinary.js';
 
-const themes = ['DEFAULT', 'GRID', 'MINIMAL', 'BISTRO', 'ELEGANT', 'WARM', 'MODERN', 'DARK', 'CLASSIC'];
+const themes = ['DEFAULT', 'GRID', 'STUDIO', 'MINIMAL', 'BISTRO', 'ELEGANT', 'WARM', 'MODERN', 'DARK', 'CLASSIC'];
 const fonts = ['Inter', 'DM Sans', 'Playfair Display', 'Lora'];
 const layoutStyles = ['STANDARD', 'COMPACT', 'EDITORIAL'];
 const hexColor = /^#[0-9A-Fa-f]{6}$/;

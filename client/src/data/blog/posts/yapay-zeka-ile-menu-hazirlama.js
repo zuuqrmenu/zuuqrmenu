@@ -1,0 +1,32 @@
+export default [
+  ['p', 'Dijital menüye geçmenin en yorucu kısmı, onlarca ürünü tek tek yazmaktır. Yapay zeka bu aşamayı dakikalara indirebilir: elinizdeki PDF ya da menü fotoğrafı okunur, kategoriler ve ürünler otomatik çıkarılır.'],
+  ['h2', 'Yapay zeka menüyü nasıl okur?'],
+  ['p', 'Gelişmiş görsel modeller, bir menü fotoğrafındaki ya da PDF’teki metni, düzeni ve fiyatları anlayabilir. Sistem, başlıkları kategori, satırları ürün olarak tanır; ürün adı, açıklama ve fiyatı ayırarak yapılandırılmış bir liste üretir. Bu liste daha sonra düzenlenebilir bir dijital menüye dönüşür.'],
+  ['h2', 'Adım adım kullanım'],
+  ['ol', [
+    'Mevcut menünüzün PDF dosyasını veya net bir fotoğrafını yükleyin.',
+    'Yapay zekanın çıkardığı kategori ve ürünleri önizleyin.',
+    'Hatalı okunan fiyatları, yazım hatalarını ve eksik ürünleri düzeltin.',
+    'Onayladıktan sonra içeriği menünüze aktarın.',
+    'Eksik görselleri ve açıklamaları sonradan tamamlayın.',
+  ]],
+  ['h2', 'Daha iyi sonuç için ipuçları'],
+  ['ul', [
+    'Fotoğrafı düz, gölgesiz ve yüksek çözünürlükte çekin; eğik ya da bulanık fotoğraflar hata riskini artırır.',
+    'Menü birden fazla sayfaysa her sayfayı ayrı yükleyin.',
+    'El yazısı ya da çok dekoratif fontlar okunmayı zorlaştırabilir; mümkünse sade bir dosya kullanın.',
+    'Aktarma sonrası fiyatları mutlaka gözle kontrol edin. Otomasyon hız kazandırır ama son kontrol sizdedir.',
+  ]],
+  ['h2', 'Yapay zekanın menüde yapabilecekleri'],
+  ['ul', [
+    'Ürün açıklaması yazımı: Kısa bir ürün adından iştah açıcı bir açıklama üretir.',
+    'Kategori önerisi: Ürünleri doğru kategoriye yerleştirmeye yardımcı olur.',
+    'Menü analizi: Fiyat dağılımı, eksik bilgi ve ciro artırma fırsatlarını gösterir.',
+    'Asistan sohbeti: Panel içinde sorularınıza yanıt verir ve ilgili ekrana yönlendirir.',
+  ]],
+  ['h2', 'Sınırları bilin'],
+  ['p', 'Yapay zeka hızlı bir ilk taslak sunar, kusursuz bir son ürün değil. Özellikle fiyatlar, alerjen bilgisi ve porsiyon ölçüleri gibi hata kabul etmeyen alanlarda insan kontrolü şarttır.'],
+  ['tip', 'zuuqrmenu’daki ZuuAI, PDF veya fotoğraftan menü yüklemeyi, akıllı ürün açıklaması yazımını ve menü analizini tek panelde sunar. Profesyonel pakette yer alır; 7 gün ücretsiz deneyebilirsiniz.'],
+  ['h2', 'Sonuç'],
+  ['p', 'Yapay zeka, menü hazırlama süresini saatlerden dakikalara indirir ve işletme sahibinin zamanını gerçekten önemli işlere ayırmasını sağlar.'],
+];

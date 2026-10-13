@@ -1,0 +1,33 @@
+export default [
+  ['p', 'Bir kafede müşteri sabırsızdır: kahve, tatlı ya da kahvaltı seçimi birkaç dakikada yapılmalı. Kafe menüsü bu yüzden restoran menüsünden farklı kurgulanır: daha sade, daha hızlı, daha görsel.'],
+  ['h2', 'Kafe menüsünün farkı nedir?'],
+  ['ul', [
+    'Ürün sayısı yüksek ama karar süresi kısadır; menü hızlı taranabilmelidir.',
+    'Sezonluk ürünler (soğuk içecekler, kış latteleri, günün tatlısı) sık değişir.',
+    'Kahve özelleştirmeleri (süt tipi, şurup, ekstra shot) menüde net görünmelidir.',
+    'Müşteriler çoğu zaman kısa süreli ve tekrarlayan ziyaretçidir; alışkanlık oluşturmak önemlidir.',
+  ]],
+  ['h2', 'Kategori yapısı önerisi'],
+  ['p', 'Sıcak içecekler, soğuk içecekler, kahvaltı, tatlılar ve atıştırmalıklar şeklinde beş altı kategori çoğu kafe için yeterlidir. Çok satan ürünleri “Öne çıkanlar” ile kategorilerin başına taşıyın. Günün tatlısı ya da haftanın kahvesi için ayrı bir vitrin alanı oluşturabilirsiniz.'],
+  ['h2', 'Hızlı güncelleme: kafeler için en büyük avantaj'],
+  ['p', 'Kafelerde stok değişimi hızlıdır. Bir tatlı bittiğinde ya da süt alternatifi tükendiğinde menüden kapatmak, müşterinin sipariş verip hayal kırıklığına uğramasını önler. Dijital menüde bu işlem bir dokunuşla yapılır ve bütün masalarda anında geçerli olur.'],
+  ['h2', 'Görsel dili sade tutun'],
+  ['ul', [
+    'Her ürün için fotoğraf şart değil; imza ürünlerinizi görselle öne çıkarın.',
+    'Kısa, iştah açan açıklamalar yazın: “Hindistan cevizi sütlü, hafif karamel notalı soğuk latte”.',
+    'Marka renginizi ve logonuzu kullanın; menü mekanınızın uzantısı gibi hissettirmeli.',
+  ]],
+  ['h2', 'Hikaye ve öne çıkan ürünler'],
+  ['p', 'Haftanın özel ürünlerini menünün en üstünde küçük hikaye halkaları olarak sunmak, müşterinin yeni ürünleri fark etmesini sağlar. Menü sayfasını her ziyarette canlı hissettirir ve ek satış fırsatı yaratır.'],
+  ['h2', 'Masa ve vitrin yerleşimi'],
+  ['p', 'QR kodu hem masa üzerine hem de kasa yanına yerleştirin. Kasada bekleyen müşteri, sıra gelmeden menüye bakıp siparişini hazırlayabilir; böylece yoğun saatlerde kuyruk kısalır.'],
+  ['tip', 'zuuqrmenu panelinde kategorileri sürükle-bırak ile sıralayabilir, ürünleri “mevcut/tükendi” olarak anında işaretleyebilir ve öne çıkan ürünlerinizi vitrine alabilirsiniz.'],
+  ['h2', 'Sadık müşteri için küçük dokunuşlar'],
+  ['ul', [
+    'Menü sayfasında Instagram hesabınızı ve çalışma saatlerinizi gösterin.',
+    'Wi-Fi şifresini ve sosyal medya bağlantısını menü bilgilerine ekleyin.',
+    'Sezon değişiminde menü temanızı ve renginizi hafifçe güncelleyin.',
+  ]],
+  ['h2', 'Sonuç'],
+  ['p', 'Kafe menüsünde hız, sadelik ve güncellik üçlüsü belirleyicidir. Dijital menü bu üçünü aynı anda sağlayan en pratik araçtır.'],
+];

@@ -14,6 +14,10 @@ const PublicMenu = lazy(() => import('./pages/PublicMenu'));
 const RestaurantSettings = lazy(() => import('./pages/RestaurantSettings'));
 const QrManagement = lazy(() => import('./pages/QrManagement'));
 const Analytics = lazy(() => import('./pages/Analytics'));
+const BlogPage = lazy(() => import('./pages/BlogPage'));
+const BlogPostPage = lazy(() => import('./pages/BlogPostPage'));
+const Billing = lazy(() => import('./pages/Billing'));
+const PaymentResult = lazy(() => import('./pages/PaymentResult'));
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const MenuShowcase = lazy(() => import('./pages/MenuShowcase'));
 const PricingPage = lazy(() => import('./pages/PricingPage'));
@@ -23,6 +27,11 @@ const PrivacyPage = lazy(() => import('./pages/LegalPages').then(m => ({ default
 const TermsPage = lazy(() => import('./pages/LegalPages').then(m => ({ default: m.TermsPage })));
 const KvkkPage = lazy(() => import('./pages/LegalPages').then(m => ({ default: m.KvkkPage })));
 const CookiePage = lazy(() => import('./pages/LegalPages').then(m => ({ default: m.CookiePage })));
+const SellerInfoPage = lazy(() => import('./pages/CommercialLegalPages').then(m => ({ default: m.SellerInfoPage })));
+const DistanceSalesPage = lazy(() => import('./pages/CommercialLegalPages').then(m => ({ default: m.DistanceSalesPage })));
+const PreInformationPage = lazy(() => import('./pages/CommercialLegalPages').then(m => ({ default: m.PreInformationPage })));
+const RefundPolicyPage = lazy(() => import('./pages/CommercialLegalPages').then(m => ({ default: m.RefundPolicyPage })));
+const AbuseReportPage = lazy(() => import('./pages/CommercialLegalPages').then(m => ({ default: m.AbuseReportPage })));
 import PublicMenuSkeleton from './components/public-menu/PublicMenuSkeleton';
 
 // Initialise GA4 once when the module is first loaded
@@ -181,7 +190,7 @@ const AdminRoute = () => {
   return isAdmin ? <AdminDashboard /> : <Navigate to="/dashboard" replace />;
 };
 
-const RestaurantRoute = ({ menu = false, settings = false, analytics = false, qr = false }) => {
+const RestaurantRoute = ({ menu = false, settings = false, analytics = false, qr = false, billing = false }) => {
   const location = useLocation();
   const { loading, isAuthenticated, isRestaurantUser, isRestaurantAccessible } = useAuth();
 
@@ -196,7 +205,7 @@ const RestaurantRoute = ({ menu = false, settings = false, analytics = false, qr
   if (loading) return <RouteLoading />;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   if (!isRestaurantUser) return <Navigate to="/admin" replace />;
-  return isRestaurantAccessible ? (qr ? <QrManagement /> : analytics ? <Analytics /> : settings ? <RestaurantSettings /> : menu ? <MenuManagement /> : <RestaurantDashboard />) : <Navigate to="/pending-approval" replace />;
+  return isRestaurantAccessible ? (billing ? <Billing /> : qr ? <QrManagement /> : analytics ? <Analytics /> : settings ? <RestaurantSettings /> : menu ? <MenuManagement /> : <RestaurantDashboard />) : <Navigate to="/pending-approval" replace />;
 };
 
 const PendingRoute = () => {
@@ -249,6 +258,8 @@ function App() {
             <Route path="/dashboard/settings" element={<RestaurantRoute settings />} />
             <Route path="/dashboard/analytics" element={<RestaurantRoute analytics />} />
             <Route path="/dashboard/qr" element={<RestaurantRoute qr />} />
+            <Route path="/dashboard/billing" element={<RestaurantRoute billing />} />
+            <Route path="/odeme-sonuc" element={<PaymentResult />} />
             <Route
               path="/:username/menu"
               element={
@@ -259,12 +270,19 @@ function App() {
             />
             <Route path="/menu" element={<MenuShowcase />} />
             <Route path="/fiyatlandirma" element={<PricingPage />} />
+            <Route path="/blog" element={<BlogPage />} />
+            <Route path="/blog/:slug" element={<BlogPostPage />} />
             <Route path="/hakkimizda" element={<AboutPage />} />
             <Route path="/iletisim" element={<ContactPage />} />
             <Route path="/gizlilik" element={<PrivacyPage />} />
             <Route path="/kullanim-kosullari" element={<TermsPage />} />
             <Route path="/kvkk" element={<KvkkPage />} />
             <Route path="/cerez" element={<CookiePage />} />
+            <Route path="/satici-bilgileri" element={<SellerInfoPage />} />
+            <Route path="/mesafeli-satis-sozlesmesi" element={<DistanceSalesPage />} />
+            <Route path="/on-bilgilendirme-formu" element={<PreInformationPage />} />
+            <Route path="/iptal-iade-kosullari" element={<RefundPolicyPage />} />
+            <Route path="/kotuye-kullanim" element={<AbuseReportPage />} />
             <Route path="/" element={<HomeRoute />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

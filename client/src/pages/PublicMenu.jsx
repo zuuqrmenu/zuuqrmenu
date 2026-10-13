@@ -10,6 +10,8 @@ import SearchSheet from '../components/public-menu/SearchSheet';
 import SeoHead from '../components/SeoHead';
 import FeaturedStories from '../components/public-menu/FeaturedStories';
 import CategoryCardGrid from '../components/public-menu/CategoryCardGrid';
+import { StudioBar, StudioDock, StudioSpotlight } from '../components/public-menu/StudioParts';
+import '../styles/menu-studio.css';
 import { publicMenuService } from '../services/publicMenuService';
 import { getPublicMenuTheme, publicMenuFonts } from '../utils/publicMenuTheme';
 import { trackEvent } from '../utils/analytics';
@@ -302,6 +304,16 @@ const PublicMenu = () => {
 
   const currentThemeKey = menuTheme?.theme || data.restaurant.theme || 'DEFAULT';
   const isGridTheme = currentThemeKey === 'GRID';
+  const isStudioTheme = currentThemeKey === 'STUDIO';
+  const openSearch = () => {
+    trackEvent('open_search', { restaurant_username: username, restaurant_name: data?.restaurant?.name });
+    setSearch('');
+    setSearchOpen(true);
+  };
+  const openInfo = () => {
+    trackEvent('view_restaurant_info', { restaurant_username: username, restaurant_name: data?.restaurant?.name });
+    setDrawer('info');
+  };
 
   return (
     <div className="public-menu-shell" data-theme={currentThemeKey} data-mode={menuMode} data-layout={menuLayout.style || 'STANDARD'} data-show-featured={menuLayout.emphasizeFeatured !== false} style={style}>
@@ -395,6 +407,12 @@ const PublicMenu = () => {
                 onOpenReview={() => setReviewOpen(true)}
               />
             )}
+          </>
+        ) : isStudioTheme ? (
+          <>
+            <StudioBar restaurant={data.restaurant} onOpenSearch={openSearch} onOpenInfo={openInfo} />
+            {data.categories.length > 0 && <CategoryNavigation categories={data.categories} activeCategory={activeCategory} onSelect={scrollToCategory} />}
+            {menuLayout?.showStories && <StudioSpotlight products={allProducts} onSelect={selectProduct} />}
           </>
         ) : (
           <>
@@ -735,6 +753,7 @@ const PublicMenu = () => {
           mode={menuMode}
         />
       )}
+      {isStudioTheme && !drawer && !selectedProduct && !searchOpen && !reviewOpen && <StudioDock onCategories={() => setDrawer('categories')} onSearch={openSearch} showTop={showTop} />}
       <div className="public-floating-actions" data-mode={menuMode}>
         <button
           type="button"

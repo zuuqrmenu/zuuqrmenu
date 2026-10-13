@@ -7,7 +7,7 @@ import { LandingHeader, LandingFooter } from './LandingPage';
 import '../styles/landing.css';
 
 /* Shared Page Wrapper */
-const PageShell = ({ title, eyebrow, subtitle, children, canonical, metaDesc }) => {
+export const PageShell = ({ title, eyebrow, subtitle, children, canonical, metaDesc }) => {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
@@ -245,6 +245,7 @@ export const PrivacyPage = () => (
       <ul className="lp3-legal-list">
         <li><strong>Hesap Bilgileri:</strong> İsim, e-posta adresi, telefon numarası, restoran adı ve şube bilgileri.</li>
         <li><strong>Menü & İçerik Verileri:</strong> Ürün adları, fiyatlar, fotoğraflar, kategori yapıları ve stok durumları.</li>
+        <li><strong>Ödeme ve Fatura Bilgileri:</strong> Abonelik satın alırken verdiğiniz ad, telefon ve fatura adresi ile sipariş kayıtları. Kart bilgileriniz lisanslı ödeme kuruluşu PayTR tarafından işlenir; zuuqrmenu kart numarası, son kullanma tarihi veya CVV bilgisini görmez ve saklamaz.</li>
         <li><strong>Kullanım & Analitik Verileri:</strong> QR kod tarama sayısı, ziyaret edilen kategori/ürünler, anonimleştirilmiş cihaz ve tarayıcı türleri.</li>
       </ul>
     </div>

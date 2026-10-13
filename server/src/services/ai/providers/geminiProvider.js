@@ -41,7 +41,7 @@ export const cleanPlainText = (text) => {
  * @param {string} [options.model] - Optional override for Gemini model
  * @returns {Promise<string>} The generated text response
  */
-export const generateText = async ({ prompt, systemInstruction, restaurantContext, model, images = [], responseMimeType, providerTimeoutMs }) => {
+export const generateText = async ({ prompt, systemInstruction, restaurantContext, model, images = [], responseMimeType, providerTimeoutMs, history = [] }) => {
   // Ensure fresh environment variables are available
   dotenv.config({ override: true });
   const apiKey = process.env.GEMINI_API_KEY;
@@ -85,6 +85,12 @@ export const generateText = async ({ prompt, systemInstruction, restaurantContex
         ],
       },
     ];
+  }
+
+  if (history.length > 0) {
+    // Earlier turns of the conversation, so follow-up questions keep their meaning.
+    const turns = history.map((turn) => ({ role: turn.role === 'assistant' ? 'model' : 'user', parts: [{ text: turn.text }] }));
+    contents = [...turns, ...(Array.isArray(contents) ? contents : [{ role: 'user', parts: [{ text: contents }] }])];
   }
 
   let attempts = 0;
