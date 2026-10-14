@@ -118,14 +118,18 @@ const DashboardSkeleton = ({ variant = 'panel', bare = false }) => {
       return (
         <Wrap label="Menü yönetimi yükleniyor" className="dsk-stack">
           <div className="dsk-grid dsk-grid--2">
-            {[1, 2].map((i) => (
-              <Card className="dsk-panel" key={i} style={{ minHeight: '9.75rem' }}>
-                <div className="dsk-row dsk-row--between">
-                  <div className="dsk-heading"><Bar w="5rem" h="0.8rem" /><Bar w="11rem" h="1.4rem" r="10px" /><Bar w="15rem" h="0.85rem" /></div>
-                  <Bar w="10rem" h="2.6rem" r="999px" />
-                </div>
-              </Card>
-            ))}
+            {/* Yayın durumu: title, status panel, full-width switch */}
+            <Card className="dsk-panel">
+              <div className="dsk-heading"><Bar w="9rem" h="1.4rem" r="10px" /><Bar w="75%" h="0.85rem" /></div>
+              <Bar w="100%" h="4.6rem" r="20px" />
+              <Bar w="100%" h="3.1rem" r="999px" />
+            </Card>
+            {/* Menü tasarımı: title, live design panel, two actions */}
+            <Card className="dsk-panel">
+              <div className="dsk-heading"><Bar w="9rem" h="1.4rem" r="10px" /><Bar w="80%" h="0.85rem" /></div>
+              <div className="dsk-row" style={{ gap: '1rem' }}><Bar w="7.6rem" h="5rem" r="14px" /><div className="dsk-list__text"><Bar w="35%" h="0.75rem" /><Bar w="55%" h="1.1rem" /><Bar w="70%" h="0.8rem" /></div></div>
+              <div className="dsk-row"><Bar w="8rem" h="2.6rem" r="999px" /><Bar w="10rem" h="2.6rem" r="999px" /></div>
+            </Card>
           </div>
           <Card className="dsk-panel" style={{ minHeight: '13.5rem' }}>
             <div className="dsk-heading"><Bar w="7rem" h="0.8rem" /><Bar w="10rem" h="1.4rem" r="10px" /><Bar w="60%" h="0.85rem" /></div>
@@ -169,16 +173,39 @@ const DashboardSkeleton = ({ variant = 'panel', bare = false }) => {
         </Wrap>
       );
 
+    /* Subscription modal: status strip + two plans side by side */
+    case 'billing':
+      return (
+        <Wrap label="Abonelik yükleniyor" className="dsk-stack">
+          <Card className="dsk-row dsk-row--between" style={{ padding: '0.85rem 1rem', borderRadius: '20px' }}>
+            <div className="dsk-row"><Bar w="4.5rem" h="1.6rem" r="999px" /><Bar w="16rem" h="0.9rem" /></div>
+            <Bar w="9rem" h="2.6rem" r="999px" />
+          </Card>
+          <div className="dsk-grid dsk-grid--2">
+            {[1, 2].map((i) => (
+              <Card className="dsk-panel" key={i} style={{ padding: '1.1rem 1.2rem', borderRadius: '22px' }}>
+                <div className="dsk-row dsk-row--between"><Bar w="35%" h="1.2rem" r="8px" /><Bar w="30%" h="1.6rem" r="8px" /></div>
+                <Bar w="90%" h="0.8rem" />
+                <div className="dsk-list__text" style={{ gap: '0.6rem' }}>{[1, 2, 3, 4].map((k) => <Bar key={k} w={`${85 - k * 8}%`} h="0.8rem" />)}</div>
+                <Bar w="100%" h="2.9rem" r="999px" />
+              </Card>
+            ))}
+          </div>
+        </Wrap>
+      );
+
     /* Settings tab content */
     case 'settings':
       return (
         <Wrap label="Ayarlar yükleniyor" className="dsk-stack">
           <Card className="dsk-panel">
-            <Heading title="48%" sub="62%" />
-            <div className="dsk-grid dsk-grid--3">{[1, 2, 3].map((i) => <Bar key={i} h="15rem" r="22px" />)}</div>
-            <div className="dsk-grid dsk-grid--2">{[1, 2, 3, 4].map((i) => <div key={i} className="dsk-field"><Bar w="30%" h="0.8rem" /><Bar h="3rem" r="14px" /></div>)}</div>
-            <Bar w="100%" h="6rem" r="14px" />
+            <Heading title="42%" sub="58%" />
+            <div className="dsk-grid dsk-grid--3">{[1, 2, 3].map((i) => <Bar key={i} h="11rem" r="22px" />)}</div>
+            <div className="dsk-grid dsk-grid--2">{[1, 2, 3, 4, 5, 6].map((i) => <div key={i} className="dsk-field"><Bar w="30%" h="0.8rem" /><Bar h="3rem" r="14px" /></div>)}</div>
+            <div className="dsk-row">{[1, 2, 3, 4, 5, 6].map((i) => <Bar key={i} w="3rem" h="3rem" r="999px" />)}</div>
+            <div className="dsk-row dsk-row--between"><span /><Bar w="11rem" h="2.9rem" r="999px" /></div>
           </Card>
+          <Card className="dsk-panel"><Heading title="36%" sub="50%" /><div className="dsk-grid dsk-grid--2">{[1, 2].map((i) => <Bar key={i} h="3rem" r="14px" />)}</div></Card>
         </Wrap>
       );
 

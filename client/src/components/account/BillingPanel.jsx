@@ -102,7 +102,7 @@ export const BillingPanel = ({ paid = false, onLoaded, compact = false }) => {
     {error && <Notice tone="bad">{error}</Notice>}
 
     {loading ? (
-      <DashboardSkeleton variant="qr" />
+      <DashboardSkeleton variant={compact ? 'billing' : 'qr'} />
     ) : (
       <>
         <Card

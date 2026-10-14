@@ -152,3 +152,5 @@ body .dashboard-shell.dashboard-shell .dashboard-sidebar.is-collapsed .acc-card_
 .acc-body .settings-field-hint { overflow-wrap: anywhere; font-size: 0.78rem; line-height: 1.35; }
 .acc-body .settings-form-footer { margin-top: 0.25rem; }
 @media (max-width: 720px) { .acc-body .settings-form-grid { grid-template-columns: minmax(0, 1fr); } }
+
+.acc-dp .dsk-wrap, .acc-dp .dsk-stack { gap: 1rem; }
