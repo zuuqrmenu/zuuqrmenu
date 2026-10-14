@@ -564,3 +564,13 @@ body[data-dashboard-theme='dark'] .ck { --ck-bg: #0b0b09; --ck-card: #1a1a17; --
 .ck__success .dp-card__sub { margin: 0; }
 .ck__success-card { width: 100%; text-align: left; }
 .ck__success-card dl { margin: 0; }
+
+/* Yayın durumu kartı: "Menü tasarımı" kartıyla aynı iskelet — başlık, durum paneli, tam genişlik anahtar. */
+.dp .dp-publish { align-content: start; }
+.dp .dp-publish__live { display: flex; align-items: center; gap: 1rem; padding: 1rem 1.15rem; border-radius: 20px; background: var(--glass-strong); box-shadow: inset 0 0 0 1px var(--glass-line); }
+.dp .dp-publish__dot { flex: none; width: 0.85rem; height: 0.85rem; border-radius: 999px; background: #64748b; box-shadow: 0 0 0 5px color-mix(in srgb, #64748b 18%, transparent); }
+.dp .dp-publish__dot.is-published { background: #7aa300; box-shadow: 0 0 0 5px color-mix(in srgb, #9fcf00 24%, transparent); }
+.dp .dp-publish__dot.is-hidden { background: #6d4fa3; box-shadow: 0 0 0 5px color-mix(in srgb, #6d4fa3 18%, transparent); }
+.dp .dp-publish .menu-status-switcher { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.25rem; width: 100%; padding: 0.3rem; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--dashboard-text) 5%, transparent); }
+.dp .dp-publish .menu-status-switcher button { min-height: 2.6rem; padding: 0 0.75rem; border-radius: 999px; font-size: 0.92rem; font-weight: 600; }
+.dp .dp-publish__foot { margin: 0; color: var(--dashboard-muted); font-size: 0.85rem; }

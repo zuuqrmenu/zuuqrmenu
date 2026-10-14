@@ -8,6 +8,7 @@ import { PageHeader, Card, Stat, Button, EmptyState, Notice, Icon } from '../com
 import SystemLimitsTab from '../components/admin/SystemLimitsTab';
 import AdminSettingsTab from '../components/admin/AdminSettingsTab';
 import { getPublicMenuAbsoluteUrl } from '../utils/domainHelpers';
+import ModalPortal from '../components/common/ModalPortal';
 
 const getMenuIdentity = (restaurant) => restaurant?.ownerId?.username || restaurant?.slug || '';
 
@@ -1651,43 +1652,49 @@ const AdminDashboard = () => {
 
       {/* ─── Detail Modal ────────────────────────────────────── */}
       {detailRestaurant && (
-        <RestaurantDetailModal
-          restaurant={detailRestaurant}
-          onClose={() => setDetailRestaurant(null)}
-          onEdit={(r) => {
-            setDetailRestaurant(null);
-            setEditingRestaurant(r);
-          }}
-          onSuspendToggle={(r) => {
-            handleQuickStatus(r, r.status === 'SUSPENDED' ? 'activate' : 'suspend');
-          }}
-          onRestaurantUpdated={(updated) => {
-            setRestaurants((prev) =>
-              prev.map((r) => (r._id === updated._id ? { ...r, ...updated } : r))
-            );
-            setDetailRestaurant(updated);
-          }}
-        />
+        <ModalPortal>
+          <RestaurantDetailModal
+            restaurant={detailRestaurant}
+            onClose={() => setDetailRestaurant(null)}
+            onEdit={(r) => {
+              setDetailRestaurant(null);
+              setEditingRestaurant(r);
+            }}
+            onSuspendToggle={(r) => {
+              handleQuickStatus(r, r.status === 'SUSPENDED' ? 'activate' : 'suspend');
+            }}
+            onRestaurantUpdated={(updated) => {
+              setRestaurants((prev) =>
+                prev.map((r) => (r._id === updated._id ? { ...r, ...updated } : r))
+              );
+              setDetailRestaurant(updated);
+            }}
+          />
+        </ModalPortal>
       )}
 
       {/* ─── Edit Modal ─────────────────────────────────────── */}
       {editingRestaurant && (
-        <EditRestaurantModal
-          restaurant={editingRestaurant}
-          onClose={() => setEditingRestaurant(null)}
-          onSave={handleSaveEdit}
-          saving={savingEdit}
-        />
+        <ModalPortal>
+          <EditRestaurantModal
+            restaurant={editingRestaurant}
+            onClose={() => setEditingRestaurant(null)}
+            onSave={handleSaveEdit}
+            saving={savingEdit}
+          />
+        </ModalPortal>
       )}
 
       {/* ─── Delete Confirmation Modal ──────────────────────── */}
       {deletingRestaurant && (
-        <DeleteRestaurantModal
-          restaurant={deletingRestaurant}
-          onClose={() => setDeletingRestaurant(null)}
-          onConfirm={handleConfirmDelete}
-          deleting={deletingBusy}
-        />
+        <ModalPortal>
+          <DeleteRestaurantModal
+            restaurant={deletingRestaurant}
+            onClose={() => setDeletingRestaurant(null)}
+            onConfirm={handleConfirmDelete}
+            deleting={deletingBusy}
+          />
+        </ModalPortal>
       )}
     </AdminLayout>
   );

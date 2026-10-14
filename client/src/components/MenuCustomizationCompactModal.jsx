@@ -83,7 +83,7 @@ const ColorField = ({ label, hint, value, onChange }) => (
   </label>
 );
 
-const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, onDelete = null, editingIndex = null, initialMenu = null, restaurant = null }) => {
+const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, onDelete = null, editingIndex = null, initialMenu = null, restaurant = null, brandColors = null }) => {
   useBodyScrollLock(true);
   const [savedThemes, setSavedThemes] = useState(Array.isArray(themes) ? themes : []);
   const [draft, setDraft] = useState(() => (initialMenu ? normalize(initialMenu) : buildDefaultMenuTemplate({ name: '' })));
@@ -133,6 +133,20 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, onDelete = nu
 
   const update = (field, value) => setDraft((current) => ({ ...current, [field]: value }));
   const updateLayout = (field, value) => setDraft((current) => ({ ...current, layout: { ...current.layout, [field]: value } }));
+  // Brand colours saved in settings become the first preset ("Kurumsal"); it takes Şarap's slot.
+  const brandPalette = useMemo(() => {
+    const primary = brandColors?.primaryColor;
+    const secondary = brandColors?.secondaryColor || '#FFFFFF';
+    if (!/^#[0-9a-f]{6}$/i.test(primary || '')) return null;
+    const isFactoryDefault = primary.toLowerCase() === '#1f2937' && secondary.toLowerCase() === '#ffffff';
+    return isFactoryDefault ? null : { name: 'Kurumsal', primary: primary.toUpperCase(), secondary: secondary.toUpperCase() };
+  }, [brandColors?.primaryColor, brandColors?.secondaryColor]);
+  const palettes = useMemo(() => (brandPalette ? [brandPalette, ...menuPalettes.filter((palette) => palette.name !== 'Şarap')] : menuPalettes), [brandPalette]);
+  // A brand-new design starts with the corporate colours selected.
+  useEffect(() => {
+    if (initialMenu || !brandPalette) return;
+    setDraft((current) => ({ ...current, primaryColor: brandPalette.primary, secondaryColor: brandPalette.secondary }));
+  }, [brandPalette, initialMenu]);
   const applyPalette = (palette) => setDraft((current) => ({ ...current, primaryColor: palette.primary, secondaryColor: palette.secondary }));
 
   const save = async () => {
@@ -263,7 +277,7 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, onDelete = nu
         <>
           <Section title="Hazır paletler" hint="Tek dokunuşla vurgu ve ikincil rengi birlikte ayarlayın.">
             <div className="mcz-palettes">
-              {menuPalettes.map((palette) => {
+              {palettes.map((palette) => {
                 const selected = palette.primary.toLowerCase() === draft.primaryColor?.toLowerCase() && palette.secondary.toLowerCase() === draft.secondaryColor?.toLowerCase();
                 return (
                   <button key={palette.name} type="button" className={`mcz-palette ${selected ? 'is-selected' : ''}`} onClick={() => applyPalette(palette)} aria-pressed={selected}>
@@ -305,7 +319,8 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, onDelete = nu
 
     return (
       <>
-        <Section title="Ürün yerleşimi" hint="Ürünlerin listede nasıl dizileceği.">
+        {draft.theme === 'STUDIO' && (
+        <Section title="Ürün yerleşimi" hint="Stüdyo kartlarının nasıl dizileceği.">
           <div className="mcz-layouts" role="radiogroup" aria-label="Ürün yerleşimi">
             {menuLayoutOptions.map((option) => (
               <button key={option.value} type="button" role="radio" aria-checked={draft.layout.style === option.value} className={`mcz-layout ${draft.layout.style === option.value ? 'is-selected' : ''}`} onClick={() => updateLayout('style', option.value)}>
@@ -315,6 +330,7 @@ const MenuCustomizationCompactModal = ({ themes, onClose, onSaved, onDelete = nu
             ))}
           </div>
         </Section>
+        )}
         <Section title="Gösterilecekler" hint="Menüde hangi unsurların yer alacağını seçin.">
           <div className="mcz-toggles">
             {menuToggleOptions.map(([field, title, helper]) => (

@@ -12,7 +12,13 @@ const getRestaurantId = (req) => req.restaurant._id;
 const ensureMenu = async (restaurantId) => {
   let menu = await Menu.findOne({ restaurantId }).lean();
   if (!menu) {
-    menu = await Menu.create({ restaurantId, name: 'Ana Menü' });
+    try {
+      menu = await Menu.create({ restaurantId, name: 'Ana Menü' });
+    } catch (error) {
+      // Two requests can race to create the first menu (restaurantId is unique); the loser reuses the winner's.
+      if (error?.code !== 11000) throw error;
+      menu = await Menu.findOne({ restaurantId }).lean();
+    }
   }
   return menu;
 };
@@ -167,6 +173,17 @@ export const createCategory = async (req, res, next) => {
     const menu = await ensureMenu(restaurantId);
     const { fields, error } = parseCategoryFields(req.body);
     if (error) return res.status(400).json({ error });
+
+    // A retried request (the first answer got lost on the way back) must not create the same category twice.
+    const recentDuplicate = await Category.findOne({
+      restaurantId,
+      menuId: menu._id,
+      name: fields.name,
+      createdAt: { $gte: new Date(Date.now() - 2 * 60 * 1000) },
+    }).lean();
+    if (recentDuplicate) {
+      return res.status(200).json({ message: 'Kategori oluşturuldu', category: { ...recentDuplicate, productCount: 0 } });
+    }
 
     if (fields.displayOrder === undefined) {
       const lastCategory = await Category.findOne({ restaurantId, menuId: menu._id }).sort({ displayOrder: -1 });

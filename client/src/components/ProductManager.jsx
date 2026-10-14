@@ -4,6 +4,7 @@ import { menuService } from '../services/menuService';
 import { suggestProductDetails } from '../services/aiService';
 import { compressImageToWebp } from '../utils/imageOptimizer';
 import '../components/CategorySuggester.css';
+import '../styles/menu-modals.css';
 import {
   getFilteredProductSuggestions,
   generateProductDescriptionText,
@@ -664,7 +665,7 @@ export const ProductModal = ({ product, categoryId, categories, onClose, onSaved
           {/* Modal Header */}
         <div className="flex items-start justify-between gap-4 pb-3 border-b border-slate-100">
           <div>
-            <p className="text-sm font-medium text-emerald-600">Menü</p>
+            <p className="mz-kicker">Menü</p>
             <h2 id="product-dialog-title" className="mt-1 text-xl font-semibold text-slate-900">
               {product ? 'Ürünü düzenle' : 'Ürün ekle'}
             </h2>
@@ -672,7 +673,7 @@ export const ProductModal = ({ product, categoryId, categories, onClose, onSaved
           <button
             type="button"
             onClick={() => handleClose()}
-            className="text-2xl leading-none text-slate-400 hover:text-slate-700 transition-colors"
+            className="mz-close"
             aria-label="Kapat"
           >
             ×
@@ -680,7 +681,7 @@ export const ProductModal = ({ product, categoryId, categories, onClose, onSaved
         </div>
 
         {/* Step Navigation Tabs */}
-        <div className="mt-3.5 flex items-center justify-between border-b border-slate-100 bg-slate-50/80 p-1 rounded-xl">
+        <div className="mz-steps">
           {[
             { id: 1, label: 'Temel Bilgiler', short: '1. Temel' },
             { id: 2, label: 'Görsel & Açıklama', short: '2. Görsel' },

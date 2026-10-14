@@ -11990,7 +11990,7 @@ body[data-dashboard-theme='dark'] .dashboard-shell .menu-structure-product__imag
   color: var(--brand-primary);
 }
 
-body[data-dashboard-theme='dark'] .dashboard-shell .menu-structure-drag-preview {
+body[data-dashboard-theme='dark'] .menu-structure-drag-preview {
   border-color: var(--brand-primary);
   background: var(--dashboard-elevated);
   color: var(--dashboard-text);

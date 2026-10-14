@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import '../styles/cookie-banner.css';
 import { getCookieConsent, setCookieConsent } from '../utils/consent';
 
 /** Cookie consent bar for the marketing site. Analytics cookies stay off until "Kabul et". */

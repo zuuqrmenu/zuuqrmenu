@@ -80,7 +80,16 @@ api.interceptors.response.use(
   (response) => {
     return response;
   },
-  (error) => {
+  async (error) => {
+    // Idempotent requests get one automatic retry when no answer came back (network blip, server waking) or the gateway failed.
+    const config = error.config;
+    const method = (config?.method || '').toLowerCase();
+    const transient = !error.response || [502, 503, 504].includes(error.response.status);
+    if (config && transient && !config.__retried && ['get', 'patch', 'put', 'delete'].includes(method) && error.code !== 'ERR_CANCELED') {
+      config.__retried = true;
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      return api(config);
+    }
     if (error.response?.status === 401) {
       localStorage.removeItem('zuulab_auth_token');
       localStorage.removeItem('zuulab_auth_expires_at');

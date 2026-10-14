@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import SeoHead from './SeoHead';
 import ZuuAIAssistant from './ZuuAIAssistant';
 import DashboardSidebar, { useSidebarCollapsed } from './DashboardSidebar';
+import AccountMenu from './account/AccountMenu';
 import '../styles/dashboard-theme.css';
 
 const AdminLayout = ({ children, title = 'Yönetim Paneli | zuuqrmenu' }) => {
@@ -55,6 +56,7 @@ const AdminLayout = ({ children, title = 'Yönetim Paneli | zuuqrmenu' }) => {
         onLogout={logout}
         collapsed={collapsed}
         onToggle={() => setCollapsed((v) => !v)}
+        accountSlot={<AccountMenu name={user?.name || 'Sistem Yöneticisi'} subline={user?.email || 'admin@zuuqrmenu.com'} badge="Yönetici" collapsed={collapsed} onLogout={logout} />}
       />
 
       {/* Mobile Drawer Overlay & Sheet */}

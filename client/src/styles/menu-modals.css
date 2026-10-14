@@ -1,0 +1,139 @@
+/* ═══════════════════════════════════════════════════════════════
+   Kategori ve ürün ekleme pencereleri — menü tasarımı penceresiyle (menu-customizer.css)
+   aynı dil: yumuşak köşeler, ince çizgiler, hap düğmeler, limon vurgu.
+   Renkler panelin --dashboard-* değişkenlerinden gelir; açık ve koyu temada aynı çalışır.
+   ═══════════════════════════════════════════════════════════════ */
+
+body .category-modal-backdrop,
+body .product-modal-backdrop {
+  --mz-surface: var(--dashboard-surface, #ffffff);
+  --mz-text: var(--dashboard-text, #11110e);
+  --mz-secondary: var(--dashboard-secondary, #4a4a42);
+  --mz-muted: var(--dashboard-muted, #7a7a70);
+  --mz-line: color-mix(in srgb, var(--mz-text) 11%, transparent);
+  --mz-fill: color-mix(in srgb, var(--mz-text) 4.5%, transparent);
+  --mz-accent: #deff36;
+  --mz-accent-ink: #11110e;
+  background: rgb(8 10 6 / 58%) !important;
+  backdrop-filter: blur(8px);
+  font-family: 'Instrument Sans', system-ui, -apple-system, sans-serif;
+}
+
+body .category-modal-panel,
+body .product-modal-panel {
+  border: 1px solid var(--mz-line) !important;
+  border-radius: 28px !important;
+  background: var(--mz-surface) !important;
+  color: var(--mz-text);
+  padding: 1.5rem !important;
+  box-shadow: 0 50px 120px -30px rgb(0 0 0 / 55%) !important;
+}
+body .category-modal-panel { max-width: 30rem; }
+body .product-modal-panel { max-width: 40rem; }
+
+/* Başlık */
+body .category-modal-panel .mz-kicker,
+body .product-modal-panel .mz-kicker { margin: 0; color: var(--mz-muted); font-size: 0.8rem; font-weight: 600; letter-spacing: 0.01em; }
+body .category-modal-panel h2,
+body .product-modal-panel h2 { margin: 0.15rem 0 0 !important; color: var(--mz-text) !important; font-size: 1.45rem !important; font-weight: 650 !important; letter-spacing: -0.02em; line-height: 1.15; }
+body .product-modal-panel > .border-b { border-color: var(--mz-line) !important; padding-bottom: 1rem !important; }
+
+body .category-modal-panel .mz-close,
+body .product-modal-panel .mz-close {
+  display: grid; place-items: center; flex: none; width: 2.5rem; height: 2.5rem; padding: 0; border: 1px solid var(--mz-line); border-radius: 999px;
+  background: transparent; color: var(--mz-secondary); font-size: 1.3rem; line-height: 1; cursor: pointer; transition: background-color 0.2s ease, color 0.2s ease;
+}
+body .category-modal-panel .mz-close:hover,
+body .product-modal-panel .mz-close:hover { background: var(--mz-fill); color: var(--mz-text); }
+
+/* Adımlar */
+body .product-modal-panel .mz-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.25rem; margin-top: 1rem; padding: 0.3rem; border: 0 !important; border-radius: 999px; background: var(--mz-fill); }
+body .product-modal-panel .mz-steps > button { min-height: 2.5rem; padding: 0.4rem 0.6rem; border: 0 !important; border-radius: 999px; background: transparent; color: var(--mz-secondary); font-size: 0.82rem; font-weight: 600; box-shadow: none; }
+body .product-modal-panel .mz-steps > button.bg-white { background: var(--mz-surface); color: var(--mz-text); box-shadow: 0 1px 0 var(--mz-line), 0 8px 18px -10px rgb(0 0 0 / 40%); }
+body .product-modal-panel .mz-steps > button:hover { background: transparent; }
+body .product-modal-panel .mz-steps > button.bg-white:hover { background: var(--mz-surface); }
+body .product-modal-panel .mz-steps > button span:first-child { width: 1.2rem; height: 1.2rem; background: var(--mz-fill); color: var(--mz-secondary); }
+body .product-modal-panel .mz-steps > button.bg-white span:first-child { background: var(--mz-accent); color: var(--mz-accent-ink); }
+body .product-modal-panel .mz-steps > button.text-emerald-700 { color: var(--mz-text); }
+body .product-modal-panel .mz-steps > button.text-emerald-700 span:first-child { background: color-mix(in srgb, var(--mz-accent) 55%, transparent); color: var(--mz-accent-ink); }
+
+/* Etiketler ve alanlar */
+body .category-modal-panel label,
+body .product-modal-panel label,
+body .product-modal-panel legend { color: var(--mz-text) !important; text-transform: none !important; letter-spacing: 0 !important; font-size: 0.86rem !important; font-weight: 600 !important; }
+body .category-modal-panel label .text-slate-400,
+body .product-modal-panel label .text-slate-400 { color: var(--mz-muted) !important; font-weight: 500; }
+
+body .category-modal-panel input:not([type='checkbox']):not([type='radio']):not([type='file']),
+body .category-modal-panel textarea,
+body .product-modal-panel input:not([type='checkbox']):not([type='radio']):not([type='file']),
+body .product-modal-panel textarea,
+body .product-modal-panel select,
+body .product-modal-panel .custom-category-select-btn {
+  min-height: 2.9rem; padding: 0.65rem 1rem; border: 1px solid var(--mz-line) !important; border-radius: 16px !important;
+  background: var(--mz-fill) !important; color: var(--mz-text) !important; font-size: 0.95rem; box-shadow: none; transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+body .category-modal-panel textarea,
+body .product-modal-panel textarea { min-height: 5.5rem; }
+body .category-modal-panel input::placeholder,
+body .category-modal-panel textarea::placeholder,
+body .product-modal-panel input::placeholder,
+body .product-modal-panel textarea::placeholder { color: var(--mz-muted); }
+body .category-modal-panel input:focus,
+body .category-modal-panel textarea:focus,
+body .product-modal-panel input:focus,
+body .product-modal-panel textarea:focus,
+body .product-modal-panel select:focus,
+body .product-modal-panel .custom-category-select-btn:focus {
+  outline: none; border-color: color-mix(in srgb, var(--mz-text) 55%, transparent) !important; background: var(--mz-surface) !important;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--mz-accent) 40%, transparent) !important;
+}
+
+/* Gruplanmış kutular (alerjen, içerik, görsel yükleme) */
+body .product-modal-panel .rounded-xl.border.bg-slate-50\/50,
+body .product-modal-panel .rounded-xl.border-dashed { border-color: var(--mz-line) !important; border-radius: 20px !important; background: var(--mz-fill) !important; }
+body .product-modal-panel .rounded-xl.border-dashed { border-style: dashed !important; }
+
+/* Öneri açılır listeleri */
+body .category-suggestions-dropdown,
+body .product-suggestions-dropdown { border: 1px solid var(--mz-line); border-radius: 18px; background: var(--dashboard-surface, #fff); box-shadow: 0 24px 50px -20px rgb(0 0 0 / 40%); }
+body .category-suggestion-item,
+body .product-suggestion-item { border-radius: 12px; }
+
+/* Etiket düğmeleri */
+body .product-modal-panel .product-tag-toggle-btn { min-height: 2.2rem; padding: 0 0.9rem !important; border: 1px solid var(--mz-line); border-radius: 999px; background: transparent; color: var(--mz-secondary); font-weight: 600; transition: background-color 0.2s ease, border-color 0.2s ease; }
+body .product-modal-panel .product-tag-toggle-btn:hover { background: var(--mz-fill); }
+body .product-modal-panel .product-tag-toggle-btn.is-active { border-color: transparent; background: var(--mz-accent) !important; color: var(--mz-accent-ink) !important; }
+
+/* Alt çubuk ve düğmeler */
+body .category-modal-panel .border-t,
+body .product-modal-panel form > .border-t { border-color: var(--mz-line) !important; padding-top: 1.1rem; }
+
+body .category-modal-panel form button[type='submit'],
+body .product-modal-panel form button[type='submit'] {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; min-height: 2.9rem; padding: 0 1.4rem !important; border: 0; border-radius: 999px !important;
+  background: var(--mz-accent) !important; color: var(--mz-accent-ink) !important; font-size: 0.95rem; font-weight: 650; box-shadow: 0 10px 24px -12px rgb(160 200 0 / 70%) !important; transform: none !important;
+}
+body .category-modal-panel form button[type='submit']:hover,
+body .product-modal-panel form button[type='submit']:hover { background: #cdee1f !important; }
+body .category-modal-panel form button[type='submit']:active,
+body .product-modal-panel form button[type='submit']:active { transform: scale(0.97) !important; }
+body .category-modal-panel .border-t button[type='button'],
+body .product-modal-panel form > .border-t button[type='button'] {
+  min-height: 2.9rem; padding: 0 1.3rem !important; border: 1px solid var(--mz-line) !important; border-radius: 999px !important; background: transparent !important; color: var(--mz-text) !important; font-size: 0.95rem; font-weight: 650;
+}
+body .category-modal-panel .border-t button[type='button']:hover,
+body .product-modal-panel form > .border-t button[type='button']:hover { background: var(--mz-fill) !important; }
+
+@media (max-width: 640px) {
+  body .category-modal-panel, body .product-modal-panel { padding: 1.15rem !important; border-radius: 24px !important; }
+  body .product-modal-panel .mz-steps > button { font-size: 0.76rem; padding: 0.4rem; }
+}
+
+/* ModalPortal: pencereleri <body>'ye taşıyan sarmalayıcı kutu oluşturmaz; yalnızca tema kapsamını (.dashboard-shell) korur. */
+body .dashboard-shell.dashboard-shell.dashboard-portal,
+body[data-dashboard-theme='dark'] .dashboard-shell.dashboard-shell.dashboard-portal {
+  display: contents;
+  min-height: 0;
+  background: none !important;
+}

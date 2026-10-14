@@ -18,6 +18,7 @@ import { ProductModal } from './ProductManager';
 import BulkMenuActionsModal from './BulkMenuActionsModal';
 import { menuService } from '../services/menuService';
 import { publicMenuService } from '../services/publicMenuService';
+import ModalPortal from './common/ModalPortal';
 
 const getId = (item) => String(item?._id || item?.id);
 const getCategoryId = (product) => String(product?.categoryId?._id || product?.categoryId);
@@ -275,8 +276,8 @@ const MenuStructureEditor = ({ categories, products, actionId, onEditCategory, o
     if (overId.startsWith('category-drop:')) return overId.slice(14);
     if (overId.startsWith('category:')) return overId.slice(9);
     if (overId.startsWith('product:')) {
-      const target = currentColumns.flatMap((column) => column.products).find((product) => getId(product) === overId.slice(8));
-      return target ? getCategoryId(target) : null;
+      const location = findProductLocation(currentColumns, overId.slice(8));
+      return location ? getId(currentColumns[location.columnIndex].category) : null;
     }
     return null;
   };
@@ -328,6 +329,7 @@ const MenuStructureEditor = ({ categories, products, actionId, onEditCategory, o
     if (!over || !String(active.id).startsWith('product:')) return;
     const productId = String(active.id).slice(8);
     const overId = String(over.id);
+    if (overId === String(active.id)) return;
     setColumns((current) => moveProduct(current, productId, overId));
   };
 
@@ -509,13 +511,16 @@ const MenuStructureEditor = ({ categories, products, actionId, onEditCategory, o
           )}
         </div>
       </section>
-      <DragOverlay>
-        {activeProduct ? (
-          <div className="menu-structure-drag-preview">{activeProduct.name}</div>
-        ) : activeCategory ? (
-          <div className="menu-structure-drag-preview">{activeCategory.name}</div>
-        ) : null}
-      </DragOverlay>
+      {createPortal(
+        <DragOverlay dropAnimation={null}>
+          {activeProduct ? (
+            <div className="menu-structure-drag-preview">{activeProduct.name}</div>
+          ) : activeCategory ? (
+            <div className="menu-structure-drag-preview">{activeCategory.name}</div>
+          ) : null}
+        </DragOverlay>,
+        document.body,
+      )}
       {(editingProduct || productModalCategory) && (
         <ProductModal
           product={editingProduct}
@@ -560,11 +565,13 @@ const MenuStructureEditor = ({ categories, products, actionId, onEditCategory, o
         />
       )}
       {deleteConfirmation && (
-        <DeleteConfirmDialog
-          confirmation={deleteConfirmation}
-          onClose={() => setDeleteConfirmation(null)}
-          onConfirm={confirmDelete}
-        />
+        <ModalPortal>
+          <DeleteConfirmDialog
+            confirmation={deleteConfirmation}
+            onClose={() => setDeleteConfirmation(null)}
+            onConfirm={confirmDelete}
+          />
+        </ModalPortal>
       )}
       {bulkModalOpen && (
         <BulkMenuActionsModal

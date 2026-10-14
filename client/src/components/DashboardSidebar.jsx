@@ -32,7 +32,7 @@ export const useSidebarCollapsed = () => {
  * Desktop sidebar shared by the restaurant and admin panels.
  * Collapsed = 76px icon rail; every item keeps its label in the DOM (visually hidden) and shows a tooltip on hover/focus.
  */
-const DashboardSidebar = ({ title, identity, subline, items, footerItems, onLogout, collapsed, onToggle }) => {
+const DashboardSidebar = ({ title, identity, subline, items, footerItems, onLogout, collapsed, onToggle, accountSlot = null }) => {
   const link = ({ isActive }) => `dashboard-nav-link ${isActive ? 'is-active' : ''}`;
   const renderItem = (item) => (
     <NavLink key={item.to} to={item.to} end={item.end} className={link} data-tip={item.label}>
@@ -64,22 +64,27 @@ const DashboardSidebar = ({ title, identity, subline, items, footerItems, onLogo
         </svg>
       </button>
 
-      <div className="dashboard-restaurant" title={`${identity} ${subline || ''}`}>
-        <span className="dashboard-restaurant__avatar" aria-hidden="true">{(identity || 'R').charAt(0).toUpperCase()}</span>
-        <div className="dashboard-restaurant__text">
-          <p className="truncate">{identity}</p>
-          {subline && <span className="truncate">{subline}</span>}
+      {!accountSlot && (
+        <div className="dashboard-restaurant" title={`${identity} ${subline || ''}`}>
+          <span className="dashboard-restaurant__avatar" aria-hidden="true">{(identity || 'R').charAt(0).toUpperCase()}</span>
+          <div className="dashboard-restaurant__text">
+            <p className="truncate">{identity}</p>
+            {subline && <span className="truncate">{subline}</span>}
+          </div>
         </div>
-      </div>
+      )}
 
       <nav className="dashboard-sidebar__nav">
         <div className="dashboard-sidebar__primary">{items.map(renderItem)}</div>
         <div className="dashboard-sidebar__bottom">
           {footerItems.map(renderItem)}
-          <button type="button" onClick={onLogout} className="dashboard-logout dashboard-nav-link" data-tip="Çıkış yap">
-            <span className="dashboard-nav-link__icon">{NAV_ICONS.logout}</span>
-            <span className="dashboard-nav-link__label">Çıkış yap</span>
-          </button>
+          {!accountSlot && (
+            <button type="button" onClick={onLogout} className="dashboard-logout dashboard-nav-link" data-tip="Çıkış yap">
+              <span className="dashboard-nav-link__icon">{NAV_ICONS.logout}</span>
+              <span className="dashboard-nav-link__label">Çıkış yap</span>
+            </button>
+          )}
+          {accountSlot}
         </div>
       </nav>
     </aside>

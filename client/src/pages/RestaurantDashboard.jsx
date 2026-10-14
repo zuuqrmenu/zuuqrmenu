@@ -8,6 +8,7 @@ import MenuOnboardingModal from '../components/MenuOnboardingModal';
 import DashboardSkeleton from '../components/DashboardSkeleton';
 import { PageHeader, Card, Stat, Button, Segmented, ActionRow, EmptyState, Notice, Icon } from '../components/dashboard/ui';
 import { getPublicMenuUrl } from '../utils/publicMenuUrl';
+import ModalPortal from '../components/common/ModalPortal';
 
 const statusTone = { DRAFT: 'draft', PUBLISHED: 'published', HIDDEN: 'hidden' };
 
@@ -349,18 +350,22 @@ const RestaurantDashboard = () => {
       </div>
 
       {statusDialog && (
-        <OverviewStatusDialog
-          currentStatus={currentStatus}
-          onClose={() => setStatusDialog(false)}
-          onSelect={(status) => updateMenuStatus(status)}
-        />
+        <ModalPortal>
+          <OverviewStatusDialog
+            currentStatus={currentStatus}
+            onClose={() => setStatusDialog(false)}
+            onSelect={(status) => updateMenuStatus(status)}
+          />
+        </ModalPortal>
       )}
 
       {onboardingOpen && (
-        <MenuOnboardingModal
-          restaurantName={restaurant?.name || overview?.restaurant?.name || 'Restoranınız'}
-          onCreate={createMenu}
-        />
+        <ModalPortal>
+          <MenuOnboardingModal
+            restaurantName={restaurant?.name || overview?.restaurant?.name || 'Restoranınız'}
+            onCreate={createMenu}
+          />
+        </ModalPortal>
       )}
     </RestaurantLayout>
   );

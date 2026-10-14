@@ -121,7 +121,7 @@ export const ContactPage = () => {
             <span className="lp3-contact-card__icon">✉️</span>
             <div>
               <strong>E-Posta</strong>
-              <p><a href="mailto:destek@zuuqrmenu.com">destek@zuuqrmenu.com</a></p>
+              <p><a href="mailto:zuuqrmenu@gmail.com">zuuqrmenu@gmail.com</a></p>
             </div>
           </div>
 
@@ -346,7 +346,7 @@ export const KvkkPage = () => (
         <li>Eksik veya yanlış işlenmişse düzeltilmesini isteme,</li>
         <li>KVKK 7. maddesi uyarınca silinmesini veya yok edilmesini talep etme haklarına sahiptir.</li>
       </ul>
-      <p>Başvurularınızı <a href="mailto:kvkk@zuuqrmenu.com">kvkk@zuuqrmenu.com</a> adresine iletebilirsiniz.</p>
+      <p>Başvurularınızı <a href="mailto:zuuqrmenu@gmail.com">zuuqrmenu@gmail.com</a> adresine iletebilirsiniz.</p>
     </div>
   </PageShell>
 );

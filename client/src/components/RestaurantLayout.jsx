@@ -4,6 +4,10 @@ import { useAuth } from '../context/AuthContext';
 import SeoHead from './SeoHead';
 import ZuuAIAssistant from './ZuuAIAssistant';
 import DashboardSidebar, { useSidebarCollapsed } from './DashboardSidebar';
+import AccountMenu from './account/AccountMenu';
+import SubscriptionModal from './account/SubscriptionModal';
+import AccountSettingsModal from './account/AccountSettingsModal';
+import useSubscriptionSummary from '../hooks/useSubscriptionSummary';
 import '../styles/dashboard-theme.css';
 
 const RestaurantLayout = ({ children }) => {
@@ -11,6 +15,9 @@ const RestaurantLayout = ({ children }) => {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [collapsed, setCollapsed] = useSidebarCollapsed();
+  const [accountDialog, setAccountDialog] = useState(null); // 'subscription' | 'settings' | null
+  const [subscription, refreshSubscription] = useSubscriptionSummary();
+  const planLabel = subscription.loaded ? (subscription.planName || 'Paket yok') : null;
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -44,14 +51,28 @@ const RestaurantLayout = ({ children }) => {
         items={[
           { label: 'Genel bakış', to: '/dashboard', end: true, icon: 'overview' },
           { label: 'Menü yönetimi', to: '/dashboard/menu', icon: 'menu' },
+          { label: 'Firma ayarları', to: '/dashboard/settings', icon: 'settings' },
           { label: 'QR kod', to: '/dashboard/qr', icon: 'qr' },
           { label: 'İstatistikler', to: '/dashboard/analytics', icon: 'stats' },
         ]}
-        footerItems={[{ label: 'Abonelik', to: '/dashboard/billing', icon: 'billing' }, { label: 'Ayarlar', to: '/dashboard/settings', icon: 'settings' }]}
+        footerItems={[]}
         onLogout={logout}
         collapsed={collapsed}
         onToggle={() => setCollapsed((v) => !v)}
+        accountSlot={(
+          <AccountMenu
+            name={restaurant?.name || 'Restoranınız'}
+            subline={user?.email}
+            badge={planLabel}
+            collapsed={collapsed}
+            onSubscription={() => setAccountDialog('subscription')}
+            onSettings={() => setAccountDialog('settings')}
+            onLogout={logout}
+          />
+        )}
       />
+      {accountDialog === 'subscription' && <SubscriptionModal onClose={() => { setAccountDialog(null); refreshSubscription(); }} />}
+      {accountDialog === 'settings' && <AccountSettingsModal onClose={() => setAccountDialog(null)} />}
 
       {/* Mobile Drawer Overlay & Sheet (Only on mobile / tablet < 1024px) */}
       <div
@@ -120,6 +141,17 @@ const RestaurantLayout = ({ children }) => {
               </NavLink>
 
               <NavLink
+                to="/dashboard/settings"
+                className={({ isActive }) => `dashboard-mobile-drawer-link ${isActive ? 'is-active' : ''}`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <span className="dashboard-mobile-drawer-link__icon">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z" /></svg>
+                </span>
+                <span>Firma ayarları</span>
+              </NavLink>
+
+              <NavLink
                 to="/dashboard/qr"
                 className={({ isActive }) => `dashboard-mobile-drawer-link ${isActive ? 'is-active' : ''}`}
                 onClick={() => setMobileMenuOpen(false)}
@@ -143,27 +175,26 @@ const RestaurantLayout = ({ children }) => {
             </div>
 
             <div className="dashboard-mobile-drawer__footer">
-              <NavLink
-                to="/dashboard/billing"
-                className={({ isActive }) => `dashboard-mobile-drawer-link ${isActive ? 'is-active' : ''}`}
-                onClick={() => setMobileMenuOpen(false)}
+              <button
+                type="button"
+                className="dashboard-mobile-drawer-link"
+                onClick={() => { setMobileMenuOpen(false); setAccountDialog('subscription'); }}
               >
                 <span className="dashboard-mobile-drawer-link__icon">
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2.5" /><path d="M2.5 10h19M6.5 15h4" /></svg>
                 </span>
-                <span>Abonelik</span>
-              </NavLink>
-
-              <NavLink
-                to="/dashboard/settings"
-                className={({ isActive }) => `dashboard-mobile-drawer-link ${isActive ? 'is-active' : ''}`}
-                onClick={() => setMobileMenuOpen(false)}
+                <span>{planLabel ? `Abonelik · ${planLabel}` : 'Abonelik'}</span>
+              </button>
+              <button
+                type="button"
+                className="dashboard-mobile-drawer-link"
+                onClick={() => { setMobileMenuOpen(false); setAccountDialog('settings'); }}
               >
                 <span className="dashboard-mobile-drawer-link__icon">
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z" /></svg>
                 </span>
-                <span>Ayarlar</span>
-              </NavLink>
+                <span>Hesap ayarları</span>
+              </button>
 
               <button
                 type="button"

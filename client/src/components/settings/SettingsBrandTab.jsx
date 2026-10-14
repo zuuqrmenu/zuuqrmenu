@@ -255,7 +255,7 @@ const SettingsBrandTab = ({ settings, setSettings, profile, setProfile, onNotice
         ...(brandingResult.settings || {}),
         socialMedia: brandingResult.settings?.socialMedia || socialList,
       }));
-      onNotice('Marka ve restoran ayarları başarıyla kaydedildi.');
+      onNotice('Firma ayarları başarıyla kaydedildi.');
     } catch (error) {
       onError(error.response?.data?.error || 'Marka ayarları kaydedilemedi.');
     } finally {
@@ -339,7 +339,7 @@ const SettingsBrandTab = ({ settings, setSettings, profile, setProfile, onNotice
         return onError('URL http:// veya https:// ile başlamalıdır.');
       }
     } catch {
-      return onError('Lütfen geçerli bir internet adresi (URL) girin (Örn: https://instagram.com/restoraniniz).');
+      return onError('Lütfen geçerli bir internet adresi (URL) girin (Örn: https://instagram.com/isletmeniz).');
     }
 
     if (socialList.some((item) => item.platform === newSocial.platform)) {
@@ -391,7 +391,7 @@ const SettingsBrandTab = ({ settings, setSettings, profile, setProfile, onNotice
         return onError('URL http:// veya https:// ile başlamalıdır.');
       }
     } catch {
-      return onError('Lütfen geçerli bir internet adresi (URL) girin (Örn: https://instagram.com/restoraniniz).');
+      return onError('Lütfen geçerli bir internet adresi (URL) girin (Örn: https://instagram.com/isletmeniz).');
     }
 
     const duplicate = socialList.some((item, i) => i !== index && item.platform === editingSocialData.platform);
@@ -448,7 +448,7 @@ const SettingsBrandTab = ({ settings, setSettings, profile, setProfile, onNotice
         <div className="settings-card__header">
           <div>
             <span className="settings-eyebrow">Marka kimliği</span>
-            <h3 className="settings-card__title">Restoran ve Marka Bilgileri</h3>
+            <h3 className="settings-card__title">Firma ve Marka Bilgileri</h3>
             <p className="settings-card__desc">
               Menünüzde ve QR sayfalarınızda müşterilerinize gösterilen marka kimliğini yönetin.
             </p>
@@ -497,7 +497,7 @@ const SettingsBrandTab = ({ settings, setSettings, profile, setProfile, onNotice
           <h4 className="settings-section-subhead">İşletme Bilgileri</h4>
           <div className="settings-form-grid">
             <label className="settings-field-label">
-              <span>Restoran Adı *</span>
+              <span>Firma Adı *</span>
               <input
                 name="name"
                 value={profile.name}
@@ -547,13 +547,13 @@ const SettingsBrandTab = ({ settings, setSettings, profile, setProfile, onNotice
             </label>
 
             <label className="settings-field-label">
-              <span>Restoran İletişim E-postası</span>
+              <span>Firma İletişim E-postası</span>
               <input
                 name="email"
                 value={profile.email || ''}
                 onChange={updateProfile}
                 type="email"
-                placeholder="info@restoran.com"
+                placeholder="info@isletmeniz.com"
                 className="field-input"
               />
             </label>
@@ -565,7 +565,7 @@ const SettingsBrandTab = ({ settings, setSettings, profile, setProfile, onNotice
                 value={profile.address || ''}
                 onChange={updateProfile}
                 rows="2"
-                placeholder="Restoranınızın açık adresi..."
+                placeholder="İşletmenizin açık adresi..."
                 className="field-input resize-none"
               />
             </label>
@@ -663,7 +663,7 @@ const SettingsBrandTab = ({ settings, setSettings, profile, setProfile, onNotice
                   type="url"
                   value={newSocial.url}
                   onChange={(e) => setNewSocial((prev) => ({ ...prev, url: e.target.value }))}
-                  placeholder="https://instagram.com/restoraniniz"
+                  placeholder="https://instagram.com/isletmeniz"
                   className="field-input"
                   autoFocus
                 />
@@ -735,7 +735,7 @@ const SettingsBrandTab = ({ settings, setSettings, profile, setProfile, onNotice
                           type="url"
                           value={editingSocialData.url}
                           onChange={(e) => setEditingSocialData((prev) => ({ ...prev, url: e.target.value }))}
-                          placeholder="https://instagram.com/restoraniniz"
+                          placeholder="https://instagram.com/isletmeniz"
                           className="field-input"
                           autoFocus
                         />

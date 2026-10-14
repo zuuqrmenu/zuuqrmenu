@@ -5,6 +5,7 @@ import { analyticsService } from '../services/analyticsService';
 import DashboardSkeleton from '../components/DashboardSkeleton';
 import { PageHeader, Card, Stat as KpiStat, Button, Segmented, EmptyState, Notice, Icon } from '../components/dashboard/ui';
 import { getPublicMenuUrl } from '../utils/publicMenuUrl';
+import ModalPortal from '../components/common/ModalPortal';
 
 const pad = (value) => String(value).padStart(2, '0');
 const dateString = (date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
@@ -681,10 +682,12 @@ const Analytics = () => {
         )}
 
         {modalConfig && (
-          <AnalyticsDetailModal
-            config={modalConfig}
-            onClose={() => setModalConfig(null)}
-          />
+          <ModalPortal>
+            <AnalyticsDetailModal
+              config={modalConfig}
+              onClose={() => setModalConfig(null)}
+            />
+          </ModalPortal>
         )}
       </div>
     </RestaurantLayout>

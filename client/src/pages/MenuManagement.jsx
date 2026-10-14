@@ -15,6 +15,8 @@ import { menuService } from '../services/menuService';
 import { restaurantSettingsService } from '../services/restaurantSettingsService';
 import { publicMenuService } from '../services/publicMenuService';
 import '../components/CategorySuggester.css';
+import '../styles/menu-modals.css';
+import ModalPortal from '../components/common/ModalPortal';
 import {
   findMatchingCategory,
   getFilteredCategorySuggestions,
@@ -193,7 +195,16 @@ const CategoryModal = ({ category, nextOrder, onClose, onSaved }) => {
     setSaving(true);
     try {
       const payload = { ...form, name: form.name.trim(), displayOrder: Number(form.displayOrder) };
-      const result = category ? await menuService.updateCategory(category._id, payload) : await menuService.createCategory(payload);
+      const send = () => (category ? menuService.updateCategory(category._id, payload) : menuService.createCategory(payload));
+      let result;
+      try {
+        result = await send();
+      } catch (firstError) {
+        // One retry when the request never got an answer (network blip, server waking up); a real API error is shown as is.
+        if (firstError?.response) throw firstError;
+        await new Promise((resolve) => setTimeout(resolve, 600));
+        result = await send();
+      }
       handleClose(() => onSaved(result.message));
     } catch (err) {
       showToast(err.response?.data?.error || 'Kategori kaydedilemedi.', 'error');
@@ -227,10 +238,10 @@ const CategoryModal = ({ category, nextOrder, onClose, onSaved }) => {
         >
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-sm font-medium text-emerald-600">Menü</p>
+              <p className="mz-kicker">Menü</p>
               <h2 id="category-dialog-title" className="mt-1 text-xl font-semibold">{category ? 'Kategoriyi düzenle' : 'Kategori ekle'}</h2>
             </div>
-            <button type="button" onClick={() => handleClose()} className="text-2xl leading-none text-slate-400 hover:text-slate-700" aria-label="Kapat">×</button>
+            <button type="button" onClick={() => handleClose()} className="mz-close" aria-label="Kapat">×</button>
           </div>
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           {/* Category Name Input & Suggestions Dropdown */}
@@ -629,6 +640,7 @@ const MenuManagement = () => {
   ));
   const [statusDialog, setStatusDialog] = useState(null);
   const [menuThemes, setMenuThemes] = useState([]);
+  const [brandColors, setBrandColors] = useState(null);
   const [activeMenuThemeId, setActiveMenuThemeId] = useState(null);
   const [themeSelectionOpen, setThemeSelectionOpen] = useState(false);
   const [customizationOpen, setCustomizationOpen] = useState(false);
@@ -675,6 +687,7 @@ const MenuManagement = () => {
         });
       }
       setMenuThemes(settingsData?.settings?.menuThemes || []);
+      setBrandColors({ primaryColor: settingsData?.settings?.primaryColor, secondaryColor: settingsData?.settings?.secondaryColor });
       setActiveMenuThemeId(settingsData?.settings?.activeMenuThemeId || null);
       publicMenuService.clearCache();
     } catch (err) {
@@ -895,42 +908,47 @@ const MenuManagement = () => {
           <>
         <div className="menu-management-header-grid">
           {overview ? (
-            <section className="menu-publish-card">
-              <div className="menu-publish-card__header">
-                <div>
-                  <p className="menu-publish-card__eyebrow">Yayın durumu</p>
-                  <h3>{statusCopy[0]}</h3>
-                  <p>{statusCopy[1]}</p>
-                  {overview.restaurant?.publishedAt && (
-                    <small>Son yayın: {new Intl.DateTimeFormat('tr-TR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(overview.restaurant.publishedAt))}</small>
-                  )}
-                </div>
-                <div className="menu-status-switcher" role="group" aria-label="Menü görünürlüğü">
-                  {[['DRAFT', 'Taslak'], ['PUBLISHED', 'Yayında'], ['HIDDEN', 'Gizli']].map(([value, label]) => (
-                    <button
-                      type="button"
-                      key={value}
-                      className={`${menuStatus === value ? 'is-active ' : ''}menu-status-switcher__${value.toLowerCase()}`}
-                      disabled={actionId === 'menu-status'}
-                      onClick={() => menuStatus !== value && setStatusDialog({ status: value })}
-                    >
-                      {label}
-                    </button>
-                  ))}
+            <Card
+              className="dp-publish"
+              title="Yayın durumu"
+              sub="Menünüzün müşterilere görünür olup olmayacağını buradan belirleyin."
+            >
+              <div className="dp-publish__live">
+                <span className={`dp-publish__dot is-${menuStatus.toLowerCase()}`} aria-hidden="true" />
+                <div className="dp-theme__text">
+                  <small>Şu anki durum</small>
+                  <b>{statusCopy[0]}</b>
+                  <span>{statusCopy[1]}</span>
                 </div>
               </div>
-            </section>
+              <div className="menu-status-switcher dp-publish__switch" role="group" aria-label="Menü görünürlüğü">
+                {[['DRAFT', 'Taslak'], ['PUBLISHED', 'Yayında'], ['HIDDEN', 'Gizli']].map(([value, label]) => (
+                  <button
+                    type="button"
+                    key={value}
+                    className={`${menuStatus === value ? 'is-active ' : ''}menu-status-switcher__${value.toLowerCase()}`}
+                    disabled={actionId === 'menu-status'}
+                    onClick={() => menuStatus !== value && setStatusDialog({ status: value })}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {overview.restaurant?.publishedAt && (
+                <p className="dp-publish__foot">Son yayın: {new Intl.DateTimeFormat('tr-TR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(overview.restaurant.publishedAt))}</p>
+              )}
+            </Card>
           ) : (
-            <section className="menu-publish-card menu-publish-card--skeleton" role="status" aria-busy="true" aria-label="Yayın durumu yükleniyor">
-              <div className="menu-publish-card__header">
-                <div style={{ display: 'grid', gap: '0.6rem', flex: 1 }}>
+            <Card className="dp-publish" title="Yayın durumu" sub="Menünüzün müşterilere görünür olup olmayacağını buradan belirleyin.">
+              <div className="dp-publish__live" role="status" aria-busy="true" aria-label="Yayın durumu yükleniyor">
+                <span className="dsk" style={{ width: '0.8rem', height: '0.8rem', borderRadius: '999px' }} />
+                <div style={{ display: 'grid', gap: '0.5rem', flex: 1 }}>
                   <span className="dsk" style={{ width: '5rem', height: '0.8rem' }} />
-                  <span className="dsk" style={{ width: '10rem', height: '1.4rem' }} />
-                  <span className="dsk" style={{ width: '14rem', height: '0.85rem' }} />
+                  <span className="dsk" style={{ width: '10rem', height: '1.2rem' }} />
                 </div>
-                <span className="dsk" style={{ width: '12rem', height: '2.6rem', borderRadius: '999px' }} />
               </div>
-            </section>
+              <span className="dsk" style={{ width: '100%', height: '3rem', borderRadius: '999px' }} />
+            </Card>
           )}
           <Card
             className="dp-theme"
@@ -983,44 +1001,46 @@ const MenuManagement = () => {
       </div>
       {modalOpen && <CategoryModal category={editingCategory} nextOrder={categories.length} onClose={() => { setModalOpen(false); setEditingCategory(null); }} onSaved={showNotice} />}
       {themeSelectionOpen && (
-        <SavedThemeSelectionModal
-          themes={menuThemes}
-          activeThemeId={activeMenuThemeId}
-          onClose={() => setThemeSelectionOpen(false)}
-          onApply={selectMenuTheme}
-          applying={actionId === 'menu-theme'}
-          onNewTheme={() => {
-            setEditingTheme(null);
-            setEditingThemeIndex(null);
-            setThemeSelectionOpen(false);
-            setCustomizationOpen(true);
-          }}
-          onEditTheme={(theme, index) => {
-            setEditingTheme(theme);
-            setEditingThemeIndex(index);
-            setThemeSelectionOpen(false);
-            setCustomizationOpen(true);
-          }}
-          onDeleteTheme={async (themeToDelete) => {
-            const deleteId = themeToDelete._id || themeToDelete.id;
-            const remainingThemes = menuThemes.filter((t) => String(t._id || t.id) !== String(deleteId));
-            const isDeletedActive = String(activeMenuThemeId) === String(deleteId);
-            const payload = {
-              menuThemes: remainingThemes,
-              ...(isDeletedActive
-                ? { activeMenuThemeId: null, activeMenuId: null, theme: 'DEFAULT', mode: 'LIGHT', primaryColor: '#1F2937', secondaryColor: '#FFFFFF' }
-                : {}),
-            };
-            const result = await restaurantSettingsService.update(payload);
-            setMenuThemes(result.settings?.menuThemes || remainingThemes);
-            if (isDeletedActive) {
-              setActiveMenuThemeId(null);
-            }
-            publicMenuService.clearCache();
-            setNotice('Tema silindi.');
-            return result.settings;
-          }}
-        />
+        <ModalPortal>
+          <SavedThemeSelectionModal
+            themes={menuThemes}
+            activeThemeId={activeMenuThemeId}
+            onClose={() => setThemeSelectionOpen(false)}
+            onApply={selectMenuTheme}
+            applying={actionId === 'menu-theme'}
+            onNewTheme={() => {
+              setEditingTheme(null);
+              setEditingThemeIndex(null);
+              setThemeSelectionOpen(false);
+              setCustomizationOpen(true);
+            }}
+            onEditTheme={(theme, index) => {
+              setEditingTheme(theme);
+              setEditingThemeIndex(index);
+              setThemeSelectionOpen(false);
+              setCustomizationOpen(true);
+            }}
+            onDeleteTheme={async (themeToDelete) => {
+              const deleteId = themeToDelete._id || themeToDelete.id;
+              const remainingThemes = menuThemes.filter((t) => String(t._id || t.id) !== String(deleteId));
+              const isDeletedActive = String(activeMenuThemeId) === String(deleteId);
+              const payload = {
+                menuThemes: remainingThemes,
+                ...(isDeletedActive
+                  ? { activeMenuThemeId: null, activeMenuId: null, theme: 'DEFAULT', mode: 'LIGHT', primaryColor: '#1F2937', secondaryColor: '#FFFFFF' }
+                  : {}),
+              };
+              const result = await restaurantSettingsService.update(payload);
+              setMenuThemes(result.settings?.menuThemes || remainingThemes);
+              if (isDeletedActive) {
+                setActiveMenuThemeId(null);
+              }
+              publicMenuService.clearCache();
+              setNotice('Tema silindi.');
+              return result.settings;
+            }}
+          />
+        </ModalPortal>
       )}
       {customizationOpen && (
         <MenuCustomizationCompactModal
@@ -1028,6 +1048,7 @@ const MenuManagement = () => {
           initialMenu={editingTheme}
           editingIndex={editingThemeIndex}
           restaurant={overview?.restaurant || restaurant}
+          brandColors={brandColors}
           onClose={() => {
             setCustomizationOpen(false);
             setEditingTheme(null);
@@ -1089,12 +1110,14 @@ const MenuManagement = () => {
         />
       )}
       {statusDialog && (
-        <StatusConfirmDialog
-          statusDialog={statusDialog}
-          onClose={() => setStatusDialog(null)}
-          onConfirm={updateMenuStatus}
-          actionId={actionId}
-        />
+        <ModalPortal>
+          <StatusConfirmDialog
+            statusDialog={statusDialog}
+            onClose={() => setStatusDialog(null)}
+            onConfirm={updateMenuStatus}
+            actionId={actionId}
+          />
+        </ModalPortal>
       )}
     </RestaurantLayout>
   );

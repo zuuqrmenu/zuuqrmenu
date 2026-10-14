@@ -9,8 +9,8 @@ export const companyInfo = {
   taxNumber: '[Vergi Kimlik No / T.C. Kimlik No]',
   mersisNo: '', // optional, shown only when filled
   address: '[Açık Adres]',
-  email: 'destek@zuuqrmenu.com',
-  kvkkEmail: 'kvkk@zuuqrmenu.com',
+  email: 'zuuqrmenu@gmail.com',
+  kvkkEmail: 'zuuqrmenu@gmail.com',
   phone: '[Telefon]',
   website: 'https://www.zuuqrmenu.com',
 };
